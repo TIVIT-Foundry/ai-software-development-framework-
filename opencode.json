@@ -1,0 +1,137 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "orchestrator",
+  "instructions": [
+    "AGENTS.md"
+  ],
+  "skills": {
+    "paths": [
+      ".opencode/skills"
+    ]
+  },
+  "mcp": {
+    "context7": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp"
+      ],
+      "enabled": true
+    },
+    "docker": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-docker"
+      ],
+      "enabled": true
+    },
+    "package-registry": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "package-registry-mcp"
+      ],
+      "enabled": true
+    },
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        ".opencode"
+      ],
+      "enabled": true
+    },
+    "github": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "enabled": true,
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "postgres": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-postgres"
+      ],
+      "enabled": true,
+      "env": {
+        "POSTGRES_CONNECTION_STRING": "${POSTGRES_CONNECTION_STRING}"
+      }
+    },
+    "notion": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "enabled": false,
+      "env": {
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\":\"Bearer ${NOTION_TOKEN}\",\"Notion-Version\":\"2025-09-03\"}"
+      }
+    },
+    "gcloud": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@google-cloud/gcloud-mcp"
+      ],
+      "enabled": false,
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}"
+      }
+    },
+    "observability": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@google-cloud/observability-mcp"
+      ],
+      "enabled": false,
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}"
+      }
+    }
+  },
+  "permission": {
+    "edit": {
+      ".opencode/framework/**": "ask",
+      ".opencode/agents/**": "ask",
+      "*": "allow"
+    },
+    "bash": {
+      "git *": "allow",
+      "rm *": "ask",
+      "*": "ask"
+    },
+    "external_directory": {
+      "~/.config/opencode/**": "deny",
+      "**/node_modules/**": "deny",
+      "*": "allow"
+    }
+  }
+}

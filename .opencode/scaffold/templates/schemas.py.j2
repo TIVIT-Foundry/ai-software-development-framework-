@@ -1,0 +1,39 @@
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, Field, ConfigDict
+from sqlalchemy import String, Integer, Boolean, DateTime, Numeric, Text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.sql import func
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class ${ENTITY}(Base):
+    __tablename__ = "${entities}"
+    __table_args__ = {"schema": "${SCHEMA}"}
+
+$PY_ALL_FIELDS
+
+
+class ${ENTITY}Create(BaseModel):
+$PY_CREATE_FIELDS
+
+
+class ${ENTITY}Update(BaseModel):
+$PY_UPDATE_FIELDS
+
+
+class ${ENTITY}Response(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+$PY_RESPONSE_FIELDS
+
+
+class ${ENTITY}ListResponse(BaseModel):
+    items: list[${ENTITY}Response]
+    total: int
+    page: int
+    page_size: int

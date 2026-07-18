@@ -1,0 +1,22 @@
+/* ============================================================
+   Table: $SCHEMA.$TABLE
+   Description: Stores $entities
+   Author: Framework Generated
+   ============================================================ */
+CREATE TABLE $SCHEMA.$TABLE (
+$SQL_COLUMNS
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by INTEGER,
+    updated_at TIMESTAMPTZ,
+    updated_by INTEGER,
+    record_status CHAR(1) NOT NULL DEFAULT 'A',
+    CONSTRAINT pk_${TABLE} PRIMARY KEY (id)
+);
+
+COMMENT ON TABLE $SCHEMA.$TABLE IS 'Stores $entities records';
+COMMENT ON COLUMN $SCHEMA.$TABLE.record_status IS 'A = Active, I = Inactive';
+
+CREATE INDEX ix_${TABLE}_record_status ON $SCHEMA.$TABLE (record_status)
+    INCLUDE (id, created_at);
+
+CREATE INDEX ix_${TABLE}_created_at ON $SCHEMA.$TABLE (created_at DESC);

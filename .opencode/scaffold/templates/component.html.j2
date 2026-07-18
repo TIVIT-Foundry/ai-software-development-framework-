@@ -1,0 +1,31 @@
+<div class="${entity}-list">
+  <div class="toolbar">
+    <input
+      type="search"
+      placeholder="Search ${entities}..."
+      (keyup.enter)="onSearch(searchInput.value)"
+      #searchInput
+    />
+    <button type="button" (click)="create.emit()">New ${ENTITY}</button>
+  </div>
+
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
+  }
+
+  <app-${entity}-table
+    [items]="items()"
+    [total]="total()"
+    [page]="page()"
+    [pageSize]="pageSize()"
+    [loading]="loading()"
+    (pageChange)="pageChange.emit($event)"
+    (sortChange)="sortChange.emit($event)"
+    (edit)="edit.emit($event)"
+    (delete)="delete.emit($event)"
+  />
+
+  @if (loading()) {
+    <div class="loading">Loading...</div>
+  }
+</div>

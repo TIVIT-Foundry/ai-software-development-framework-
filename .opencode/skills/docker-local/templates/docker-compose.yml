@@ -1,0 +1,487 @@
+# ============================================================================
+# Docker Compose — Local Development Environment
+# Stacks: Python FastAPI + Bun (TypeScript) + Angular + PostgreSQL (pgvector)
+# Services: API, Bun Backend, Frontend, DB, Redis, Kafka, Keycloak, OTel Collector
+# ============================================================================
+# Usage:
+#   Core only:          docker compose --profile core up -d
+#   Full dev + tools:   docker compose --profile core --profile dev up -d
+#   With messaging UI:  docker compose --profile core --profile messaging up -d
+#   Stop all:           docker compose --profile '*' down -v
+#
+# Requires .env file (copy from .env.example):
+#   DB_USER, DB_PASSWORD, DB_NAME
+#   JWT_SECRET, KEYCLOAK_ADMIN_PASSWORD
+# ============================================================================
+
+version: "3.9"
+
+# ─── Extension fields (YAML anchors) ──────────────────────────
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-health-defaults: &health-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 5
+  start_period: 30s
+
+x-security-defaults: &security-defaults
+  cap_drop:
+    - ALL
+  cap_add:
+    - NET_BIND_SERVICE
+  security_opt:
+    - no-new-privileges:true
+
+x-env-db: &env-db
+  DATABASE_URL: postgresql+asyncpg://${DB_USER:-appuser}:${DB_PASSWORD:-devpassword}@db:5432/${DB_NAME:-myapp}
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_USER: ${DB_USER:-appuser}
+  DB_PASSWORD: ${DB_PASSWORD:-devpassword}
+  DB_NAME: ${DB_NAME:-myapp}
+
+x-env-redis: &env-redis
+  REDIS_URL: redis://redis:6379/0
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+
+x-env-kafka: &env-kafka
+  KAFKA_BROKERS: kafka:9092
+  KAFKA_TOPIC_PREFIX: myapp
+
+x-env-otel: &env-otel
+  OTEL_SERVICE_NAME: myapp
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  OTEL_METRICS_EXPORTER: otlp
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_LOGS_EXPORTER: otlp
+
+x-env-auth: &env-auth
+  JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars-long}
+  JWT_ALGORITHM: RS256
+  JWT_ISSUER: myapp.local
+  JWT_AUDIENCE: myapp-api
+  KEYCLOAK_URL: http://keycloak:8080
+  KEYCLOAK_REALM: myapp
+
+# ═══════════════════════════════════════════════════════════════
+# NETWORKS
+# ═══════════════════════════════════════════════════════════════
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+  monitoring:
+    driver: bridge
+
+# ═══════════════════════════════════════════════════════════════
+# VOLUMES
+# ═══════════════════════════════════════════════════════════════
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  kafka-data:
+    driver: local
+  keycloak-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+
+# ═══════════════════════════════════════════════════════════════
+# SERVICES
+# ═══════════════════════════════════════════════════════════════
+services:
+
+  # ── Python FastAPI (AI/ML Core) ─────────────────────────────
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: myapp-api
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # debugpy
+    environment:
+      <<: [*env-db, *env-redis, *env-kafka, *env-otel, *env-auth]
+      APP_ENV: development
+      UVICORN_PORT: 8000
+      LOG_LEVEL: debug
+    volumes:
+      - ../backend/src:/app/src:ro
+      - ../backend/migrations:/app/migrations:ro
+      - ../backend/alembic.ini:/app/alembic.ini:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    logging: *default-logging
+    <<: *security-defaults
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      <<: *health-defaults
+    profiles:
+      - core
+
+  # ── Bun Backend (TypeScript general backend) ────────────────
+  api-bun:
+    build:
+      context: ../services
+      dockerfile: Dockerfile
+    container_name: myapp-api-bun
+    ports:
+      - "3000:3000"
+    environment:
+      <<: [*env-db, *env-redis, *env-kafka, *env-otel, *env-auth]
+      NODE_ENV: development
+      PORT: "3000"
+    volumes:
+      - ../services/src:/app/src:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    logging: *default-logging
+    <<: *security-defaults
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      <<: *health-defaults
+    profiles:
+      - core
+
+  # ── Angular Frontend (Dev Server) ───────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      target: development
+      dockerfile: Dockerfile
+    container_name: myapp-frontend
+    ports:
+      - "4200:4200"
+    environment:
+      NODE_ENV: development
+      API_URL: http://api:8000
+      BUN_API_URL: http://api-bun:3000
+      KEYCLOAK_URL: http://keycloak:8080
+    volumes:
+      - ../frontend/src:/app/src:ro
+      - ../frontend/public:/app/public:ro
+    depends_on:
+      - api
+      - api-bun
+    networks:
+      - app-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200"]
+      <<: *health-defaults
+    profiles:
+      - frontend
+      - dev
+
+  # ── PostgreSQL 16 + pgvector ────────────────────────────────
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: myapp-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-appuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devpassword}
+      POSTGRES_DB: ${DB_NAME:-myapp}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-appuser} -d ${DB_NAME:-myapp}"]
+      <<: *health-defaults
+    profiles:
+      - core
+
+  # ── Redis 7 (Cache & Message Broker) ────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: myapp-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - app-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    profiles:
+      - core
+
+  # ── Apache Kafka (KRaft mode — no Zookeeper) ────────────────
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: myapp-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    profiles:
+      - core
+      - messaging
+
+  # ── Keycloak 25 (Identity Provider — OAuth2/OIDC) ───────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: myapp-keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-myapp}
+      KC_DB_USERNAME: ${DB_USER:-appuser}
+      KC_DB_PASSWORD: ${DB_PASSWORD:-devpassword}
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_PORT: 8080
+      KC_PROXY: edge
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./scripts/keycloak:/opt/keycloak/data/import:ro
+    command:
+      - start-dev
+      - --import-realm
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3; cat <&3 | grep -q 'UP'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    profiles:
+      - auth
+      - core
+
+  # ── OpenTelemetry Collector ─────────────────────────────────
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.102.0
+    container_name: myapp-otel
+    command: ["--config=/etc/otel-config.yaml"]
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otel-config.yaml:ro
+    ports:
+      - "4317:4317" # gRPC
+      - "4318:4318" # HTTP
+      - "8888:8888" # metrics (Prometheus)
+      - "8889:8889" # health check
+    networks:
+      - app-network
+      - monitoring
+    restart: unless-stopped
+    logging: *default-logging
+    profiles:
+      - observability
+      - dev
+
+  # ── Prometheus ──────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: myapp-prometheus
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    logging: *default-logging
+    profiles:
+      - observability
+      - dev
+
+  # ── Grafana ─────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: myapp-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+    networks:
+      - monitoring
+    restart: unless-stopped
+    logging: *default-logging
+    profiles:
+      - observability
+      - dev
+
+  # ═════════════════════════════════════════════════════════════
+  # DEV TOOLS (profile: dev)
+  # ═════════════════════════════════════════════════════════════
+
+  # ── Adminer (lightweight DB admin) ──────────────────────────
+  adminer:
+    image: adminer:4
+    container_name: myapp-adminer
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - dev
+      - admin
+
+  # ── pgAdmin ─────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:8.9
+    container_name: myapp-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@local.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - dev
+      - admin
+
+  # ── Redis Commander ─────────────────────────────────────────
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: myapp-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8082:8081"
+    networks:
+      - app-network
+    depends_on:
+      - redis
+    profiles:
+      - dev
+
+  # ── Kafka UI ────────────────────────────────────────────────
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: myapp-kafka-ui
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8083:8080"
+    networks:
+      - app-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    profiles:
+      - dev
+      - messaging
+
+  # ── Mailpit (Email testing) ─────────────────────────────────
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: myapp-mailpit
+    ports:
+      - "8025:8025" # Web UI
+      - "1025:1025" # SMTP
+    networks:
+      - app-network
+    profiles:
+      - dev
+
+  # ── Jaeger (Distributed Tracing UI) ─────────────────────────
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    container_name: myapp-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      COLLECTOR_ZIPKIN_HOST_PORT: 9411
+    ports:
+      - "16686:16686" # UI
+      - "14250:14250" # gRPC
+      - "14268:14268" # HTTP collector
+    networks:
+      - monitoring
+    profiles:
+      - observability
+      - dev

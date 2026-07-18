@@ -1,0 +1,566 @@
+# ============================================================================
+# GitHub Actions — CI/CD Full Pipeline
+# Stacks: Python 3.12 (FastAPI) + Angular 18+ (pnpm) + Bun (TypeScript)
+# Stages: lint → test → security-scan → build → docker-push → deploy
+# ============================================================================
+# Usage:
+#   1. Copy this file to .github/workflows/ci-cd.yml
+#   2. Configure secrets in GitHub → Settings → Secrets and variables → Actions:
+#      - DEPLOY_SSH_KEY  (private SSH key for deploy server)
+#      - REGISTRY_TOKEN  (if using private registry)
+#      - SLACK_WEBHOOK   (optional, for notifications)
+#   3. Adjust paths, env names, and deployment targets per project
+# ============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+  BUN_VERSION: '1'
+
+# ─── Concurrency: cancel in-progress runs on same branch/PR ───
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ═══════════════════════════════════════════════════════════════
+# JOBS
+# ═══════════════════════════════════════════════════════════════
+
+jobs:
+
+  # ── CHANGES DETECTION ────────────────────────────────────────
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      bun: ${{ steps.filter.outputs.bun }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'pyproject.toml'
+              - 'requirements*.txt'
+              - 'alembic.ini'
+              - 'migrations/**'
+            frontend:
+              - 'frontend/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+            bun:
+              - 'services/**'
+              - 'package.json'
+              - 'bun.lock*'
+            docker:
+              - '**/Dockerfile'
+              - '**/docker-compose*.yml'
+              - '.dockerignore'
+
+  # ── PYTHON LINT ─────────────────────────────────────────────
+  python-lint:
+    name: Python Lint
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - name: Install lint tools
+        run: pip install ruff
+      - name: Ruff check
+        run: ruff check .
+      - name: Ruff format check
+        run: ruff format --check .
+
+  # ── PYTHON TEST ─────────────────────────────────────────────
+  python-test:
+    name: Python Tests
+    needs: python-lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
+      REDIS_URL: redis://localhost:6379/0
+      APP_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+      - name: Run migrations
+        run: alembic upgrade head
+      - name: Run tests with coverage
+        run: pytest --cov=src --cov-report=xml --cov-report=html -n auto -v
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: backend/coverage.xml
+          flags: python
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage-${{ github.sha }}
+          path: backend/htmlcov/
+          retention-days: 7
+
+  # ── FRONTEND LINT (Angular) ─────────────────────────────────
+  frontend-lint:
+    name: Angular Lint
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: ESLint
+        run: pnpm ng lint
+      - name: TypeScript check
+        run: pnpm tsc --noEmit
+
+  # ── FRONTEND TEST (Angular) ─────────────────────────────────
+  frontend-test:
+    name: Angular Tests
+    needs: frontend-lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Unit tests
+        run: pnpm ng test --code-coverage --watch=false --browsers=ChromeHeadless
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          flags: angular
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
+
+  # ── BUN LINT ────────────────────────────────────────────────
+  bun-lint:
+    name: Bun Lint
+    needs: changes
+    if: ${{ needs.changes.outputs.bun == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: ESLint
+        run: bunx eslint src/ --max-warnings=0
+      - name: TypeScript check
+        run: bunx tsc --noEmit
+
+  # ── BUN TEST ────────────────────────────────────────────────
+  bun-test:
+    name: Bun Tests
+    needs: bun-lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://testuser:testpass@localhost:5432/testdb
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Run tests
+        run: bunx vitest run --coverage
+      - name: Upload Bun coverage
+        uses: codecov/codecov-action@v4
+        with:
+          flags: bun
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
+
+  # ── SECURITY SCAN ───────────────────────────────────────────
+  security-scan:
+    name: Security Scan
+    needs: [python-test, frontend-test, bun-test]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # SAST — Semgrep
+      - name: Semgrep scan
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: p/default
+        continue-on-error: true
+
+      # Python dependency audit
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: pip-audit
+        if: ${{ needs.changes.outputs.backend == 'true' }}
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/requirements.txt --strict
+        continue-on-error: true
+
+      # npm dependency audit (frontend)
+      - name: npm audit (frontend)
+        if: ${{ needs.changes.outputs.frontend == 'true' }}
+        working-directory: frontend
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+      # Secret scanning (Trufflehog)
+      - name: TruffleHog scan
+        uses: trufflesecurity/trufflehog-action@v1
+        with:
+          path: ./
+          base: ${{ github.event.before }}
+          head: ${{ github.sha }}
+        continue-on-error: true
+
+  # ── BUILD PYTHON DOCKER ─────────────────────────────────────
+  build-python:
+    name: Build Python Image
+    needs: [security-scan]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/api
+          tags: |
+            type=sha,prefix=,format=short
+            type=ref,event=tag
+            type=raw,value=latest
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+  # ── BUILD ANGULAR DOCKER ────────────────────────────────────
+  build-frontend:
+    name: Build Angular Image
+    needs: [security-scan]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/web
+          tags: |
+            type=sha,prefix=,format=short
+            type=ref,event=tag
+            type=raw,value=latest
+      - uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── BUILD BUN DOCKER ────────────────────────────────────────
+  build-bun:
+    name: Build Bun Image
+    needs: [security-scan]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.changes.outputs.bun == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/bun-api
+          tags: |
+            type=sha,prefix=,format=short
+            type=ref,event=tag
+            type=raw,value=latest
+      - uses: docker/build-push-action@v6
+        with:
+          context: services
+          file: services/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── DEPLOY DEV ──────────────────────────────────────────────
+  deploy-dev:
+    name: Deploy to Development
+    needs: [build-python, build-frontend, build-bun]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/develop' &&
+      !cancelled()
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://dev.example.com
+    steps:
+      - name: Deploy to dev
+        run: |
+          echo "Deploying images to development environment"
+          echo "  API: ${{ env.REGISTRY }}/${{ github.repository }}/api:${{ needs.build-python.outputs.image-tag }}"
+          echo "  Web: ${{ env.REGISTRY }}/${{ github.repository }}/web:${{ needs.build-frontend.outputs.image-tag }}"
+          echo "  Bun: ${{ env.REGISTRY }}/${{ github.repository }}/bun-api:${{ needs.build-bun.outputs.image-tag }}"
+          # Replace with actual deploy command (kubectl, helm, ssh, etc.)
+          # kubectl set image deployment/api api=${{ env.REGISTRY }}/${{ github.repository }}/api:${{ needs.build-python.outputs.image-tag }} -n dev
+          # kubectl rollout status deployment/api -n dev
+
+  # ── DEPLOY STAGING ──────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [deploy-dev, build-python, build-frontend, build-bun]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      !cancelled()
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.example.com
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run DB migrations on staging
+        run: |
+          echo "Running Alembic migrations on staging"
+          # alembic upgrade head
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging"
+          # kubectl set image deployment/api api=${{ env.REGISTRY }}/${{ github.repository }}/api:${{ needs.build-python.outputs.image-tag }} -n staging
+          # kubectl rollout status deployment/api -n staging
+
+  # ── E2E TESTS (post-staging) ────────────────────────────────
+  e2e-tests:
+    name: E2E Tests
+    needs: [deploy-staging]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Run Playwright tests
+        run: |
+          cd frontend
+          pnpm exec playwright install --with-deps chromium
+          pnpm exec playwright test --project=chromium
+        continue-on-error: true
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: frontend/playwright-report/
+          retention-days: 7
+
+  # ── DEPLOY PROD ─────────────────────────────────────────────
+  deploy-prod:
+    name: Deploy to Production
+    needs: [deploy-staging, e2e-tests]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      !cancelled() &&
+      !contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://example.com
+    steps:
+      - name: Run DB migrations on production
+        run: |
+          echo "Running Alembic migrations on production"
+          # This should be careful — consider manual step for production migrations
+          # alembic upgrade head
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production"
+          # kubectl set image deployment/api api=${{ env.REGISTRY }}/${{ github.repository }}/api:${{ needs.build-python.outputs.image-tag }} -n prod
+          # kubectl rollout status deployment/api -n prod --timeout=5m
+
+  # ── ROLLBACK (manual workflow_dispatch) ─────────────────────
+  rollback:
+    name: Rollback
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rollback to previous version
+        run: |
+          echo "Rolling back deployment"
+          # Option A: Revert image tag
+          # kubectl set image deployment/api api=${{ env.REGISTRY }}/${{ github.repository }}/api:${{ github.event.inputs.rollback-tag }} -n prod
+          # Option B: Helm rollback
+          # helm rollback myapp -n prod
+
+  # ── NOTIFY ──────────────────────────────────────────────────
+  notify:
+    name: Notify
+    needs: [deploy-prod]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack notification
+        uses: slackapi/slack-github-action@v2
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            {
+              "channel": "${{ secrets.SLACK_CHANNEL }}",
+              "text": "Deploy ${{ needs.deploy-prod.result == 'success' && 'succeeded :rocket:' || 'failed :x:' }} — ${{ github.repository }}@${{ github.sha }} to production"
+            }
+        continue-on-error: true

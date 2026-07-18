@@ -1,0 +1,21 @@
+import { z } from 'zod';
+
+export const ${entity}CreateSchema = z.object({
+$BUN_CREATE_FIELDS
+});
+
+export const ${entity}UpdateSchema = z.object({
+$BUN_UPDATE_FIELDS
+});
+
+export const ${entity}ParamsSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(100).default(20),
+  sortBy: z.string().default('created_at'),
+  sortOrder: z.enum(['ASC', 'DESC']).default('DESC'),
+  searchFilter: z.string().optional(),
+});
+
+export type ${ENTITY}Create = z.infer<typeof ${entity}CreateSchema>;
+export type ${ENTITY}Update = z.infer<typeof ${entity}UpdateSchema>;
+export type ${ENTITY}QueryParams = z.infer<typeof ${entity}ParamsSchema>;

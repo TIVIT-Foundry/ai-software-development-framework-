@@ -1,0 +1,126 @@
+{
+  "$schema": "https://opencode.ai/mcp-metadata.json",
+  "description": "MCP server governance metadata per MCP-GOVERNANCE.md. This file provides machine-readable enforcement for risk tiers, allowed agents, and audit requirements.",
+  "mcpServers": {
+    "context7": {
+      "type": "documentation",
+      "risk_tier": "low",
+      "purpose": "Consultar documentación actualizada de librerías y frameworks",
+      "authorized_by": "control-agent",
+      "authorized_date": "2026-05-30",
+      "scope": ["global"],
+      "allowed_agents": ["orchestrator-agent", "design-agent", "control-agent", "delivery-agent"],
+      "secrets_managed_by": "none",
+      "audit_enabled": false,
+      "review_date": "2027-05-30"
+    },
+    "playwright": {
+      "type": "automation",
+      "risk_tier": "medium",
+      "purpose": "Automatización de navegador para testing E2E y generación de screenshots",
+      "authorized_by": "control-agent",
+      "authorized_date": "2026-05-30",
+      "scope": ["global"],
+      "allowed_agents": ["delivery-agent"],
+      "secrets_managed_by": "none",
+      "audit_enabled": true,
+      "review_date": "2027-05-30"
+    },
+    "docker": {
+      "type": "automation",
+      "risk_tier": "medium",
+      "purpose": "Gestión de containers Docker locales para desarrollo y testing",
+      "authorized_by": "control-agent",
+      "authorized_date": "2026-05-30",
+      "scope": ["global"],
+      "allowed_agents": ["delivery-agent"],
+      "secrets_managed_by": "none",
+      "audit_enabled": true,
+      "review_date": "2027-05-30"
+    },
+    "package-registry": {
+      "type": "documentation",
+      "risk_tier": "low",
+      "purpose": "Búsqueda de paquetes en npm, PyPI, NuGet, crates.io",
+      "authorized_by": "control-agent",
+      "authorized_date": "2026-05-30",
+      "scope": ["global"],
+      "allowed_agents": ["orchestrator-agent", "design-agent", "delivery-agent"],
+      "secrets_managed_by": "none",
+      "audit_enabled": false,
+      "review_date": "2027-05-30"
+    },
+    "filesystem": {
+      "type": "data",
+      "risk_tier": "medium",
+      "purpose": "Acceso sandboxed a .opencode/",
+      "authorized_by": "control-agent",
+      "authorized_date": "2026-05-30",
+      "scope": ["global"],
+      "allowed_agents": ["orchestrator-agent", "design-agent", "control-agent", "delivery-agent"],
+      "secrets_managed_by": "none",
+      "audit_enabled": true,
+      "review_date": "2027-05-30"
+    },
+    "github": {
+      "type": "external-api",
+      "risk_tier": "medium",
+      "purpose": "API de GitHub para PRs, issues, search y gestión de repos",
+      "authorized_by": "control-agent",
+      "authorized_date": "2026-05-30",
+      "scope": ["global"],
+      "allowed_agents": ["orchestrator-agent", "control-agent", "delivery-agent"],
+      "secrets_managed_by": "env",
+      "audit_enabled": true,
+      "review_date": "2026-11-30"
+    },
+    "postgres": {
+      "type": "data",
+      "risk_tier": "medium-high",
+      "purpose": "Queries a PostgreSQL para desarrollo y testing",
+      "authorized_by": "control-agent + framework-governance",
+      "authorized_date": "2026-05-30",
+      "scope": ["global"],
+      "allowed_agents": ["delivery-agent"],
+      "secrets_managed_by": "env",
+      "audit_enabled": true,
+      "review_date": "2026-11-30"
+    },
+    "notion": {
+      "type": "external-api",
+      "risk_tier": "low",
+      "purpose": "Páginas y DBs de Notion para documentación y project management",
+      "authorized_by": "control-agent",
+      "authorized_date": "",
+      "scope": ["global"],
+      "allowed_agents": ["design-agent", "delivery-agent"],
+      "secrets_managed_by": "env",
+      "audit_enabled": true,
+      "review_date": ""
+    },
+    "gcloud": {
+      "type": "external-api",
+      "risk_tier": "medium-high",
+      "purpose": "Multi-acción sobre infraestructura GCP",
+      "authorized_by": "control-agent + framework-governance + SLA review",
+      "authorized_date": "",
+      "scope": ["per-tenant"],
+      "allowed_agents": ["delivery-agent"],
+      "secrets_managed_by": "env",
+      "audit_enabled": true,
+      "review_date": ""
+    },
+    "observability": {
+      "type": "observability",
+      "risk_tier": "low",
+      "purpose": "Métricas, trazas y logs de GCP",
+      "authorized_by": "control-agent",
+      "authorized_date": "",
+      "scope": ["per-tenant"],
+      "allowed_agents": ["delivery-agent"],
+      "secrets_managed_by": "env",
+      "audit_enabled": true,
+      "review_date": ""
+    }
+  }
+}

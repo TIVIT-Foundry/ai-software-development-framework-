@@ -1,0 +1,23 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('$ENTITY Module', () => {
+  const baseUrl = process.env.BASE_URL ?? 'http://localhost:5173';
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(baseUrl);
+  });
+
+  test('should render $entities list page', async ({ page }) => {
+    await expect(page.getByRole('heading', { level: 2 })).toContainText('$ENTITIES');
+  });
+
+  test('should create a new $entity', async ({ page }) => {
+    await page.getByRole('button', { name: 'New $ENTITY' }).click();
+    await page.getByRole('button', { name: /create/i }).first().click();
+    await expect(page.locator('table tbody tr')).toBeVisible();
+  });
+
+  test('should show empty state when no $entities exist', async ({ page }) => {
+    await expect(page.getByText('No $entities found')).toBeVisible();
+  });
+});

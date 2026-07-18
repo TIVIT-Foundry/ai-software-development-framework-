@@ -1,0 +1,47 @@
+import { Elysia, t } from 'elysia';
+import * as service from './${entity}.service';
+import {
+  ${entity}CreateSchema,
+  ${entity}UpdateSchema,
+  ${entity}ParamsSchema,
+} from './${entity}.dto';
+
+const app = new Elysia({ prefix: '/${entities}' });
+
+app.get('/', async ({ query }) => {
+  const params = ${entity}ParamsSchema.parse(query);
+  return service.list${ENTITIES}(params);
+});
+
+app.get('/:id', async ({ params: { id }, set }) => {
+  const item = await service.get${ENTITY}(id);
+  if (!item) {
+    set.status = 404;
+    return { error: '${ENTITY} not found' };
+  }
+  return item;
+});
+
+app.post('/', async ({ body }) => {
+  return service.create${ENTITY}(body);
+}, { body: ${entity}CreateSchema });
+
+app.put('/:id', async ({ params: { id }, body, set }) => {
+  const item = await service.update${ENTITY}(id, body);
+  if (!item) {
+    set.status = 404;
+    return { error: '${ENTITY} not found' };
+  }
+  return item;
+}, { body: ${entity}UpdateSchema });
+
+app.delete('/:id', async ({ params: { id }, set }) => {
+  const deleted = await service.delete${ENTITY}(id);
+  if (!deleted) {
+    set.status = 404;
+    return { error: '${ENTITY} not found' };
+  }
+  set.status = 204;
+});
+
+export default app;

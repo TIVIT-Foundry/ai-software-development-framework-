@@ -1,0 +1,87 @@
+from sqlalchemy import select, func, or_, update as sa_update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from .${entity}_schemas import ${ENTITY}, ${ENTITY}Create, ${ENTITY}Update, ${ENTITY}Response
+
+
+async def list_${entities}(
+    db: AsyncSession,
+    page: int = 1,
+    page_size: int = 20,
+    sort_by: str = "created_at",
+    sort_order: str = "DESC",
+    search_filter: str | None = None,
+) -> tuple[list[${ENTITY}Response], int]:
+    stmt = select(${ENTITY}).where(${ENTITY}.record_status == "A")
+
+    if search_filter:
+        # Generic text search across string/text columns
+        text_filters = [
+            getattr(${ENTITY}, c.name).ilike(f"%{search_filter}%")
+            for c in ${ENTITY}.__table__.columns
+            if str(c.type).lower() in ("varchar", "text", "character varying")
+        ]
+        if text_filters:
+            stmt = stmt.where(or_(*text_filters))
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    sort_col = getattr(${ENTITY}, sort_by, ${ENTITY}.created_at)
+    if sort_order.upper() == "ASC":
+        stmt = stmt.order_by(sort_col.asc())
+    else:
+        stmt = stmt.order_by(sort_col.desc())
+
+    offset = (page - 1) * page_size
+    stmt = stmt.offset(offset).limit(page_size)
+
+    result = await db.execute(stmt)
+    rows = result.scalars().all()
+
+    items = [${ENTITY}Response.model_validate(r) for r in rows]
+    return items, total
+
+
+async def get_${entity}(db: AsyncSession, ${entity}_id: int) -> ${ENTITY}Response | None:
+    stmt = select(${ENTITY}).where(
+        ${ENTITY}.id == ${entity}_id,
+        ${ENTITY}.record_status == "A",
+    )
+    result = await db.execute(stmt)
+    row = result.scalar_one_or_none()
+    if not row:
+        return None
+    return ${ENTITY}Response.model_validate(row)
+
+
+async def create_${entity}(db: AsyncSession, body: ${ENTITY}Create) -> ${ENTITY}Response:
+    new_row = ${ENTITY}(**body.model_dump())
+    db.add(new_row)
+    await db.flush()
+    await db.refresh(new_row)
+    return ${ENTITY}Response.model_validate(new_row)
+
+
+async def update_${entity}(db: AsyncSession, ${entity}_id: int, body: ${ENTITY}Update) -> ${ENTITY}Response | None:
+    stmt = (
+        sa_update(${ENTITY})
+        .where(${ENTITY}.id == ${entity}_id, ${ENTITY}.record_status == "A")
+        .values(**body.model_dump(exclude_unset=True), updated_at=func.now())
+        .returning(${ENTITY})
+    )
+    result = await db.execute(stmt)
+    row = result.scalar_one_or_none()
+    if not row:
+        return None
+    return ${ENTITY}Response.model_validate(row)
+
+
+async def delete_${entity}(db: AsyncSession, ${entity}_id: int) -> bool:
+    stmt = (
+        sa_update(${ENTITY})
+        .where(${ENTITY}.id == ${entity}_id, ${ENTITY}.record_status == "A")
+        .values(record_status="I", updated_at=func.now())
+    )
+    result = await db.execute(stmt)
+    return result.rowcount > 0

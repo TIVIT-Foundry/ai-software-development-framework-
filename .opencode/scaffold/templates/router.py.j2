@@ -1,0 +1,71 @@
+from fastapi import APIRouter, Depends, Query, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from .database import get_db
+from . import ${entity}_service as service
+from . import ${entity}_schemas as schemas
+
+router = APIRouter(prefix="/${entities}", tags=["${ENTITY}"])
+
+
+@router.get("/", response_model=schemas.${ENTITY}ListResponse)
+async def list_${entities}(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    sort_by: str = Query("created_at"),
+    sort_order: str = Query("DESC", pattern="^(ASC|DESC)$"),
+    search_filter: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+):
+    items, total = await service.list_${entities}(
+        db, page=page, page_size=page_size,
+        sort_by=sort_by, sort_order=sort_order,
+        search_filter=search_filter,
+    )
+    return schemas.${ENTITY}ListResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/{${entity}_id}", response_model=schemas.${ENTITY}Response)
+async def get_${entity}(
+    ${entity}_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await service.get_${entity}(db, ${entity}_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="${ENTITY} not found")
+    return result
+
+
+@router.post("/", response_model=schemas.${ENTITY}Response, status_code=201)
+async def create_${entity}(
+    body: schemas.${ENTITY}Create,
+    db: AsyncSession = Depends(get_db),
+):
+    return await service.create_${entity}(db, body)
+
+
+@router.put("/{${entity}_id}", response_model=schemas.${ENTITY}Response)
+async def update_${entity}(
+    ${entity}_id: int,
+    body: schemas.${ENTITY}Update,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await service.update_${entity}(db, ${entity}_id, body)
+    if not result:
+        raise HTTPException(status_code=404, detail="${ENTITY} not found")
+    return result
+
+
+@router.delete("/{${entity}_id}", status_code=204)
+async def delete_${entity}(
+    ${entity}_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    deleted = await service.delete_${entity}(db, ${entity}_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="${ENTITY} not found")

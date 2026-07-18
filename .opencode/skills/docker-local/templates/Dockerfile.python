@@ -1,0 +1,172 @@
+# ============================================================================
+# Dockerfile — Python FastAPI (Multi-Stage)
+# Stack: Python 3.12 + FastAPI + SQLAlchemy 2.0 async + Alembic
+# ============================================================================
+# Two variants below — uncomment the one matching your dependency manager.
+# Build:
+#   docker build -t myapp-api:latest -f Dockerfile .
+#   docker build --target builder -t myapp-api:dev -f Dockerfile .
+# Run:
+#   docker run -p 8000:8000 --env-file .env myapp-api:latest
+# ============================================================================
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  VARIANT 1 — uv (recommended, faster)                       ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# Stage 1: Build dependencies with uv
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm AS builder
+WORKDIR /app
+
+# Enable bytecode compilation and copy mode (no symlinks)
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
+# Install dependencies first (cache layer)
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project --no-dev
+
+# ── Stage 2: Runtime ──────────────────────────────────────────
+FROM python:3.12-slim-bookworm AS runtime
+WORKDIR /app
+
+# Create non-root user
+RUN groupadd -r appgroup && \
+    useradd -r -g appgroup -d /app -s /bin/false appuser && \
+    chown -R appuser:appgroup /app
+
+# Install runtime system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python optimizations
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PYTHONHASHSEED=random \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    TZ=UTC
+
+# Copy virtual environment from builder
+COPY --from=builder --chown=appuser:appgroup /app/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Copy application code
+COPY --chown=appuser:appgroup . .
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Start FastAPI with uvicorn
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  VARIANT 2 — pip + requirements.txt (compatibility)         ║
+# ╚══════════════════════════════════════════════════════════════╝
+#
+# To use this variant, comment out the uv variant above and
+# uncomment everything below:
+
+# # Stage 1: Build dependencies
+# FROM python:3.12-slim-bookworm AS builder
+# WORKDIR /app
+#
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends \
+#         build-essential \
+#         curl \
+#     && rm -rf /var/lib/apt/lists/*
+#
+# COPY requirements.txt .
+# RUN pip install --no-cache-dir --upgrade pip && \
+#     pip install --no-cache-dir --target=/install -r requirements.txt
+#
+# # Stage 2: Runtime
+# FROM python:3.12-slim-bookworm AS runtime
+# WORKDIR /app
+#
+# # Create non-root user
+# RUN groupadd -r appgroup && \
+#     useradd -r -g appgroup -d /app -s /bin/false appuser && \
+#     chown -R appuser:appgroup /app
+#
+# # Install runtime system dependencies
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends \
+#         curl \
+#         ca-certificates \
+#         libpq5 \
+#     && rm -rf /var/lib/apt/lists/*
+#
+# # Python optimizations
+# ENV PYTHONDONTWRITEBYTECODE=1 \
+#     PYTHONUNBUFFERED=1 \
+#     PYTHONFAULTHANDLER=1 \
+#     PIP_NO_CACHE_DIR=1 \
+#     PIP_DISABLE_PIP_VERSION_CHECK=1 \
+#     TZ=UTC
+#
+# # Copy installed dependencies from builder
+# COPY --from=builder /install /usr/local/lib/python3.12/site-packages
+#
+# # Copy application code
+# COPY --chown=appuser:appgroup . .
+#
+# # Switch to non-root user
+# USER appuser
+#
+# EXPOSE 8000
+#
+# HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+#     CMD curl -f http://localhost:8000/health || exit 1
+#
+# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  DEVELOPMENT STAGE (docker build --target dev)              ║
+# ╚══════════════════════════════════════════════════════════════╝
+#
+# Build: docker build --target dev -t myapp-api:dev -f Dockerfile .
+# Run:   docker run -p 8000:8000 -v ${PWD}/src:/app/src myapp-api:dev
+
+FROM runtime AS dev
+USER root
+
+# Install dev tools
+RUN pip install --no-cache-dir \
+    debugpy \
+    watchfiles \
+    pytest \
+    pytest-cov \
+    pytest-asyncio
+
+# Switch back to appuser
+USER appuser
+
+# Enable hot reload with watchfiles
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "app/"]
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  MIGRATIONS STAGE — runs Alembic, then exits               ║
+# ╚══════════════════════════════════════════════════════════════╝
+#
+# Build: docker build --target migrations -t myapp-migrations -f Dockerfile .
+# Run:   docker run --env-file .env myapp-migrations
+
+FROM runtime AS migrations
+USER root
+RUN pip install --no-cache-dir alembic
+USER appuser
+COPY --chown=appuser:appgroup alembic.ini migrations/ ./
+ENTRYPOINT ["alembic", "upgrade", "head"]

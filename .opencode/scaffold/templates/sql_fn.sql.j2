@@ -1,0 +1,195 @@
+/* ============================================================
+   Function: $SCHEMA.list_$TABLE
+   Description: Paginated list of active $entities
+   ============================================================ */
+CREATE OR REPLACE FUNCTION $SCHEMA.list_$TABLE(
+    p_page INTEGER DEFAULT 1,
+    p_page_size INTEGER DEFAULT 20,
+    p_sort_by VARCHAR(50) DEFAULT 'created_at',
+    p_sort_order VARCHAR(4) DEFAULT 'DESC',
+    p_search_filter VARCHAR(100) DEFAULT NULL
+)
+RETURNS TABLE(
+$SQL_COLUMNS_RETURN
+    created_at TIMESTAMPTZ,
+    created_by INTEGER,
+    updated_at TIMESTAMPTZ,
+    updated_by INTEGER,
+    record_status CHAR(1),
+    total_count BIGINT
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    v_search_pattern VARCHAR(102);
+    v_offset INTEGER;
+BEGIN
+    v_search_pattern := CASE
+        WHEN p_search_filter IS NOT NULL AND TRIM(p_search_filter) <> ''
+        THEN '%' || TRIM(p_search_filter) || '%'
+        ELSE NULL
+    END;
+
+    v_offset := (p_page - 1) * p_page_size;
+
+    RETURN QUERY
+    SELECT
+$SQL_SELECT_COLS
+        t.created_at,
+        t.created_by,
+        t.updated_at,
+        t.updated_by,
+        t.record_status,
+        COUNT(*) OVER()::BIGINT AS total_count
+    FROM $SCHEMA.$TABLE t
+    WHERE t.record_status = 'A'
+        AND (v_search_pattern IS NULL
+            OR CAST(t.id AS VARCHAR) ILIKE v_search_pattern)
+    ORDER BY
+        CASE WHEN p_sort_order = 'ASC' AND p_sort_by = 'created_at' THEN t.created_at END ASC,
+        CASE WHEN p_sort_order = 'ASC' AND p_sort_by = 'id' THEN t.id END ASC,
+        CASE WHEN p_sort_order = 'DESC' AND p_sort_by = 'created_at' THEN t.created_at END DESC,
+        CASE WHEN p_sort_order = 'DESC' AND p_sort_by = 'id' THEN t.id END DESC
+    OFFSET v_offset
+    LIMIT p_page_size;
+END;
+$$;
+
+/* ============================================================
+   Function: $SCHEMA.get_$TABLE
+   Description: Gets a $ENTITY by ID
+   ============================================================ */
+CREATE OR REPLACE FUNCTION $SCHEMA.get_$TABLE(
+    p_id INTEGER
+)
+RETURNS TABLE(
+$SQL_COLUMNS_RETURN
+    created_at TIMESTAMPTZ,
+    created_by INTEGER,
+    updated_at TIMESTAMPTZ,
+    updated_by INTEGER,
+    record_status CHAR(1)
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+$SQL_SELECT_COLS
+        t.created_at,
+        t.created_by,
+        t.updated_at,
+        t.updated_by,
+        t.record_status
+    FROM $SCHEMA.$TABLE t
+    WHERE t.id = p_id
+        AND t.record_status = 'A';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION '${MODULE}_001: $ENTITY not found' USING ERRCODE = 'P0002';
+    END IF;
+END;
+$$;
+
+/* ============================================================
+   Function: $SCHEMA.create_$TABLE
+   Description: Creates a new $ENTITY record
+   ============================================================ */
+CREATE OR REPLACE FUNCTION $SCHEMA.create_$TABLE(
+$FN_PARAMS_CREATE
+)
+RETURNS TABLE(
+$SQL_COLUMNS_RETURN
+    created_at TIMESTAMPTZ,
+    created_by INTEGER,
+    updated_at TIMESTAMPTZ,
+    updated_by INTEGER,
+    record_status CHAR(1)
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_new_id INTEGER;
+BEGIN
+    INSERT INTO $SCHEMA.$TABLE (
+$SQL_INSERT_COLS
+        created_by
+    ) VALUES (
+$SQL_VALUES_PLACEHOLDERS
+        p_current_user_id
+    )
+    RETURNING $SCHEMA.$TABLE.id INTO v_new_id;
+
+    RETURN QUERY
+    SELECT * FROM $SCHEMA.get_$TABLE(v_new_id);
+END;
+$$;
+
+/* ============================================================
+   Function: $SCHEMA.update_$TABLE
+   Description: Updates an existing $ENTITY record
+   ============================================================ */
+CREATE OR REPLACE FUNCTION $SCHEMA.update_$TABLE(
+    p_id INTEGER,
+$FN_PARAMS_UPDATE
+)
+RETURNS TABLE(
+$SQL_COLUMNS_RETURN
+    created_at TIMESTAMPTZ,
+    created_by INTEGER,
+    updated_at TIMESTAMPTZ,
+    updated_by INTEGER,
+    record_status CHAR(1)
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM $SCHEMA.$TABLE
+        WHERE id = p_id AND record_status = 'A'
+    ) THEN
+        RAISE EXCEPTION '${MODULE}_001: $ENTITY not found' USING ERRCODE = 'P0002';
+    END IF;
+
+    UPDATE $SCHEMA.$TABLE SET
+$SQL_UPDATE_SET
+        updated_by = p_current_user_id,
+        updated_at = NOW()
+    WHERE id = p_id;
+
+    RETURN QUERY
+    SELECT * FROM $SCHEMA.get_$TABLE(p_id);
+END;
+$$;
+
+/* ============================================================
+   Function: $SCHEMA.delete_$TABLE
+   Description: Soft deletes a $ENTITY record
+   ============================================================ */
+CREATE OR REPLACE FUNCTION $SCHEMA.delete_$TABLE(
+    p_id INTEGER,
+    p_current_user_id INTEGER DEFAULT NULL
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM $SCHEMA.$TABLE
+        WHERE id = p_id AND record_status = 'A'
+    ) THEN
+        RETURN FALSE;
+    END IF;
+
+    UPDATE $SCHEMA.$TABLE
+    SET
+        record_status = 'I',
+        updated_by = p_current_user_id,
+        updated_at = NOW()
+    WHERE id = p_id;
+
+    RETURN TRUE;
+END;
+$$;

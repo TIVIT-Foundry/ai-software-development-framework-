@@ -1,0 +1,24 @@
+$TS_FIELDS
+
+export interface ${ENTITY}CreateRequest {
+$TS_CREATE_FIELDS
+}
+
+export interface ${ENTITY}UpdateRequest {
+$TS_UPDATE_FIELDS
+}
+
+export interface ${ENTITY}ListResponse {
+  items: ${ENTITY}ListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ${ENTITY}QueryParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  searchFilter?: string;
+}
