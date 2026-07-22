@@ -72,7 +72,7 @@ respects ALL core principles. If any principle is violated, stop and redesign.
 ## Article 2: Stack & Dependencies
 
 - **Language(s)**: [Python 3.12 / TypeScript / etc.]
-- **Framework(s)**: [FastAPI / Angular / Bun / etc.]
+- **Framework(s)**: [FastAPI / React / Bun / etc.]
 - **Database**: [PostgreSQL 16 + pgvector]
 - **Library-First Rule**: New functionality MUST be implemented as a reusable
   library before being integrated into an application.

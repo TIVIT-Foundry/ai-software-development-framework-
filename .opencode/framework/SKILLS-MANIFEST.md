@@ -3,7 +3,7 @@
 **TIVIT Foundry — Framework Agéntico**
 **Versión:** 2.0.0
 **Última actualización:** 17 de julio de 2026
-**Total de skills:** 102
+**Total de skills:** 105
 
 ---
 
@@ -12,7 +12,7 @@
 - **Fase:** inception | conception | governance | architecture | scaffold | construction | quality | operations | closure
 - **Layer:** business | design | implementation | infrastructure | testing | operations
 - **Enforcement:** mandatory | recommended | optional
-- **Stack:** Python/FastAPI | Angular | Bun/TypeScript | PostgreSQL | Multi
+- **Stack:** Python/FastAPI | React | Bun/TypeScript | PostgreSQL | Multi
 
 ---
 
@@ -50,7 +50,7 @@
 |-------|------|-------|-------------|-------|-------------|
 | api-first-spec | inception | backend | mandatory | Multi | Especificación API completa por módulo |
 | api-first-backend | construction | backend | mandatory | Python | Backend desde OpenAPI: SP → Handler → DTOs → Endpoint |
-| api-first-frontend | construction | frontend | mandatory | Angular | Frontend desde OpenAPI: types → services → components |
+| api-first-frontend | construction | frontend | mandatory | React | Frontend desde OpenAPI: types → hooks → components |
 | api-first-testing | quality | testing | mandatory | Multi | Tests desde OpenAPI: contract, E2E, schema validation |
 | api-catalog | operations | backend | recommended | Multi | Inventario DB → Endpoint → Service ID → Screen → Route |
 | api-gateway | construction | backend | recommended | Multi | API Gateway: routing, auth, rate limiting, NGINX |
@@ -79,12 +79,12 @@
 | data-access | construction | backend | mandatory | Data access handlers: SQLAlchemy 2.0 async, repositorios |
 | data-migration | construction | database | recommended | Migración de datos: ETL, transformación, verificación |
 
-### Angular (2 skills) — Frontend
+### React (2 skills) — Frontend
 
 | Skill | Fase | Layer | Enforcement | Stack | Descripción |
 |-------|------|-------|-------------|-------|-------------|
-| angular | construction | frontend | mandatory | Angular | Component architecture, signals, DI, routing, CDK |
-| angular-services | construction | frontend | mandatory | Angular | Services, RxJS, @ngneat/query, signals, toSignal() |
+| react | construction | frontend | mandatory | React | Function components, hooks, routing, code-splitting |
+| react-services | construction | frontend | mandatory | React | Data hooks, @tanstack/react-query, Zustand, fetch client |
 
 ### Testing (6 skills) — Aseguramiento de Calidad
 
@@ -152,9 +152,9 @@
 | accesibilidad | quality | frontend | mandatory | WCAG 2.2 AA, ARIA, keyboard nav, axe-core |
 | html-prototype | inception | frontend | optional | Mockups HTML + CSS + JS, interactive prototypes |
 | microfrontend | construction | frontend | recommended | Module Federation, Host/Child, Import Maps |
-| i18n | construction | frontend | recommended | @ngx-translate, locale files, RTL, Intl formatting |
+| i18n | construction | frontend | recommended | react-i18next, locale files, RTL, Intl formatting |
 | mobile-pwa | construction | frontend | optional | PWA: service workers, offline, push notifications |
-| angular-upgrade | operations | frontend | optional | Migración de versiones Angular y legacy → moderno |
+| react-upgrade | operations | frontend | optional | Migración de versiones React/Vite/Next.js y legacy → moderno |
 
 ### Proceso (4 skills)
 
@@ -164,6 +164,16 @@
 | pull-request | closure | implementation | mandatory | PR template, conventional commits, changelog |
 | code-review | quality | implementation | recommended | Checklist de revisión: backend, frontend, database |
 | readme | closure | implementation | optional | Template README para módulos |
+
+### Spec-Driven Development (3 skills)
+
+Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-first-spec` ya cubre el caso con API; estas skills completan el resto del ciclo y los features sin API.
+
+| Skill | Fase | Layer | Enforcement | Descripción |
+|-------|------|-------|-------------|-------------|
+| feature-spec | inception | business | recommended | Spec-first para features sin superficie REST (UI-only, data-only, cross-cutting) |
+| tasks | inception | business | recommended | Descompone un spec en tareas ordenadas y verificables (2-4h c/u) |
+| converge | quality | testing | recommended | Verifica que el código implementado coincide con el spec, antes del PR |
 
 ### Especializadas (6 skills) — LangChain, Keycloak, Kafka, GraphQL
 
@@ -194,8 +204,8 @@
 | C — Scaffold | N10-N15 | framework-scaffold-implementation, project-architecture, project-bootstrap, repo-structure, app-bootstrap, backend-api, bun-backend | 1 |
 | D — Especificación | N16 | api-first-spec, api-contracts | 1 |
 | E — Backend | N17-N31 | api-first-backend, data-access, database-*, pgvector, authentication, authorization, oauth2-jwt, error-handling, shared-libs, api-integration, api-resilience, api-versioning, api-gateway, redis, real-time, file-upload, notifications, costos-llm, langfuse | 1 |
-| F — Frontend | N32-N37 | api-first-frontend, api-contracts, angular, angular-services, typescript, design-system, i18n, mobile-pwa, angular-upgrade | 1 |
+| F — Frontend | N32-N37 | api-first-frontend, api-contracts, react, react-services, typescript, design-system, i18n, mobile-pwa, react-upgrade | 1 |
 | G — Calidad | N38-N44 | unit-testing, integration-testing, playwright, security-testing, load-testing, code-review, accesibilidad, a11y-testing | 1 |
 | H — Operación | N45-N49 | ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, infrastructure-as-code, terraform, kubernetes, disaster-recovery, postgresql-backup, pull-request, langfuse | 1 |
 
-**Nota:** Las fases mantienen 15 confirmaciones en modo Hybrid. Las skills `recommended`/`optional` se activan bajo demanda según el contexto del proyecto. Las skills adicionales del catálogo expandido incluyen: `api-contracts`, `bun-backend`, `redis`, `terraform`, `github-actions`, `gitlab-ci`, `kubernetes`, `prometheus-grafana`, `opentelemetry`, `langfuse`, `pgvector`, `postgresql-backup`, `oauth2-jwt`, `mobile-pwa`, `angular-upgrade`, `a11y-testing`.
+**Nota:** Las fases mantienen 15 confirmaciones en modo Hybrid. Las skills `recommended`/`optional` se activan bajo demanda según el contexto del proyecto. Las skills adicionales del catálogo expandido incluyen: `api-contracts`, `bun-backend`, `redis`, `terraform`, `github-actions`, `gitlab-ci`, `kubernetes`, `prometheus-grafana`, `opentelemetry`, `langfuse`, `pgvector`, `postgresql-backup`, `oauth2-jwt`, `mobile-pwa`, `react-upgrade`, `a11y-testing`, `feature-spec`, `tasks`, `converge`.

@@ -13,7 +13,7 @@ metadata:
   - openapi-docs
   consumed_by:
   - api-first-frontend
-  - angular-services
+  - react-services
   - api-first-testing
   agent_roles:
   - design-agent
@@ -46,7 +46,7 @@ Usa esta skill para responder estas preguntas:
 - `backend-api` define la estructura de endpoints que esta skill versiona.
 - `openapi-docs` documenta las versiones en OpenAPI spec.
 - `api-first-frontend` consume la versión correcta de la API desde el frontend.
-- `angular-services` implementa los services con la versión de API seleccionada.
+- `react-services` implementa los services con la versión de API seleccionada.
 - `error-handling` define cómo se reportan errores de versión incompatible.
 
 ## Qué debe hacer el agente cuando esta skill está activa
@@ -271,7 +271,7 @@ async def deprecation_middleware(request: Request, call_next):
 
 ### 10. Consumidores de esta skill
 - `api-first-frontend` usa la versión correcta para generar tipos TypeScript;
-- `angular-services` implementa services con la versión de API seleccionada;
+- `react-services` implementa services con la versión de API seleccionada;
 - `api-first-testing` genera tests para cada versión activa;
 - `openapi-docs` documenta cada versión en OpenAPI spec;
 - `error-handling` define respuestas de error para versiones inexistentes o deprecadas.

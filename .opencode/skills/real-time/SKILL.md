@@ -13,7 +13,7 @@ metadata:
   - authentication
   - playwright
   consumed_by:
-  - angular
+  - react
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency
@@ -45,7 +45,7 @@ Usa esta skill para responder estas preguntas:
 - `authentication` proporciona la identidad del usuario para conexiones WebSocket.
 - `authorization` define quién puede unirse a qué canales/grupos.
 - `notifications` puede usar esta skill para push de notificaciones en tiempo real.
-- `angular` consume las conexiones WebSocket desde el frontend.
+- `react` consume las conexiones WebSocket desde el frontend.
 
 ## Qué debe hacer el agente cuando esta skill está activa
 
@@ -272,14 +272,12 @@ export interface EntityUpdatedPayload {
 }
 ```
 
-### 6. Reconexión con exponential backoff (frontend Angular)
+### 6. Reconexión con exponential backoff (hook React)
 
 ```typescript
-// src/app/features/realtime/realtime.service.ts
-import { Injectable, inject, OnDestroy } from '@angular/core';
-import { Subject, Observable, timer, of } from 'rxjs';
-import { takeUntil, switchMap, filter, catchError, retryWhen, delayWhen } from 'rxjs/operators';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+// src/core/realtime/use-realtime-socket.ts
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RealtimeMessage } from '@/types/realtime';
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const BASE_DELAY_MS = 1000;
@@ -291,95 +289,93 @@ function calculateDelay(attempt: number): number {
   return Math.min(exponentialDelay + jitter, MAX_DELAY_MS);
 }
 
-@Injectable({ providedIn: 'root' })
-export class RealtimeService implements OnDestroy {
-  private ws: WebSocket | null = null;
-  private attempt = 0;
-  private reconnectTimer = 0;
+/** Hook que mantiene una conexión WebSocket con reconexión y exponential backoff. */
+export function useRealtimeSocket(url: string) {
+  const wsRef = useRef<WebSocket | null>(null);
+  const attemptRef = useRef(0);
+  const reconnectTimerRef = useRef<number | undefined>(undefined);
+  const [lastMessage, setLastMessage] = useState<RealtimeMessage | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-  private readonly messages$ = new Subject<RealtimeMessage>();
-  private readonly destroy$ = new Subject<void>();
+  const connect = useCallback(() => {
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
 
-  /** Stream de mensajes entrantes. Los componentes se suscriben con takeUntilDestroyed. */
-  readonly onMessage$: Observable<RealtimeMessage> = this.messages$.asObservable();
-
-  connect(url: string): void {
-    this.ws = new WebSocket(url);
-
-    this.ws.onopen = () => {
+    ws.onopen = () => {
       console.log('WebSocket connected');
-      this.attempt = 0;
+      attemptRef.current = 0;
+      setIsConnected(true);
     };
 
-    this.ws.onmessage = (event) => {
-      this.messages$.next(JSON.parse(event.data));
+    ws.onmessage = (event) => {
+      setLastMessage(JSON.parse(event.data));
     };
 
-    this.ws.onclose = (event) => {
+    ws.onclose = (event) => {
+      setIsConnected(false);
       if (event.code !== 1000) {
-        this.attempt += 1;
-        if (this.attempt < MAX_RECONNECT_ATTEMPTS) {
-          const delay = calculateDelay(this.attempt);
-          console.log(`Reconnecting in ${delay}ms (attempt ${this.attempt})`);
-          this.reconnectTimer = window.setTimeout(() => this.connect(url), delay);
+        attemptRef.current += 1;
+        if (attemptRef.current < MAX_RECONNECT_ATTEMPTS) {
+          const delay = calculateDelay(attemptRef.current);
+          console.log(`Reconnecting in ${delay}ms (attempt ${attemptRef.current})`);
+          reconnectTimerRef.current = window.setTimeout(connect, delay);
         }
       }
     };
 
-    this.ws.onerror = (error) => {
+    ws.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-  }
+  }, [url]);
 
-  send(data: unknown): void {
-    this.ws?.send(JSON.stringify(data));
-  }
+  const send = useCallback((data: unknown) => {
+    wsRef.current?.send(JSON.stringify(data));
+  }, []);
 
-  close(): void {
-    this.ws?.close(1000, 'Service destroyed');
-    this.ws = null;
-  }
+  useEffect(() => {
+    connect();
+    return () => {
+      window.clearTimeout(reconnectTimerRef.current);
+      wsRef.current?.close(1000, 'Component unmounted');
+      wsRef.current = null;
+    };
+  }, [connect]);
 
-  ngOnDestroy(): void {
-    window.clearTimeout(this.reconnectTimer);
-    this.close();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  return { lastMessage, isConnected, send };
 }
 ```
 
-### 7. Suscripción a canal (Angular Service + takeUntilDestroyed)
+### 7. Suscripción a canal (hook React sobre `useRealtimeSocket`)
 
 ```typescript
-// src/app/features/realtime/channel-subscription.service.ts
-import { Injectable, inject } from '@angular/core';
-import { Observable, filter } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RealtimeService } from './realtime.service';
-import { RealtimeMessage } from '@/types/realtime';
+// src/core/realtime/use-channel-subscription.ts
+import { useEffect, useState } from 'react';
+import { useRealtimeSocket } from './use-realtime-socket';
+import type { RealtimeMessage } from '@/types/realtime';
 
-@Injectable({ providedIn: 'root' })
-export class ChannelSubscriptionService {
-  private readonly realtime = inject(RealtimeService);
+/** Devuelve el último mensaje recibido filtrado por canal y tipo de mensaje. */
+export function useChannelSubscription<T>(
+  url: string,
+  channel: string,
+  messageType: string
+): RealtimeMessage<T> | null {
+  const { lastMessage } = useRealtimeSocket(url);
+  const [filtered, setFiltered] = useState<RealtimeMessage<T> | null>(null);
 
-  /** Devuelve un Observable filtrado por canal y tipo de mensaje. */
-  subscribe<T>(channel: string, messageType: string): Observable<RealtimeMessage<T>> {
-    return this.realtime.onMessage$.pipe(
-      filter(
-        (msg) => msg.type === messageType && msg.channel === channel
-      ),
-      takeUntilDestroyed()
-    ) as Observable<RealtimeMessage<T>>;
-  }
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === messageType && lastMessage.channel === channel) {
+      setFiltered(lastMessage as RealtimeMessage<T>);
+    }
+  }, [lastMessage, channel, messageType]);
+
+  return filtered;
 }
 
-// Uso en un componente standalone:
-// private readonly subscriptions = inject(ChannelSubscriptionService);
-// ngOnInit(): void {
-//   this.subscriptions.subscribe<Task>('tasks', 'entity.updated')
-//     .subscribe((msg) => this.onTaskUpdated(msg));
-// }
+// Uso en un componente:
+// const taskUpdate = useChannelSubscription<Task>(wsUrl, 'tasks', 'entity.updated');
+// useEffect(() => {
+//   if (taskUpdate) onTaskUpdated(taskUpdate);
+// }, [taskUpdate]);
 ```
 
 ### 8. Presence tracking
@@ -441,9 +437,9 @@ class PresenceService:
 ### B. Redis pub/sub para escalado
 - Configuración de Redis pub/sub en el backend.
 
-### C. Servicios de conexión (frontend Angular)
-- `RealtimeService` con reconexión y exponential backoff.
-- `ChannelSubscriptionService` para suscribirse a canales con `takeUntilDestroyed`.
+### C. Hooks de conexión (frontend React)
+- `useRealtimeSocket` con reconexión y exponential backoff (via `useRef`/`useEffect`).
+- `useChannelSubscription` para suscribirse a canales, con cleanup automático al desmontar.
 
 ### D. Modelo de mensajes
 - Tipos `RealtimeMessage`, `MessageType`, payloads tipados.
@@ -454,7 +450,7 @@ class PresenceService:
 - Notificación de join/leave.
 
 ### F. Consumidores de esta skill
-- `angular` consume los servicios de conexión y suscripción;
+- `react` consume los hooks de conexión y suscripción;
 - `notifications` usa canales para push de notificaciones;
 - `authentication` provee el token para la conexión WebSocket;
 - `authorization` define quién puede unirse a cada canal.
@@ -486,5 +482,5 @@ Cuando el usuario use strings sin formato para mensajes, el agente debe proponer
 - ¿Los mensajes son tipados con ID secuencial?
 - ¿Se implementó presence tracking?
 - ¿Los canales tienen autorización explícita?
-- ¿Se crearon los servicios de conexión en el frontend Angular?
+- ¿Se crearon los hooks de conexión en el frontend React?
 - ¿Se documentaron los tipos de mensajes?

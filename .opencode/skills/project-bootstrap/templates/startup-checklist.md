@@ -1,7 +1,7 @@
 # Startup & Onboarding Checklist — `{PROJECT_CODE}`
 
 > **Project**: `{PROJECT_NAME}` — `{VERTICAL}`
-> **Stack**: Python 3.12 / FastAPI · Angular 17+ · Bun (TypeScript) · PostgreSQL 16
+> **Stack**: Python 3.12 / FastAPI · React 18+ · Bun (TypeScript) · PostgreSQL 16
 > **Onboarded by**: `{MENTOR_NAME}` | **Date**: `{DATE}` | **New Member**: `{NAME}`
 
 ---
@@ -78,17 +78,16 @@
 - [ ] **Tests passing**: `pytest` (all green, 0 failures)
 - [ ] **Lint passing**: `ruff check .` (0 errors)
 
-### Angular Frontend
+### React Frontend
 
 - [ ] **Node.js 20 LTS** installed: `node --version`
 - [ ] **Bun 1.1+** installed: `bun --version`
-- [ ] **Angular CLI** available: `npx @angular/cli version`
+- [ ] **Vite** available: `npm create vite@latest -- --version`
 - [ ] **VS Code extensions**:
-  - [ ] `angular.ng-template`
-  - [ ] `esbenp.prettier-vscode`
   - [ ] `dbaeumer.vscode-eslint`
-  - [ ] `ryanivey.vscode-angular2-switcher`
-  - [ ] `natewallace.angular2-vscode-html-syntax`
+  - [ ] `esbenp.prettier-vscode`
+  - [ ] `burkeholland.simple-react-snippets`
+  - [ ] `dsznajder.es7-react-js-snippets`
 - [ ] **Dependencies installed**:
   ```bash
   cd frontend
@@ -96,14 +95,14 @@
   ```
 - [ ] **Local configuration**:
   ```bash
-  cp src/environments/environment.example.ts src/environments/environment.local.ts
+  cp .env.example .env.local
   # Edit API URL if needed
   ```
-- [ ] **Dev server running**: `ng serve --configuration=local --port 4200`
-- [ ] **App loads at** `http://localhost:4200` without console errors
-- [ ] **Tests passing**: `ng test --watch=false` (all green)
-- [ ] **Lint passing**: `ng lint` (0 errors)
-- [ ] **Build passing**: `ng build --configuration=production` (no errors)
+- [ ] **Dev server running**: `npm run dev -- --port 5173`
+- [ ] **App loads at** `http://localhost:5173` without console errors
+- [ ] **Tests passing**: `vitest run` (all green)
+- [ ] **Lint passing**: `eslint .` (0 errors)
+- [ ] **Build passing**: `vite build` (no errors)
 
 ### Bun TypeScript Backend
 
@@ -156,7 +155,7 @@
 ### Quality Gates (must pass before every commit)
 
 - [ ] **Python**: `ruff check .` + `ruff format --check .` + `mypy src/`
-- [ ] **Angular**: `ng lint` + `ng test --watch=false` (optional for speed)
+- [ ] **React**: `eslint .` + `vitest run` (optional for speed)
 - [ ] **Bun**: `bunx eslint .` + `bun test`
 - [ ] **All**: `pre-commit run` (triggered automatically on `git commit`)
 
@@ -257,15 +256,14 @@ python -c "import fastapi; print(fastapi.__version__)"  # Should print version
 uv sync --reinstall
 ```
 
-### Angular build fails with memory error
+### Vite build fails with memory error
 
 ```bash
 # Increase Node memory limit
 export NODE_OPTIONS="--max-old-space-size=4096"
 
-# Clear Angular cache
-rm -rf .angular/cache
-ng cache clean
+# Clear Vite cache
+rm -rf node_modules/.vite
 ```
 
 ### PostgreSQL connection refused
@@ -288,7 +286,7 @@ alembic upgrade head
 ```bash
 # Python: ensure .env is in the backend/ directory
 # Bun: ensure .env is in the bun-service/ directory
-# Angular: ensure environment.local.ts exists
+# React: ensure .env.local exists
 
 # Verify which file is being loaded:
 # Python: print(os.getenv("DATABASE_URL"))
@@ -304,12 +302,12 @@ alembic upgrade head
 | Start all infrastructure | `docker compose -f infrastructure/docker/docker-compose.yml up -d` |
 | Start Python backend | `cd backend && uvicorn src.main:app --reload --port 8000` |
 | Start Bun service | `cd bun-service && bun run src/index.ts` |
-| Start Angular dev | `cd frontend && ng serve --configuration=local` |
+| Start React dev | `cd frontend && npm run dev` |
 | Run all tests | `scripts/test-all.sh` |
 | Run all linters | `scripts/lint-all.sh` |
 | Run DB migrations | `cd backend && alembic upgrade head` |
 | Seed database | `cd backend && python scripts/seed.py` |
-| Build production | `cd frontend && ng build --configuration=production` |
+| Build production | `cd frontend && vite build` |
 | Docker build all | `docker compose -f infrastructure/docker/docker-compose.prod.yml build` |
 
 ---

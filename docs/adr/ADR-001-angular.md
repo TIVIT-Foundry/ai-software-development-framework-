@@ -1,8 +1,10 @@
 # ADR-001 — Selección de Angular como framework frontend
 
-**Estado:** Aceptado  
+**Estado:** Superseded por [ADR-004](ADR-004-react.md) (2026-07-21)  
 **Fecha:** 2026-07-17  
 **Autor:** Manuel Aliaga — TIVIT Foundry
+
+> Esta decisión ya no está vigente. El framework migró de Angular a React — ver ADR-004 para el contexto y las razones del cambio. Este documento se conserva como registro histórico y no debe usarse como referencia para nuevos proyectos.
 
 ## Contexto
 

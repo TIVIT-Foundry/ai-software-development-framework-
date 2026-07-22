@@ -1,6 +1,6 @@
 ---
 name: unit-testing
-description: "Unit testing patterns and best practices. Covers pytest (Python), Angular TestBed (Angular), Vitest/Jest (Bun/TypeScript), AAA pattern, mocks vs fakes vs stubs, test naming, coverage by layer, TDD workflow, and test isolation. Trigger: When writing unit tests, setting up test projects, or establishing testing conventions."
+description: "Unit testing patterns and best practices. Covers pytest (Python), Vitest + React Testing Library (React), Vitest/Jest (Bun/TypeScript), AAA pattern, mocks vs fakes vs stubs, test naming, coverage by layer, TDD workflow, and test isolation. Trigger: When writing unit tests, setting up test projects, or establishing testing conventions."
 version: 2.0
 metadata:
   phase:
@@ -11,7 +11,7 @@ metadata:
   depends_on:
   - backend-api
   - file-upload
-  - angular
+  - react
   consumed_by:
   - integration-testing
   - framework-qa-validation
@@ -44,7 +44,7 @@ Usa esta skill para responder estas preguntas:
 ## Relación con otras skills
 
 - `backend-api` define los handlers/endpoints que esta skill testea unitariamente.
-- `angular` define los componentes, servicios, pipes y directivas que esta skill testea unitariamente.
+- `react` define los componentes y hooks que esta skill testea unitariamente.
 - `typescript` define los tipos que esta skill usa en tests.
 - `integration-testing` testea las mismas unidades pero con dependencias reales.
 - `framework-qa-validation` define la estrategia de testing de la que esta skill forma la base.
@@ -53,7 +53,7 @@ Usa esta skill para responder estas preguntas:
 
 1. Configurar el proyecto de tests unitarios según el stack:
    - **Python**: pytest con conftest.py, pytest-asyncio, pytest-mock.
-   - **Angular (Frontend)**: Angular CLI (`ng generate`) con Karma/Jasmine o Vitest.
+   - **React (Frontend)**: Vitest + React Testing Library (jsdom environment).
    - **Bun (TypeScript Backend)**: Vitest (preferido) o Jest con configuración para Bun.
 2. Definir la convención de naming de tests (`MethodName_Scenario_ExpectedResult`).
 3. Estructurar los tests con el patrón AAA (Arrange/Act/Assert).
@@ -66,7 +66,7 @@ Usa esta skill para responder estas preguntas:
 ## Entradas esperadas
 
 Esta skill asume que ya existe:
-- código de producción que testear (`backend-api`, `angular`, `file-upload`);
+- código de producción que testear (`backend-api`, `react`, `file-upload`);
 - tipos TypeScript definidos (`typescript`);
 - convenciones de proyecto (`project-architecture`).
 
@@ -81,7 +81,7 @@ La fase sí incluye:
 - convención de naming;
 - cobertura por capa;
 - tests de handlers/services/endpoints (Python / Bun TypeScript);
-- tests de componentes, pipes, directivas y servicios (Angular);
+- tests de componentes y hooks (React);
 - configuración de CI para tests unitarios.
 
 La fase no incluye todavía:
@@ -201,365 +201,297 @@ class TestCreateUser:
             await create_user(request, repo)
 ```
 
-### 2. Angular Frontend (TestBed / Jasmine / Karma)
+### 2. React Frontend (Vitest + React Testing Library)
 
 #### Configuración
 
-Angular incluye Karma + Jasmine por defecto. Para ejecutar:
-
 ```bash
-ng test                      # watch mode
-ng test --no-watch           # single run (CI)
-ng test --code-coverage      # con cobertura
+npm install --save-dev vitest @testing-library/react @testing-library/user-event @testing-library/jest-dom jsdom
 ```
 
-Alternativa moderna (Vitest):
+```typescript
+// vite.config.ts (o vitest.config.ts)
+export default defineConfig({
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts', // registra jest-dom matchers
+    coverage: { provider: 'v8' },
+  },
+});
+```
 
 ```bash
-npm install --save-dev vitest @analogjs/vitest-angular
+vitest                      # watch mode
+vitest run                  # single run (CI)
+vitest run --coverage       # con cobertura
 ```
 
 #### Estructura de directorios
 
 ```
-src/app/
+src/
 ├── features/
 │   ├── auth/
-│   │   ├── login/
-│   │   │   ├── login.component.ts
-│   │   │   ├── login.component.spec.ts      # test co-localizado
-│   │   │   └── login.service.ts
-│   │   │   └── login.service.spec.ts
-│   │   ├── auth.pipe.ts
-│   │   ├── auth.pipe.spec.ts
-│   │   └── auth.guard.ts
-│   │   └── auth.guard.spec.ts
+│   │   ├── LoginPage.tsx
+│   │   ├── LoginPage.test.tsx           # test co-localizado
+│   │   ├── use-auth.ts
+│   │   ├── use-auth.test.ts
+│   │   ├── RequireAuth.tsx
+│   │   └── RequireAuth.test.tsx
 │   └── users/
-│       ├── user-list/
-│       │   ├── user-list.component.ts
-│       │   ├── user-list.component.spec.ts
-│       │   └── user-list.component.html
-│       └── user.service.ts
-│       └── user.service.spec.ts
+│       ├── UsersList.tsx
+│       ├── UsersList.test.tsx
+│       ├── use-users.ts
+│       └── use-users.test.ts
 └── shared/
     └── utils/
-        ├── format-currency.pipe.ts
-        └── format-currency.pipe.spec.ts
+        ├── format-currency.ts
+        └── format-currency.test.ts
 ```
 
-#### Testing de Componentes (TestBed + ComponentFixture)
+#### Testing de Componentes (React Testing Library)
 
-```typescript
-// src/app/features/auth/login/login.component.spec.ts
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
-import { LoginComponent } from './login.component';
-import { AuthService } from '../auth.service';
-import { of, throwError } from 'rxjs';
+```tsx
+// src/features/auth/LoginPage.test.tsx
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { LoginPage } from './LoginPage';
+import * as authModule from './use-auth';
 
-describe('LoginComponent', () => {
-  let component: LoginComponent;
-  let fixture: ComponentFixture<LoginComponent>;
-  let authServiceSpy: jasmine.SpyObj<AuthService>;
+describe('LoginPage', () => {
+  let loginMock: ReturnType<typeof vi.fn>;
 
-  beforeEach(async () => {
-    const spy = jasmine.createSpyObj('AuthService', ['login']);
-
-    await TestBed.configureTestingModule({
-      declarations: [LoginComponent],
-      imports: [ReactiveFormsModule],
-      providers: [
-        { provide: AuthService, useValue: spy }
-      ]
-    }).compileComponents();
-
-    authServiceSpy = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
-    fixture = TestBed.createComponent(LoginComponent);
-    component = fixture.componentInstance;
+  beforeEach(() => {
+    loginMock = vi.fn();
+    vi.spyOn(authModule, 'useAuth').mockReturnValue({ login: loginMock, errorMessage: null });
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should render the login form', () => {
+    render(<LoginPage />);
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it('should call authService.login on valid submit', () => {
+  it('should call login on valid submit', async () => {
     // Arrange
-    authServiceSpy.login.and.returnValue(of({ token: 'abc123' }));
-    component.loginForm.setValue({ email: 'test@test.com', password: 'pass123' });
+    const user = userEvent.setup();
+    render(<LoginPage />);
 
     // Act
-    component.onSubmit();
+    await user.type(screen.getByLabelText(/email/i), 'test@test.com');
+    await user.type(screen.getByLabelText(/password/i), 'pass123');
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Assert
-    expect(authServiceSpy.login).toHaveBeenCalledWith('test@test.com', 'pass123');
+    expect(loginMock).toHaveBeenCalledWith('test@test.com', 'pass123');
   });
 
   it('should show error message on failed login', () => {
     // Arrange
-    authServiceSpy.login.and.returnValue(throwError(() => new Error('Invalid credentials')));
-    component.loginForm.setValue({ email: 'test@test.com', password: 'wrong' });
+    vi.spyOn(authModule, 'useAuth').mockReturnValue({
+      login: loginMock,
+      errorMessage: 'Invalid credentials',
+    });
 
     // Act
-    component.onSubmit();
+    render(<LoginPage />);
 
     // Assert
-    expect(component.errorMessage).toBe('Invalid credentials');
+    expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
   });
 });
 ```
 
-#### Testing de Servicios Angular
+#### Testing de Hooks de datos
 
 ```typescript
-// src/app/features/users/user.service.spec.ts
-import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { UserService } from './user.service';
+// src/features/users/use-users.test.ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useUsersList } from './use-users-list.query';
+import * as usersApi from './users.api';
 
-describe('UserService', () => {
-  let service: UserService;
-  let httpMock: HttpTestingController;
+function wrapper({ children }: { children: React.ReactNode }) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [UserService]
-    });
-    service = TestBed.inject(UserService);
-    httpMock = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    httpMock.verify(); // Ensure no outstanding HTTP calls
-  });
-
-  it('should return users list', () => {
+describe('useUsersList', () => {
+  it('should return users list', async () => {
     // Arrange
-    const mockUsers = [{ id: 1, name: 'John' }];
+    vi.spyOn(usersApi, 'listUsers').mockResolvedValue([{ id: 1, name: 'John' }]);
 
     // Act
-    service.getUsers().subscribe(users => {
-      // Assert
-      expect(users.length).toBe(1);
-      expect(users[0].name).toBe('John');
-    });
+    const { result } = renderHook(() => useUsersList(), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const req = httpMock.expectOne('/api/users');
-    expect(req.request.method).toBe('GET');
-    req.flush(mockUsers);
+    // Assert
+    expect(result.current.data).toHaveLength(1);
+    expect(result.current.data?.[0].name).toBe('John');
   });
 });
 ```
 
-#### Testing de Pipes
+#### Testing de Utilidades puras (equivalente a un pipe)
 
 ```typescript
-// src/app/features/auth/auth.pipe.spec.ts
-import { DateFormatPipe } from './date-format.pipe';
+// src/shared/utils/format-date.test.ts
+import { describe, it, expect } from 'vitest';
+import { formatDate } from './format-date';
 
-describe('DateFormatPipe', () => {
-  let pipe: DateFormatPipe;
-
-  beforeEach(() => {
-    pipe = new DateFormatPipe();
-  });
-
+describe('formatDate', () => {
   it('should transform ISO date to localized string', () => {
     // Arrange
     const isoDate = '2026-07-15T10:30:00Z';
 
     // Act
-    const result = pipe.transform(isoDate);
+    const result = formatDate(isoDate);
 
     // Assert
     expect(result).toContain('2026');
   });
 
   it('should return empty string for null input', () => {
-    expect(pipe.transform(null)).toBe('');
+    expect(formatDate(null)).toBe('');
   });
 });
 ```
 
-#### Testing de Directivas
+#### Testing de comportamiento con interacción del usuario (equivalente a una directiva)
 
-```typescript
-// src/app/shared/directives/highlight.directive.spec.ts
-import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HighlightDirective } from './highlight.directive';
+```tsx
+// src/shared/components/Highlightable.test.tsx
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Highlightable } from './Highlightable';
 
-@Component({
-  template: '<div appHighlight>Test content</div>'
-})
-class TestComponent {}
-
-describe('HighlightDirective', () => {
-  let fixture: ComponentFixture<TestComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      declarations: [HighlightDirective, TestComponent]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(TestComponent);
-  });
-
-  it('should add background color on mouseenter', () => {
+describe('Highlightable', () => {
+  it('should add background color on mouse enter', async () => {
     // Arrange
-    const el: HTMLElement = fixture.nativeElement.querySelector('div');
+    const user = userEvent.setup();
+    render(<Highlightable>Test content</Highlightable>);
+    const el = screen.getByText('Test content');
 
     // Act
-    el.dispatchEvent(new Event('mouseenter'));
-    fixture.detectChanges();
+    await user.hover(el);
 
     // Assert
-    expect(el.style.backgroundColor).toBe('yellow');
+    expect(el).toHaveStyle({ backgroundColor: 'yellow' });
   });
 });
 ```
 
-#### Testing de Guards (CanActivate)
+#### Testing de Route Guards
 
-```typescript
-// src/app/features/auth/auth.guard.spec.ts
-import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { AuthGuard } from './auth.guard';
-import { AuthService } from './auth.service';
+```tsx
+// src/features/auth/RequireAuth.test.tsx
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { RequireAuth } from './RequireAuth';
+import * as authStore from './auth.store';
 
-describe('AuthGuard', () => {
-  let guard: AuthGuard;
-  let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+describe('RequireAuth', () => {
+  it('should render protected content when authenticated', () => {
+    vi.spyOn(authStore, 'useAuthStore').mockReturnValue(true);
+    const router = createMemoryRouter(
+      [{ element: <RequireAuth />, children: [{ path: '/', element: <div>Dashboard</div> }] }],
+      { initialEntries: ['/'] },
+    );
 
-  beforeEach(() => {
-    authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    render(<RouterProvider router={router} />);
 
-    TestBed.configureTestingModule({
-      providers: [
-        AuthGuard,
-        { provide: AuthService, useValue: authServiceSpy },
-        { provide: Router, useValue: routerSpy }
-      ]
-    });
-    guard = TestBed.inject(AuthGuard);
-  });
-
-  it('should allow activation when authenticated', () => {
-    authServiceSpy.isAuthenticated.and.returnValue(true);
-    expect(guard.canActivate()).toBeTrue();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
   });
 
   it('should redirect to login when not authenticated', () => {
-    authServiceSpy.isAuthenticated.and.returnValue(false);
-    expect(guard.canActivate()).toBeFalse();
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+    vi.spyOn(authStore, 'useAuthStore').mockReturnValue(false);
+    const router = createMemoryRouter(
+      [
+        { element: <RequireAuth />, children: [{ path: '/', element: <div>Dashboard</div> }] },
+        { path: '/login', element: <div>Login</div> },
+      ],
+      { initialEntries: ['/'] },
+    );
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByText('Login')).toBeInTheDocument();
   });
 });
 ```
 
-#### Testing con ComponentHarness (Angular CDK)
+#### Testing con Page Objects (equivalente a ComponentHarness)
 
-`ComponentHarness` (de `@angular/cdk/testing`) permite tests más estables y centrados en la API pública del componente (no en selectores CSS frágiles). Recomendado para componentes con DOM complejo, tablas, formularios o componentes reutilizables.
-
-```bash
-# Instalación
-ng add @angular/cdk
-```
+Un **Page Object** agrupa las queries y acciones de React Testing Library detrás de una API estable, centrada en comportamiento (no en selectores CSS frágiles). Recomendado para componentes con DOM complejo, tablas, formularios o componentes reutilizables.
 
 ```typescript
-// src/app/features/users/user-list/user-list.harness.ts
-import { ComponentHarness, HarnessPredicate } from '@angular/cdk/testing';
-import { UserListComponent } from './user-list.component';
+// src/features/users/UsersList.page-object.ts
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-export class UserListHarness extends ComponentHarness {
-  static readonly hostSelector = 'app-user-list';
-
-  /** Fábrica de predicado para filtrar instancias por atributos. */
-  static with(options: { title?: string } = {}): HarnessPredicate<UserListHarness> {
-    return new HarnessPredicate(UserListHarness, options)
-      .addOption('title', options.title,
-        (harness, title) => HarnessPredicate.stringMatches(harness.getTitle(), title));
+export class UsersListPageObject {
+  getTitle(): string {
+    return screen.getByTestId('user-list-title').textContent ?? '';
   }
 
-  private _title = this.locatorFor('[data-testid="user-list-title"]');
-  private _rows = this.locatorForAll('[data-testid="user-row"]');
-  private _searchInput = this.locatorFor('[data-testid="user-search"]');
-
-  async getTitle(): Promise<string> {
-    return (await this._title()).text();
-  }
-
-  async getRowCount(): Promise<number> {
-    return (await this._rows()).length;
+  getRowCount(): number {
+    return screen.getAllByTestId('user-row').length;
   }
 
   async search(term: string): Promise<void> {
-    const input = await this._searchInput();
-    await input.sendKeys(term);
+    const input = screen.getByTestId('user-search');
+    await userEvent.type(input, term);
   }
 }
 ```
 
-```typescript
-// src/app/features/users/user-list/user-list.component.spec.ts
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
-import { UserListComponent } from './user-list.component';
-import { UserService } from '../user.service';
-import { UserListHarness } from './user-list.harness';
-import { of } from 'rxjs';
-import { provideHttpClient } from '@angular/common/http';
+```tsx
+// src/features/users/UsersList.test.tsx
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { UsersList } from './UsersList';
+import { UsersListPageObject } from './UsersList.page-object';
+import * as usersApi from './users.api';
 
-describe('UserListComponent (harness)', () => {
-  let fixture: ComponentFixture<UserListComponent>;
-  let harness: UserListHarness;
-  let userServiceSpy: jasmine.SpyObj<UserService>;
+describe('UsersList (page object)', () => {
+  let page: UsersListPageObject;
 
-  beforeEach(async () => {
-    userServiceSpy = jasmine.createSpyObj('UserService', ['getUsers']);
-    userServiceSpy.getUsers.and.returnValue(of([
+  beforeEach(() => {
+    vi.spyOn(usersApi, 'listUsers').mockResolvedValue([
       { id: 1, name: 'John' },
       { id: 2, name: 'Jane' },
-    ]));
+    ]);
 
-    await TestBed.configureTestingModule({
-      imports: [UserListComponent],
-      providers: [
-        { provide: UserService, useValue: userServiceSpy },
-        provideHttpClient(),
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(UserListComponent);
-    await fixture.whenStable();
-    const loader = TestbedHarnessEnvironment.loader(fixture);
-    harness = await loader.getHarness(UserListHarness);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <UsersList />
+      </QueryClientProvider>,
+    );
+    page = new UsersListPageObject();
   });
 
   it('should render two users on init', async () => {
-    // Assert
-    expect(await harness.getRowCount()).toBe(2);
+    expect(await page.getRowCount()).toBe(2);
   });
 
   it('should filter rows by search term', async () => {
-    // Act
-    await harness.search('John');
-
-    // Assert
-    expect(await harness.getRowCount()).toBe(1);
+    await page.search('John');
+    expect(page.getRowCount()).toBe(1);
   });
 });
 ```
 
-Reglas para ComponentHarness:
+Reglas para Page Objects:
 - **SIEMPRE** exponer la API pública del componente (acciones y lecturas), no selectores CSS internos.
-- **SIEMPRE** usar `data-testid` en el template del componente para anclar el harness al DOM estable.
-- **NUNCA** acceder a `nativeElement` desde el harness; usar `locatorFor` / `locatorForAll`.
-- **PREFERIR** harness sobre `querySelector` cuando el componente tiene más de 2 elementos interactivos o se reutiliza en múltiples lugares.
-- Un harness es código de producción (acompaña al componente), no código de test desechable.
+- **SIEMPRE** usar `data-testid` en el JSX del componente para anclar las queries al DOM estable.
+- **PREFERIR** queries por rol/texto accesible (`getByRole`, `getByLabelText`) antes que `data-testid`, y `data-testid` antes que selectores CSS.
+- **PREFERIR** Page Object sobre queries inline cuando el componente tiene más de 2 elementos interactivos o se reutiliza en múltiples lugares.
+- Un Page Object es código de producción (acompaña al componente), no código de test desechable.
 
 ### 3. Bun TypeScript Backend (Vitest preferido)
 
@@ -731,11 +663,11 @@ test_create_user_valid_request_creates_user_and_returns_id
 test_create_user_duplicate_email_raises_conflict
 test_create_user_invalid_name_raises_validation_error
 
-Ejemplos Angular:
-LoginComponent_validForm_submitsSuccessfully
-UserService_getUsers_returnsUserList
-DateFormatPipe_nullInput_returnsEmptyString
-HighlightDirective_mouseenter_appliesHighlightColor
+Ejemplos React:
+LoginPage_validForm_submitsSuccessfully
+useUsersList_onSuccess_returnsUserList
+formatDate_nullInput_returnsEmptyString
+Highlightable_mouseEnter_appliesHighlightColor
 
 Ejemplos Bun/TypeScript:
 AuthService_login_validCredentials_returnsToken
@@ -757,10 +689,10 @@ Reglas:
 | Services | 70% | 90% | Orquestación y reglas |
 | Repository/Data Access | No unit test | 0% | Se testea en integration tests |
 | Utils | 90% | 100% | Funciones puras, alta cobertura |
-| Angular Components | 70% | 85% | Templates simples, lógica en clase |
-| Angular Pipes | 80% | 95% | Funciones puras de transformación |
-| Angular Guards | 80% | 95% | Lógica de autorización |
-| Angular Directives | 60% | 80% | Testing de DOM interaction |
+| React Components | 70% | 85% | JSX simple, lógica en hooks |
+| React Hooks (datos) | 80% | 95% | Queries/mutations, transformación de datos |
+| Route Guards | 80% | 95% | Lógica de autorización |
+| Componentes con interacción DOM | 60% | 80% | Testing de eventos de usuario |
 
 Regla: La cobertura mide calidad, no cantidad. No perseguir 100% global; perseguir alta cobertura en lógica crítica.
 

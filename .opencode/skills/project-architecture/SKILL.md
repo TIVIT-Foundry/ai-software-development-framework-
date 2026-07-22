@@ -1,7 +1,7 @@
 ---
 name: project-architecture
 description: 'Application architecture patterns: Vertical Slice, Modular Monolith,
-  Microservices. Covers Python/FastAPI, Bun (TypeScript) backend and Angular frontend
+  Microservices. Covers Python/FastAPI, Bun (TypeScript) backend and React frontend
   conventions, naming, and response shapes. Trigger: When designing project architecture
   or onboarding a new project structure.'
 version: 1.1
@@ -16,7 +16,7 @@ metadata:
   - repo-structure
   consumed_by:
   - backend-api
-  - angular
+  - react
   - agent-backend
   - agent-frontend
   - agent-fullstack
@@ -162,97 +162,99 @@ Each feature (slice) is self-contained. Example for a Bun (TypeScript) backend:
 | Schema (Pydantic) | `schemas.py` | `presentation/schemas.py` |
 | Repository | `repository.py` | `infrastructure/database/repository.py` |
 
-### Frontend (Angular)
+### Frontend (React)
 
 | Element | Convention | Example |
 |---------|------------|---------|
-| Feature module folder | kebab-case | `orders/`, `order-detail/` |
-| Standalone component | `{name}.component.ts` | `order-list.component.ts` |
-| Service | `{name}.service.ts` | `order.service.ts` |
-| Route file | `{feature}.routes.ts` | `orders.routes.ts` |
-| Guard | `{name}.guard.ts` | `auth.guard.ts` |
-| Directive | `{name}.directive.ts` | `highlight.directive.ts` |
-| Pipe | `{name}.pipe.ts` | `order-status.pipe.ts` |
-| Model / Interface | `{name}.model.ts` | `order.model.ts` |
+| Feature folder | kebab-case | `orders/`, `order-detail/` |
+| Component | `{Name}.tsx` | `OrderList.tsx` |
+| Data hook | `use-{name}.ts` | `use-orders.query.ts` |
+| Route file | `{feature}.routes.tsx` | `orders.routes.tsx` |
+| Route guard | `Require{Name}.tsx` | `RequireAuth.tsx` |
+| Zustand store | `{name}.store.ts` | `orders.store.ts` |
+| Utility hook | `use-{name}.ts` | `use-highlight.ts` |
+| Model / Interface | `{name}.types.ts` | `order.types.ts` |
 
-## Angular Frontend Architecture
+## React Frontend Architecture
 
-Angular 17+ con **standalone components**, **signals** y **lazy loading** por ruta. Cada feature es un módulo autocontenido con sus propias rutas, componentes, servicios y modelos.
+React 18+ (Vite) con **function components + hooks** y **code-splitting** por ruta. Cada feature es una carpeta autocontenida con sus propias rutas, componentes, hooks y modelos.
 
 ```
 src/
-├── app/
-│   ├── core/                              # Singleton: layout, guards, interceptors, error handlers
-│   │   ├── layout/
-│   │   │   ├── shell.component.ts         # Main layout (header + router-outlet + footer)
-│   │   │   └── shell.routes.ts
-│   │   ├── guards/
-│   │   │   └── auth.guard.ts
-│   │   ├── interceptors/
-│   │   │   ├── auth.interceptor.ts        # Attach JWT
-│   │   │   ├── error.interceptor.ts       # Global error mapping
-│   │   │   └── loading.interceptor.ts
-│   │   └── services/
-│   │       └── notification.service.ts
-│   │
-│   ├── features/                          # Vertical slices by domain
-│   │   └── orders/
-│   │       ├── orders.routes.ts           # loadChildren → standalone routes
-│   │       ├── orders-list/
-│   │       │   ├── orders-list.component.ts
-│   │       │   ├── orders-list.component.html
-│   │       │   └── orders-list.component.css
-│   │       ├── order-detail/
-│   │       │   └── order-detail.component.ts
-│   │       ├── order-form/
-│   │       │   └── order-form.component.ts
-│   │       ├── services/
-│   │       │   └── orders.service.ts      # @Injectable({ providedIn: 'root' })
-│   │       └── models/
-│   │           └── order.model.ts
-│   │
-│   ├── shared/                            # Reusable: dumb components, pipes, directives
-│   │   ├── components/
-│   │   │   ├── data-table/
-│   │   │   ├── confirm-dialog/
-│   │   │   └── loading-spinner/
-│   │   ├── directives/
-│   │   └── pipes/
-│   │
-│   ├── app.component.ts                   # Root standalone component
-│   ├── app.config.ts                      # provideRouter, provideHttpClient, provideAnimations
-│   └── app.routes.ts                      # Top-level routes with lazy loading
+├── core/                                  # Singleton: layout, guards, fetch client, error handling
+│   ├── layout/
+│   │   ├── Shell.tsx                      # Main layout (header + <Outlet /> + footer)
+│   │   └── shell.routes.tsx
+│   ├── auth/
+│   │   └── RequireAuth.tsx
+│   ├── api/
+│   │   ├── fetch-client.ts                # Attach JWT, error normalization
+│   │   └── error-boundary.tsx             # Global error mapping
+│   └── notifications/
+│       └── use-notifications.ts
+│
+├── features/                              # Vertical slices by domain
+│   └── orders/
+│       ├── orders.routes.tsx              # lazy() → route components
+│       ├── OrdersList.tsx
+│       ├── OrderDetail.tsx
+│       ├── OrderForm.tsx
+│       ├── hooks/
+│       │   └── use-orders.query.ts        # @tanstack/react-query
+│       └── models/
+│           └── order.types.ts
+│
+├── shared/                                # Reusable: presentational components, hooks
+│   ├── components/
+│   │   ├── DataTable/
+│   │   ├── ConfirmDialog/
+│   │   └── LoadingSpinner/
+│   └── hooks/
+│
+├── App.tsx                                # Root component (Suspense + RouterProvider)
+├── router.tsx                             # Top-level routes with code-splitting
 │
 ├── assets/
-├── environments/
-│   ├── environment.ts
-│   └── environment.prod.ts
-├── main.ts                                # bootstrapApplication(AppComponent, appConfig)
+├── env/
+│   ├── env.ts
+│   └── env.prod.ts
+├── main.tsx                               # createRoot(...).render(<App />)
 └── styles.css                             # Global styles + design tokens
 ```
 
-**Convenciones Angular:**
+**Convenciones React:**
 
 | Convención | Regla |
 |------------|-------|
-| Standalone components | Todos los componentes son `standalone: true` (sin NgModules) |
-| Signals | Estado reactivo con `signal()`, `computed()`, `effect()` |
-| Lazy loading | `loadChildren: () => import('./features/orders/orders.routes')` |
-| DI | `@Injectable({ providedIn: 'root' })` para servicios singleton |
-| HTTP | `provideHttpClient(withInterceptors([...]))` en `app.config.ts` |
-| Routing | Un archivo `{feature}.routes.ts` por feature con `Routes[]` |
-| Change detection | `OnPush` por defecto en componentes standalone |
-| Data fetching | `@ngneat/query` (TanStack Query) o signals + `toSignal()` |
+| Function components | Todos los componentes son funciones tipadas (sin clases) |
+| Estado local | `useState()`, `useReducer()`, memoización deliberada con `useMemo`/`useCallback` |
+| Code-splitting | `React.lazy(() => import('./features/orders/OrdersList'))` |
+| Estado global | Zustand store por dominio (`create<T>()`), no Context para todo |
+| HTTP | `apiFetch()` centralizado en `core/api/fetch-client.ts` |
+| Routing | Un archivo `{feature}.routes.tsx` por feature con `RouteObject[]` |
+| Re-render | `React.memo` deliberado, no por defecto en todos los componentes |
+| Data fetching | `@tanstack/react-query` (`useQuery`/`useMutation`) — ver skill `react-services` |
 
-**Ejemplo de lazy route (app.routes.ts):**
-```typescript
-export const routes: Routes = [
-  { path: '', component: ShellComponent, children: [
-    { path: 'orders', loadChildren: () => import('./features/orders/orders.routes').then(m => m.ORDERS_ROUTES) },
-    { path: 'billing', loadChildren: () => import('./features/billing/billing.routes').then(m => m.BILLING_ROUTES) },
-  ]},
-  { path: 'login', loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent) },
-];
+**Ejemplo de rutas con code-splitting (router.tsx):**
+```tsx
+import { lazy } from 'react';
+import { createBrowserRouter } from 'react-router-dom';
+
+const OrdersRoutes = lazy(() => import('./features/orders/orders.routes'));
+const BillingRoutes = lazy(() => import('./features/billing/billing.routes'));
+const LoginPage = lazy(() => import('./features/auth/LoginPage'));
+
+export const router = createBrowserRouter([
+  {
+    path: '',
+    element: <Shell />,
+    children: [
+      { path: 'orders/*', element: <OrdersRoutes /> },
+      { path: 'billing/*', element: <BillingRoutes /> },
+    ],
+  },
+  { path: 'login', element: <LoginPage /> },
+]);
 ```
 
 ## Bun (TypeScript) Backend Architecture

@@ -16,7 +16,7 @@ metadata:
   - security
   consumed_by:
   - backend-api
-  - angular
+  - react
   agent_roles:
   - design-agent
   - control-agent
@@ -386,153 +386,11 @@ async def list_entities(
 
 La autorización en frontend **no es un control de seguridad** (es evitable desde el cliente). Su propósito es mejorar la experiencia de usuario ocultando acciones que el backend rechazaría.
 
-### Servicio de permisos
+### Store de autenticación y permisos (Zustand)
 
 ```typescript
-// services/permission.service.ts
-import { Injectable, inject } from '@angular/core';
-import { AuthService } from './auth.service';
-
-export type Action = 'create' | 'read' | 'update' | 'delete' | 'manage';
-export type Resource = 'Entity' | 'User' | 'Report' | 'all';
-
-@Injectable({ providedIn: 'root' })
-export class PermissionService {
-  private authService = inject(AuthService);
-
-  can(action: Action, resource: Resource): boolean {
-    const user = this.authService.currentUser();
-    if (!user) return false;
-
-    // Admin tiene todos los permisos
-    if (user.role === 'admin') return true;
-
-    const permission = `${resource.toLowerCase()}:${action === 'manage' ? 'manage' : action}`;
-    return user.permissions?.includes(permission) ?? false;
-  }
-
-  hasPermission(permission: string): boolean {
-    const user = this.authService.currentUser();
-    return user?.permissions?.includes(permission) ?? false;
-  }
-}
-```
-
-### Componente Can (directiva)
-
-```typescript
-// directives/can.directive.ts
-import { Directive, Input, TemplateRef, ViewContainerRef, inject, OnInit } from '@angular/core';
-import { PermissionService, Action, Resource } from '../services/permission.service';
-
-@Directive({ selector: '[appCan]', standalone: true })
-export class CanDirective implements OnInit {
-  private templateRef = inject(TemplateRef<any>);
-  private viewContainer = inject(ViewContainerRef);
-  private permissionService = inject(PermissionService);
-
-  @Input('appCanAction') action!: Action;
-  @Input('appCanResource') resource!: Resource;
-
-  ngOnInit() {
-    if (this.permissionService.can(this.action, this.resource)) {
-      this.viewContainer.createEmbeddedView(this.templateRef);
-    } else {
-      this.viewContainer.clear();
-    }
-  }
-}
-```
-
-**Uso en plantilla:**
-
-```html
-<ng-container *appCan="'update'; for: 'Entity'">
-  <button (click)="edit(entity)">Editar</button>
-</ng-container>
-
-<ng-container *appCan="'delete'; for: 'Entity'">
-  <button (click)="delete(entity)">Eliminar</button>
-</ng-container>
-```
-
-### Renderizado condicional con pipe
-
-```typescript
-// pipes/has-permission.pipe.ts
-import { Pipe, PipeTransform, inject } from '@angular/core';
-import { PermissionService } from '../services/permission.service';
-
-@Pipe({ name: 'hasPermission', standalone: true })
-export class HasPermissionPipe implements PipeTransform {
-  private permissionService = inject(PermissionService);
-
-  transform(permission: string): boolean {
-    return this.permissionService.hasPermission(permission);
-  }
-}
-```
-
-**Uso en plantilla:**
-
-```html
-<button *ngIf="'entities:write' | hasPermission" (click)="edit()">Editar</button>
-<button *ngIf="'entities:delete' | hasPermission || isOwner" (click)="delete()">Eliminar</button>
-```
-
-### Route Guards (Angular)
-
-```typescript
-// guards/permission.guard.ts
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { PermissionService, Action, Resource } from '../services/permission.service';
-
-export function permissionGuard(action: Action, resource: Resource): CanActivateFn {
-  return () => {
-    const permissionService = inject(PermissionService);
-    const router = inject(Router);
-
-    if (permissionService.can(action, resource)) {
-      return true;
-    }
-
-    return router.createUrlTree(['/unauthorized']);
-  };
-}
-
-// Uso en rutas (app.routes.ts)
-export const routes: Routes = [
-  {
-    path: '',
-    component: AppLayout,
-    children: [
-      { path: 'login', component: LoginPage },
-      {
-        path: 'entities',
-        canActivate: [permissionGuard('read', 'Entity')],
-        component: EntityList,
-      },
-      {
-        path: 'entities/:id/edit',
-        canActivate: [permissionGuard('update', 'Entity')],
-        component: EntityEdit,
-      },
-      {
-        path: 'admin',
-        canActivate: [permissionGuard('manage', 'all')],
-        component: AdminPanel,
-      },
-    ],
-  },
-];
-```
-
-### Servicio de autenticación con signals
-
-```typescript
-// services/auth.service.ts
-import { Injectable, signal, computed } from '@angular/core';
+// core/auth/auth.store.ts
+import { create } from 'zustand';
 
 export interface AuthUser {
   user_id: string;
@@ -541,24 +399,131 @@ export interface AuthUser {
   permissions: string[];
 }
 
-@Injectable({ providedIn: 'root' })
-export class AuthService {
-  private userSignal = signal<AuthUser | null>(null);
+export type Action = 'create' | 'read' | 'update' | 'delete' | 'manage';
+export type Resource = 'Entity' | 'User' | 'Report' | 'all';
 
-  currentUser = this.userSignal.asReadonly();
-
-  get isLoggedIn(): boolean {
-    return this.userSignal() !== null;
-  }
-
-  login(user: AuthUser) {
-    this.userSignal.set(user);
-  }
-
-  logout() {
-    this.userSignal.set(null);
-  }
+interface AuthState {
+  user: AuthUser | null;
+  isLoggedIn: boolean;
+  login: (user: AuthUser) => void;
+  logout: () => void;
+  can: (action: Action, resource: Resource) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  isLoggedIn: false,
+
+  login: (user) => set({ user, isLoggedIn: true }),
+  logout: () => set({ user: null, isLoggedIn: false }),
+
+  can: (action, resource) => {
+    const { user } = get();
+    if (!user) return false;
+    if (user.role === 'admin') return true; // Admin tiene todos los permisos
+
+    const permission = `${resource.toLowerCase()}:${action === 'manage' ? 'manage' : action}`;
+    return user.permissions?.includes(permission) ?? false;
+  },
+
+  hasPermission: (permission) => get().user?.permissions?.includes(permission) ?? false,
+}));
+```
+
+### Componente `Can`
+
+```tsx
+// shared/components/Can.tsx
+import type { ReactNode } from 'react';
+import { useAuthStore } from '../../core/auth/auth.store';
+import type { Action, Resource } from '../../core/auth/auth.store';
+
+interface CanProps {
+  action: Action;
+  resource: Resource;
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+export function Can({ action, resource, children, fallback = null }: CanProps) {
+  const can = useAuthStore((s) => s.can(action, resource));
+  return can ? <>{children}</> : <>{fallback}</>;
+}
+```
+
+**Uso:**
+
+```tsx
+<Can action="update" resource="Entity">
+  <button onClick={() => edit(entity)}>Editar</button>
+</Can>
+
+<Can action="delete" resource="Entity">
+  <button onClick={() => remove(entity)}>Eliminar</button>
+</Can>
+```
+
+### Renderizado condicional con hook
+
+```typescript
+// core/auth/use-has-permission.ts
+import { useAuthStore } from './auth.store';
+
+export function useHasPermission(permission: string): boolean {
+  return useAuthStore((s) => s.hasPermission(permission));
+}
+```
+
+**Uso:**
+
+```tsx
+const canEdit = useHasPermission('entities:write');
+const canDelete = useHasPermission('entities:delete') || isOwner;
+
+return (
+  <>
+    {canEdit && <button onClick={edit}>Editar</button>}
+    {canDelete && <button onClick={remove}>Eliminar</button>}
+  </>
+);
+```
+
+### Route Guards (react-router-dom)
+
+```tsx
+// core/auth/RequirePermission.tsx
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuthStore } from './auth.store';
+import type { Action, Resource } from './auth.store';
+
+export function RequirePermission({ action, resource }: { action: Action; resource: Resource }) {
+  const can = useAuthStore((s) => s.can(action, resource));
+  return can ? <Outlet /> : <Navigate to="/unauthorized" replace />;
+}
+
+// Uso en rutas (router.tsx)
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <AppLayout />,
+    children: [
+      { path: 'login', element: <LoginPage /> },
+      {
+        element: <RequirePermission action="read" resource="Entity" />,
+        children: [{ path: 'entities', element: <EntityList /> }],
+      },
+      {
+        element: <RequirePermission action="update" resource="Entity" />,
+        children: [{ path: 'entities/:id/edit', element: <EntityEdit /> }],
+      },
+      {
+        element: <RequirePermission action="manage" resource="all" />,
+        children: [{ path: 'admin', element: <AdminPanel /> }],
+      },
+    ],
+  },
+]);
 ```
 
 ### Tabla resumen: responsabilidades frontend vs backend
@@ -569,5 +534,5 @@ export class AuthService {
 | Validar permiso en cada request | No (redundante) | Sí (obligatorio) |
 | Redirigir a login/403 | Sí (routing) | No aplica |
 | Decidir si ejecutar acción | No | Sí (autoridad final) |
-| Cachear permisos del usuario | Sí (signals/estado) | Sí (token/DB) |
+| Cachear permisos del usuario | Sí (store Zustand) | Sí (token/DB) |
 | Retornar 403 | No | Sí |

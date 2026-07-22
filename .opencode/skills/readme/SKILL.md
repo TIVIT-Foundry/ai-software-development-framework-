@@ -1,6 +1,6 @@
 ---
 name: readme
-description: 'README template for project modules (Python/FastAPI, Bun/TypeScript, Angular). Trigger: When creating module documentation, README files, or project docs.'
+description: 'README template for project modules (Python/FastAPI, Bun/TypeScript, React). Trigger: When creating module documentation, README files, or project docs.'
 when_to_use:
   - Creating a new README for a module or project
   - Updating an existing README after significant changes
@@ -394,7 +394,7 @@ La aplicación estará disponible en `http://localhost:5173`.
 | El usuario dice "escribe un README rápido" | Escribir 3 líneas sin estructura | Aplicar la plantilla completa según tipo de módulo, explicando que la estructura estándar beneficia a todo el equipo |
 | El README existente tiene 600+ líneas | Dejarlo como está | Identificar secciones que deben extraerse a docs separados, reescribir con enlaces y reducir a ≤300 líneas |
 | No existe `.env.example` | Documentar variables solo en el README | Crear `.env.example` con las variables documentadas Y referenciarlo desde el README |
-| El proyecto tiene stack Python + Angular | Escribir README solo para backend | Documentar ambos stacks con secciones dedicadas, indicando prerrequisitos por stack y el flujo de desarrollo integrado |
+| El proyecto tiene stack Python + React | Escribir README solo para backend | Documentar ambos stacks con secciones dedicadas, indicando prerrequisitos por stack y el flujo de desarrollo integrado |
 | Los ejemplos de curl usan datos inventados | Dejar `{"id": 1}` genérico | Usar datos de ejemplo que coincidan con los seed data del proyecto (`/api/v1/orders/ord-0001`) |
 | Hay secciones vacías con "TODO" | Dejar los TODOs como placeholders | Eliminar secciones vacías; solo incluir secciones con contenido real. Agregar las pendientes al backlog, no al README |
 
@@ -423,13 +423,13 @@ La plantilla completa del README sigue esta estructura de 8 secciones estándar 
 | Runtime | Python 3.12 / Bun 1.1+ / Node 20+ | LTS |
 | Framework (AI/ML) | FastAPI | 0.110+ |
 | Framework (Backend general) | Bun + TypeScript (Hono/Elysia) | 1.1+ |
-| Frontend | Angular | 18+ |
-| UI libs | Angular Material / PrimeNG | 18+ |
+| Frontend | React (Vite) | 18+ |
+| UI libs | Radix UI / shadcn/ui | — |
 | Base de datos | PostgreSQL 16 | 16.x |
 | Cache / Colas | Redis 7 / Kafka | 7.x |
 | ORM / Query | SQLAlchemy 2.0 (Py) / Drizzle (TS) | 2.0.x |
 | Auth | Keycloak / OAuth2 / JWT | — |
-| Test runner | pytest / Vitest / Jasmine+Karma | 8.x |
+| Test runner | pytest / Vitest | 8.x |
 ```
 
 ### Sección 3 — Prerrequisitos e instalación
@@ -483,8 +483,8 @@ Crear `.env` a partir de `.env.example`:
 | `TOKEN_TTL_MINUTES` | No | `int` | `15` | TTL del access token para rotación |
 | `REFRESH_TOKEN_TTL_DAYS` | No | `int` | `7` | TTL del refresh token |
 
-> \* `KEYCLOAK_CLIENT_SECRET` es requerida solo para **confidential clients** (backend-to-backend o service accounts). Para SPAs Angular (public clients) se usa PKCE y no se expone el secret.
-> Frontend Angular consume estas vars vía `environment.ts` / `environment.prod.ts` inyectadas en build time (nunca secretos en el bundle).
+> \* `KEYCLOAK_CLIENT_SECRET` es requerida solo para **confidential clients** (backend-to-backend o service accounts). Para SPAs React (public clients) se usa PKCE y no se expone el secret.
+> Frontend React consume estas vars vía `import.meta.env` (prefijo `VITE_`) inyectadas en build time (nunca secretos en el bundle).
 ```
 
 ### Sección 5 — Referencia rápida (endpoints/rutas/comandos)
@@ -903,15 +903,15 @@ bun run test:e2e               # E2E
 MIT — ver [LICENSE](./LICENSE).
 ```
 
-### Ejemplo 4 — Frontend (Angular)
+### Ejemplo 4 — Frontend (React)
 
-Para un módulo `erp-portal-web` con Angular, el README resultante:
+Para un módulo `erp-portal-web` con React, el README resultante:
 
 ```markdown
 # ERP-portal-web
 
 > SPA del portal ERP: órdenes, inventario y administración.
-> Angular 18 standalone + signals, lazy loading por feature, auth vía Keycloak/OAuth2.
+> React 18 (function components + hooks) + Vite, code-splitting por feature (`React.lazy`), auth vía Keycloak/OAuth2.
 
 [![CI Status](https://img.shields.io/github/actions/workflow/acme/erp-portal-web/ci.yml?branch=main&label=CI)](https://github.com/acme/erp-portal-web/actions) [![Coverage](https://img.shields.io/codecov/c/github/acme/erp-portal-web)](https://codecov.io/gh/acme/erp-portal-web) [![Version](https://img.shields.io/github/v/tag/acme/erp-portal-web?label=version)](https://github.com/acme/erp-portal-web/releases) [![License: MIT](https://img.shields.io/github/license/acme/erp-portal-web)](./LICENSE)
 
@@ -919,21 +919,21 @@ Para un módulo `erp-portal-web` con Angular, el README resultante:
 
 | Componente | Tecnología | Versión |
 |------------|-----------|---------|
-| Framework | Angular | 18+ |
-| UI | Angular Material / PrimeNG | 18+ |
+| Framework | React | 18+ |
+| UI | Radix UI / shadcn/ui | — |
 | Lenguaje | TypeScript | 5.4+ |
-| Build | Angular CLI / esbuild | 18+ |
-| Estado | Signals + RxJS | — |
-| Data fetching | @ngneat/query (TanStack Query) | — |
-| i18n | @ngx-translate/core | 15+ |
-| Auth | Keycloak / OAuth2 (angular-keycloak) | — |
-| Test runner | Jasmine + Karma / Vitest | — |
+| Build | Vite | 5+ |
+| Estado | Zustand | — |
+| Data fetching | @tanstack/react-query | — |
+| i18n | react-i18next | 15+ |
+| Auth | Keycloak / OAuth2 (keycloak-js + PKCE) | — |
+| Test runner | Vitest + React Testing Library | — |
 | E2E | Playwright | 1.x |
 
 ## Prerrequisitos
 
 - Node.js 20+ y npm (o Bun 1.1+ como package manager)
-- Angular CLI 18+ — `npm i -g @angular/cli`
+- Vite 5+ — `npm create vite@latest`
 - Backend API corriendo (ver `erp-orders-api` / `erp-inventory-api`)
 
 ## Instalación y arranque local
@@ -942,87 +942,77 @@ Para un módulo `erp-portal-web` con Angular, el README resultante:
 git clone https://github.com/acme/erp-portal-web.git
 cd erp-portal-web
 npm install                 # o: bun install
-cp .env.example .env        # Configurar API URL y Keycloak
-ng serve                    # Arranca en http://localhost:4200
+cp .env.example .env.local  # Configurar API URL y Keycloak
+npm run dev                 # Arranca en http://localhost:5173
 ```
 
-> Alternativa con Bun: `bunx ng serve`.
+> Alternativa con Bun: `bunx vite`.
 
-### `angular.json` (snippet relevante)
+### `vite.config.ts` (snippet relevante)
 
-```jsonc
-{
-  "projects": {
-    "erp-portal-web": {
-      "architect": {
-        "build": {
-          "builder": "@angular-devkit/build-angular:application",
-          "options": {
-            "outputPath": "dist/erp-portal-web",
-            "index": "src/index.html",
-            "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
-            "tsConfig": "tsconfig.app.json",
-            "assets": ["src/favicon.ico", "src/assets"],
-            "styles": ["src/styles.scss", "@angular/material/prebuilt-themes/indigo-pink.css"],
-            "scripts": []
-          }
-        },
-        "serve": { "builder": "@angular-devkit/build-angular:dev-server" }
-      }
-    }
-  }
-}
+```ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    outDir: 'dist',
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': 'http://localhost:8000',
+    },
+  },
+});
 ```
 
-> Para PrimeNG en lugar de Material: reemplazar el theme de `styles` por `primeng/resources/themes/lara-light-blue/theme.css` y registrar `PrimeNG` + `providePrimeNG()` en `app.config.ts`.
+> Para theming con shadcn/ui: configurar `tailwind.config.ts` y registrar los tokens de diseño en `src/styles/globals.css`.
 
 ## Variables de entorno
 
-Configuradas en `src/environments/environment.ts` (dev) y `environment.prod.ts` (prod), inyectadas en build time:
+Configuradas en `.env.local` (dev) y `.env.production` (prod), leídas vía `import.meta.env` e inyectadas en build time:
 
 | Variable | Requerida | Tipo | Default | Descripción |
 |----------|-----------|------|---------|-------------|
-| `apiUrl` | Sí | `string` | `http://localhost:8000` | URL base del backend API |
-| `keycloak.url` | Sí | `string` | — | URL del realm Keycloak |
-| `keycloak.realm` | Sí | `string` | `erp` | Realm |
-| `keycloak.clientId` | Sí | `string` | `erp-portal-web` | Client ID (public, PKCE) |
-| `keycloak.scopes` | No | `string` | `openid profile email` | Scopes |
-| `production` | Sí | `boolean` | `false` | Flag de build de producción |
+| `VITE_API_URL` | Sí | `string` | `http://localhost:8000` | URL base del backend API |
+| `VITE_KEYCLOAK_URL` | Sí | `string` | — | URL del realm Keycloak |
+| `VITE_KEYCLOAK_REALM` | Sí | `string` | `erp` | Realm |
+| `VITE_KEYCLOAK_CLIENT_ID` | Sí | `string` | `erp-portal-web` | Client ID (public, PKCE) |
+| `VITE_KEYCLOAK_SCOPES` | No | `string` | `openid profile email` | Scopes |
+| `VITE_PRODUCTION` | Sí | `boolean` | `false` | Flag de build de producción |
 
-> El client del SPA es **public** (PKCE). Nunca incluir `clientSecret` en el bundle Angular.
+> El client del SPA es **public** (PKCE). Nunca incluir `clientSecret` en el bundle React.
 
 ## Rutas y pantallas
 
-| Ruta | Pantalla | Lazy | Guard |
+| Ruta | Pantalla | Code-split | Guard |
 |------|----------|------|-------|
-| `/login` | Login (Keycloak redirect) | Sí | `PublicGuard` |
-| `/orders` | Listado de órdenes | Sí | `AuthGuard` + `RoleGuard('orders:read')` |
-| `/orders/:id` | Detalle de orden | Sí | `AuthGuard` |
-| `/inventory` | Inventario | Sí | `AuthGuard` + `RoleGuard('inventory:read')` |
-| `/admin` | Administración | Sí | `AuthGuard` + `RoleGuard('admin')` |
+| `/login` | Login (Keycloak redirect) | Sí | `<PublicRoute>` |
+| `/orders` | Listado de órdenes | Sí | `<RequireAuth>` + `<RequireRole role="orders:read">` |
+| `/orders/:id` | Detalle de orden | Sí | `<RequireAuth>` |
+| `/inventory` | Inventario | Sí | `<RequireAuth>` + `<RequireRole role="inventory:read">` |
+| `/admin` | Administración | Sí | `<RequireAuth>` + `<RequireRole role="admin">` |
 
 ## Estructura del proyecto
 
 ```
 erp-portal-web/
 ├── src/
-│   ├── app/
-│   │   ├── core/               # Auth, interceptors, guards, layout
-│   │   ├── features/
-│   │   │   ├── orders/         # Standalone components + routes
-│   │   │   └── inventory/
-│   │   ├── shared/             # UI components, directives, pipes
-│   │   ├── app.config.ts       # provideRouter, provideHttpClient, providePrimeNG...
-│   │   └── app.routes.ts       # Lazy routes
-│   ├── environments/
-│   │   ├── environment.ts
-│   │   └── environment.prod.ts
-│   └── styles.scss
-├── angular.json
+│   ├── core/                   # Auth, apiFetch, guards, layout
+│   ├── features/
+│   │   ├── orders/              # Components + routes + hooks
+│   │   └── inventory/
+│   ├── shared/                 # UI components, hooks, utils
+│   ├── App.tsx                  # Providers (QueryClient, Router)
+│   ├── routes.tsx               # React.lazy + Suspense routes
+│   └── main.tsx
+├── .env.example
+├── .env.local
+├── vite.config.ts
 ├── tsconfig.json
 ├── package.json
-├── .env.example
 ├── CHANGELOG.md
 └── README.md
 ```
@@ -1030,9 +1020,9 @@ erp-portal-web/
 ## Testing
 
 ```bash
-ng test                       # Unit tests (Jasmine + Karma)
+vitest run                    # Unit tests (Vitest + React Testing Library)
 npx playwright test           # E2E (Playwright)
-ng build                     # Build de producción
+vite build                    # Build de producción
 ```
 
 ## Enlaces

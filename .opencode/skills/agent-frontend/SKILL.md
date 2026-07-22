@@ -11,8 +11,8 @@ metadata:
   - frontend
   enforcement: recommended
   depends_on:
-  - angular
-  - angular-services
+  - react
+  - react-services
   - typescript
   consumed_by:
   - agent-fullstack
@@ -33,8 +33,8 @@ Load each skill in order before generating artifacts.
 |------|-------|-----------|
 | 1 | `typescript` | Types, interfaces, const patterns |
 | 2 | `design-system` | Color tokens, spacing, component wrappers |
-| 3 | `angular` | Feature folder structure, pages, standalone components |
-| 4 | `angular-services` | Query services, mutation services (signals + @ngneat/query) |
+| 3 | `react` | Feature folder structure, pages, function components |
+| 4 | `react-services` | Query hooks, mutation hooks (`@tanstack/react-query`) |
 | 5 | `api-first-frontend` | Frontend code from spec |
 | 6 | `microfrontend` | (if applicable) Module Federation setup |
 | 7 | `export-excel` | (if applicable) Export button and service |
@@ -72,9 +72,9 @@ After each group, verify:
 
 - **Types from guesswork**: Never create TypeScript interfaces from assumptions. Always derive from OpenAPI spec or backend DTOs.
 - **Services too broad**: Split query services from mutation services. A single service doing both violates single responsibility.
-- **Missing loading/error states**: Every data-fetching component must handle loading, error, and empty states (via signals/computed).
+- **Missing loading/error states**: Every data-fetching component must handle loading, error, and empty states (via `@tanstack/react-query` status flags).
 - **Export before feature complete**: Implement export (Excel/CSV) only after the main feature is reviewed. It's always optional.
-- **Global styles over component stylesheets**: The framework standard is Angular component stylesheets. Only deviate with documented justification.
+- **Global styles over component stylesheets**: The framework standard is CSS Modules / Tailwind scoped to the component. Only deviate with documented justification.
 
 ## Quality Gates
 
@@ -83,7 +83,7 @@ Los siguientes gates deben verificarse antes de considerar la meta-skill complet
 | Gate | Título | Descripción |
 |------|--------|-------------|
 | 1 | TypeScript compila sin errores | Los tipos TypeScript compilan sin errores (npm run typecheck) |
-| 2 | Services con tipos correctos | Los services de @ngneat/query devuelven los tipos correctos |
+| 2 | Services con tipos correctos | Los hooks de @tanstack/react-query devuelven los tipos correctos |
 | 3 | Componentes sin errores de consola | Los componentes renderizan sin errores de consola |
 | 4 | i18n completa en todos los idiomas | La internacionalización muestra claves en todos los idiomas configurados |
 | 5 | Feature flags no rompen la UI | Los feature flags no rompen la UI cuando están desactivados |
@@ -103,42 +103,42 @@ Cada nivel se ejecuta de forma secuencial y obligatoria. Un nivel no comienza ha
 | **Tiempo estimado** | 15-30 min por módulo estándar (5-10 endpoints) |
 | **Pitfalls comunes** | Tipos adivinados sin consultar spec real; usar `any` como escape; interfaces no exportadas; no alinear nombres con backend; faltan tipos para `T \| null` en campos opcionales |
 
-### Nivel 2: angular-services
+### Nivel 2: react-services
 
 | Campo | Detalle |
 |-------|---------|
-| **Inputs** | Tipos del Nivel 1, endpoints de API, patrón @ngneat/query (injectQuery/injectMutation) + signals |
-| **Outputs** | `services/<entidad>-query.service.ts`, `services/<entidad>-mutation.service.ts`, `services/<entidad>.service.ts` (lógica), `services/<entidad>-infinite-query.service.ts` (si aplica) |
-| **Validation gate** | Services separados por responsabilidad (query ≠ mutation). Tipos conectados correctamente. `staleTime` definido. Casos loading/error cubiertos vía signals/computed |
+| **Inputs** | Tipos del Nivel 1, endpoints de API, patrón `@tanstack/react-query` (`useQuery`/`useMutation`) |
+| **Outputs** | `hooks/use-<entidad>-query.ts`, `hooks/use-<entidad>-mutation.ts`, `hooks/use-<entidad>.ts` (lógica), `hooks/use-<entidad>-infinite-query.ts` (si aplica) |
+| **Validation gate** | Hooks separados por responsabilidad (query ≠ mutation). Tipos conectados correctamente. `staleTime` definido. Casos loading/error cubiertos vía flags de react-query |
 | **Tiempo estimado** | 20-40 min por módulo |
-| **Pitfalls comunes** | Service único que mezcla query y mutation; omitir estado `isPending`; no tipar el retorno de `injectMutation`; faltan `onError` handlers; no usar `queryKey` correctamente; mezclar `useState`/`useEffect` en lugar de `signal()`/`effect()` |
+| **Pitfalls comunes** | Hook único que mezcla query y mutation; omitir estado `isPending`; no tipar el retorno de `useMutation`; faltan `onError` handlers; no usar `queryKey` correctamente; mezclar estado local mal alcance en lugar de `useState`/`useMemo` |
 
-### Nivel 3: angular
+### Nivel 3: react
 
 | Campo | Detalle |
 |-------|---------|
-| **Inputs** | Services del Nivel 2, diseño UI (Figma o spec), estructura de routing |
-| **Outputs** | `components/<entidad>-table.component.ts` + `.component.html`, `components/<entidad>-form.component.ts` (Reactive Forms: FormBuilder/FormGroup), `pages/<entidad>-page.component.ts`, `pages/<entidad>-form-page.component.ts`, `index.ts` barrels |
-| **Validation gate** | Renderizado sin errores de consola. Estados loading/error/empty visibles. Component stylesheets, sin estilos inline. Layout responsivo |
+| **Inputs** | Hooks del Nivel 2, diseño UI (Figma o spec), estructura de routing |
+| **Outputs** | `components/<Entidad>Table.tsx`, `components/<Entidad>Form.tsx` (`react-hook-form` + `zodResolver`), `pages/<Entidad>Page.tsx`, `pages/<Entidad>FormPage.tsx`, `index.ts` barrels |
+| **Validation gate** | Renderizado sin errores de consola. Estados loading/error/empty visibles. CSS Modules/Tailwind, sin estilos inline. Layout responsivo |
 | **Tiempo estimado** | 40-90 min por módulo (según complejidad de la UI) |
-| **Pitfalls comunes** | No manejar estado vacío; componentes monolíticos > 300 líneas; mezclar lógica de negocio en la plantilla; olvidar `trackBy` en `*ngFor`; no usar standalone components; usar `forwardRef` en lugar de patrones Angular (DI, @ViewChild, ContentProjection) |
+| **Pitfalls comunes** | No manejar estado vacío; componentes monolíticos > 300 líneas; mezclar lógica de negocio en el JSX; olvidar `key` estable en listas mapeadas; no memoizar callbacks pesados (`useCallback`/`useMemo`); reimplementar patrones con clases en lugar de hooks |
 
 ### Nivel 4: i18n
 
 | Campo | Detalle |
 |-------|---------|
 | **Inputs** | Textos de la UI del Nivel 3, archivos de locale existentes, spec de idiomas soportados |
-| **Outputs** | `locales/es/<modulo>.json`, `locales/en/<modulo>.json` (y demás idiomas), claves integradas en componentes vía `translate` pipe/directive |
+| **Outputs** | `locales/es/<modulo>.json`, `locales/en/<modulo>.json` (y demás idiomas), claves integradas en componentes vía hook `useTranslation()` (react-i18next) |
 | **Validation gate** | Todas las claves existen en todos los idiomas configurados. Sin texto hardcodeado en la UI. Prueba visual con cambio de locale |
 | **Tiempo estimado** | 15-25 min por módulo |
-| **Pitfalls comunes** | Texto hardcodeado olvidado; claves faltantes en un idioma; no usar `TranslateModule` para HTML inline; traducciones literales que no respetan contexto; olvidar pluralización |
+| **Pitfalls comunes** | Texto hardcodeado olvidado; claves faltantes en un idioma; no usar el componente `<Trans>` para HTML inline; traducciones literales que no respetan contexto; olvidar pluralización |
 
 ### Nivel 5: feature-flags
 
 | Campo | Detalle |
 |-------|---------|
 | **Inputs** | Especificación de toggles, flags existentes, componentes del Nivel 3 |
-| **Outputs** | `feature-flags/index.ts` con definición de flags, directivas `<appFeatureFlag>` y signals `featureFlag()` en componentes |
+| **Outputs** | `feature-flags/index.ts` con definición de flags, componente `<FeatureFlag name="xxx">` y hook `useFeatureFlag()` en componentes |
 | **Validation gate** | UI no se rompe con flag desactivado. Flag kill switch funcional. Sin fugas de código de feature inactiva en producción |
 | **Tiempo estimado** | 10-20 min por flag |
 | **Pitfalls comunes** | Flags sin cleanup plan; anidar múltiples flags creando matrix de pruebas imposible; no probar estado "off"; flags en middleware sin test |
@@ -148,7 +148,7 @@ Cada nivel se ejecuta de forma secuencial y obligatoria. Un nivel no comienza ha
 | Campo | Detalle |
 |-------|---------|
 | **Inputs** | Tokens existentes, spec visual del módulo, componentes del Nivel 3 |
-| **Outputs** | Variables CSS (`:root`), wrappers de componentes base (`<appButton>`, `<appInput>`, `<appModal>`), `theme.css` |
+| **Outputs** | Variables CSS (`:root`), wrappers de componentes base (`<Button>`, `<Input>`, `<Modal>` sobre Radix UI/shadcn), `theme.css` |
 | **Validation gate** | Colores y espaciados consistentes con design tokens. Sin valores raw (ej. `#fff`) en componentes de negocio. Modo oscuro funcional si aplica |
 | **Tiempo estimado** | 20-40 min (setup inicial) + 10 min por componente wrapper |
 | **Pitfalls comunes** | Usar valores raw en lugar de tokens; no actualizar tokens cuando cambia diseño; componentes wrapper demasiado rígidos; omitir focus visible |
@@ -168,17 +168,17 @@ Cada nivel se ejecuta de forma secuencial y obligatoria. Un nivel no comienza ha
 | Campo | Detalle |
 |-------|---------|
 | **Inputs** | Endpoints de upload del backend, spec de types aceptados, límites de tamaño |
-| **Outputs** | `services/file-upload.service.ts`, `components/file-uploader.component.ts` + `.component.html`, `components/file-preview.component.ts` |
+| **Outputs** | `hooks/use-file-upload.ts`, `components/FileUploader.tsx`, `components/FilePreview.tsx` |
 | **Validation gate** | Upload funciona con backend real. MIME validation client-side. Barra de progreso visible. Manejo de errores (archivo muy grande, tipo no soportado). Preview de imagen funcional |
 | **Tiempo estimado** | 25-40 min |
-| **Pitfalls comunes** | No validar tipo MIME antes de enviar; no mostrar progreso en uploads grandes; olvidar cleanup de object URLs (memory leak); no manejar cancelación; no limitar tamaño en cliente |
+| **Pitfalls comunes** | No validar tipo MIME antes de enviar; no mostrar progreso en uploads grandes; olvidar cleanup de object URLs (memory leak, vía `useEffect` cleanup); no manejar cancelación; no limitar tamaño en cliente |
 
 ### Nivel 9: export-excel
 
 | Campo | Detalle |
 |-------|---------|
 | **Inputs** | Endpoint de exportación del backend, columnas del listado, formato esperado |
-| **Outputs** | `services/export-excel.service.ts`, `components/export-button.component.ts` + `.component.html` con indicador de descarga |
+| **Outputs** | `hooks/use-export-excel.ts`, `components/ExportButton.tsx` con indicador de descarga |
 | **Validation gate** | Archivo descargado con datos correctos. Formato .xlsx/.csv válido. Encoding correcto (UTF-8). Progreso/loader visible durante exportación |
 | **Tiempo estimado** | 15-25 min |
 | **Pitfalls comunes** | Export sin feedback visual; no descargar en background (bloquea UI); archivos corruptos por encoding incorrecto; no manejar errores del endpoint de exportación; export sin limitación de filas |
@@ -206,49 +206,49 @@ Archivos a crear:
 - api/<modulo>.ts
 ```
 
-### angular-services — Prompt para generar services
+### react-services — Prompt para generar hooks
 
 ```
-Eres un agente de @ngneat/query + signals. Genera los services para el módulo [nombre].
+Eres un agente de @tanstack/react-query. Genera los hooks para el módulo [nombre].
 Tipos disponibles: [referencia archivo]
 Endpoints API: [lista]
 
 Reglas:
-1. Separa query services de mutation services
+1. Separa hooks de query de hooks de mutation
 2. Define queryKey como constante
-3. Tipa estrictamente el retorno de injectMutation
+3. Tipa estrictamente el retorno de useMutation
 4. Incluye onError handler
 5. staleTime mínimo de 30s
-6. Crea service de lógica separado si hay más de 3 pasos
-7. Usa signal() para estado local y effect() para side effects (no useState/useEffect)
-8. Usa injectQuery/injectMutation de @ngneat/query (no useQuery/useMutation)
+6. Crea hook de lógica separado si hay más de 3 pasos
+7. Usa useState/useMemo/useCallback para estado local y useEffect solo para side effects
+8. Usa useQuery/useMutation de @tanstack/react-query
 
 Archivos a crear:
-- services/<entidad>-query.service.ts
-- services/<entidad>-mutation.service.ts
+- hooks/use-<entidad>-query.ts
+- hooks/use-<entidad>-mutation.ts
 ```
 
-### angular — Prompt para generar componentes
+### react — Prompt para generar componentes
 
 ```
-Eres un agente de Angular. Genera componentes y páginas standalone para [módulo].
-Services disponibles: [lista]
+Eres un agente de React. Genera function components y páginas para [módulo].
+Hooks disponibles: [lista]
 Diseño UI: [descripción]
 
 Reglas:
-1. Component stylesheets — nunca inline styles
-2. Maneja loading / error / empty states (vía signals/computed)
+1. CSS Modules/Tailwind — nunca inline styles
+2. Maneja loading / error / empty states (vía flags de react-query)
 3. Componentes < 300 líneas
-4. Standalone components con inputs/signals tipados estrictamente
-5. Usa los services generados en nivel anterior
-6. Formularios con Reactive Forms (FormBuilder, FormGroup) — no react-hook-form
+4. Function components con props tipadas estrictamente (interfaces)
+5. Usa los hooks generados en nivel anterior
+6. Formularios con react-hook-form + zodResolver
 7. Barrels (index.ts) para exportar
-8. Usa trackBy en *ngFor
+8. Usa una `key` estable en listas mapeadas con `.map()`
 
 Archivos a crear:
-- components/<entidad>-list.component.ts + .component.html
-- components/<entidad>-form.component.ts + .component.html
-- pages/<entidad>-page.component.ts + .component.html
+- components/<Entidad>List.tsx
+- components/<Entidad>Form.tsx
+- pages/<Entidad>Page.tsx
 ```
 
 ### i18n — Prompt para internacionalizar
@@ -262,7 +262,7 @@ Reglas:
 1. Extrae todo texto visible a claves i18n
 2. Sin texto hardcodeado en plantillas
 3. Todas las claves en todos los idiomas
-4. Usa translate pipe para texto simple, TranslateModule para HTML
+4. Usa el hook useTranslation() para texto simple, el componente <Trans> para HTML
 5. Agrupa claves por componente
 
 Archivos:
@@ -279,8 +279,8 @@ Tipo de flag: boolean / multivariate
 
 Reglas:
 1. Define flag en feature-flags/index.ts
-2. Crea directiva <appFeatureFlag name="xxx"> si es visible
-3. Crea signal featureFlag() si afecta lógica
+2. Crea componente <FeatureFlag name="xxx"> si es visible
+3. Crea hook useFeatureFlag() si afecta lógica
 4. Estado off debe ser seguro (no rompe UI)
 5. Documenta cleanup date
 ```
@@ -294,7 +294,7 @@ Tokens existentes: [referencia]
 Reglas:
 1. Usa var(--token-xxx) — nunca valores raw
 2. Soporta modo oscuro con media query o clase
-3. Wrapper debe ser flexible (class, @Input(), ContentProjection) — usa patrones Angular, no forwardRef
+3. Wrapper debe ser flexible (className prop, props tipadas, children) — usa forwardRef cuando el componente exponga un DOM ref
 4. Documenta variantes disponibles
 ```
 
@@ -327,7 +327,7 @@ Reglas:
 1. Validación client-side de tipo y tamaño
 2. Barra de progreso
 3. Preview de imagen inmediata (createObjectURL)
-4. Cleanup de object URLs en ngOnDestroy / destroyRef
+4. Cleanup de object URLs en el cleanup function de useEffect
 5. Manejo de errores (tipo, tamaño, red)
 6. Cancelación de upload en progreso
 ```

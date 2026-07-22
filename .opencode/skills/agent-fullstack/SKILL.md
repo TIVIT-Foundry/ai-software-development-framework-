@@ -1,7 +1,7 @@
 ---
 name: agent-fullstack
 description: 'Meta-skill: activates all skills for full-stack feature implementation
-  (DB → API → UI). Stack: Python/FastAPI + PostgreSQL + Angular. Trigger: When implementing a complete feature across all layers.'
+  (DB → API → UI). Stack: Python/FastAPI + PostgreSQL + React. Trigger: When implementing a complete feature across all layers.'
 version: 1.1
 metadata:
   phase:
@@ -12,8 +12,8 @@ metadata:
   enforcement: recommended
   depends_on:
   - agent-backend
-  - angular
-  - angular-services
+  - react
+  - react-services
   - typescript
   consumed_by: []
   agent_roles:
@@ -42,8 +42,8 @@ Backend is always implemented first.
 | 8 | `error-handling` | Backend | Error flow |
 | 9 | `openapi-docs` | Backend | OpenAPI docs |
 | 10 | `typescript` | Frontend | Types |
-| 11 | `angular-services` | Frontend | Query/Mutation services |
-| 12 | `angular` | Frontend | Components + Pages |
+| 11 | `react-services` | Frontend | Query/Mutation hooks |
+| 12 | `react` | Frontend | Components + Pages |
 | 13 | `export-excel` | Both | (if applicable) Export |
 | 14 | `api-first-testing` | Testing | E2E tests |
 
@@ -121,9 +121,9 @@ El pipeline completo de full-stack conecta 28 niveles desde la base de datos has
 | 22 | `data-access` | Handlers SQLAlchemy que llaman SPs | N23 (backend-api) |
 | 23 | `backend-api` | Endpoints REST, controladores, requests, responses, routing | N24 (authentication), N25 (authorization), N27 (error-handling), N28 (api-integration) |
 | 24 | `authentication` | Middleware JWT/OAuth2, propagación de identidad, login/logout | N25 (authorization), N26 (security), frontend N32–N37 |
-| 25 | `authorization` | RBAC, políticas de permisos, claims, resource-level access | N26 (security), N31 (openapi-docs), frontend N34 (angular) |
+| 25 | `authorization` | RBAC, políticas de permisos, claims, resource-level access | N26 (security), N31 (openapi-docs), frontend N34 (react) |
 | 26 | `security` | CORS, validación OWASP Top 10, headers de seguridad, rate limiting | N27 (error-handling), N30 (api-resilience) |
-| 27 | `error-handling` | Mapeo DB→Backend→Frontend, excepciones, códigos de error, middleware | N28 (api-integration), frontend N33 (angular-services), N34 (angular) |
+| 27 | `error-handling` | Mapeo DB→Backend→Frontend, excepciones, códigos de error, middleware | N28 (api-integration), frontend N33 (react-services), N34 (react) |
 | 28 | `api-integration` | Wiring DB→API, paginación, validación de entrada/salida, mapeo de errores | N29 (api-versioning), N30 (api-resilience), N31 (openapi-docs) |
 | 29 | `api-versioning` | Estrategia de versionado (URI/header/media-type), sunset headers, deprecation | N30 (api-resilience), N31 (openapi-docs) |
 | 30 | `api-resilience` (*recommended*) | Circuit breakers, retry policies, rate limiting, bulkheads, timeouts | N31 (openapi-docs), infraestructura |
@@ -133,12 +133,12 @@ El pipeline completo de full-stack conecta 28 niveles desde la base de datos has
 
 | Nivel | Skill | Produce | Consumido Por |
 |-------|-------|---------|---------------|
-| 32 | `typescript` | Tipos TypeScript generados desde OpenAPI, interfaces de DTOs, tipos de error | N33 (angular-services) |
-| 33 | `angular-services` | Servicios @ngneat/query (injectQuery, injectMutation), servicios de lógica de negocio | N34 (angular) |
-| 34 | `angular` | Componentes de UI standalone, páginas, routing, Reactive Forms, tablas, layouts | N35 (i18n), N36 (feature-flags), N37 (file-upload) |
-| 35 | `i18n` | Archivos de localización, TranslateService, formato fecha/moneda, RTL | N34 (angular) — wrappers de componentes |
-| 36 | `feature-flags` | Toggles de funcionalidad, A/B testing, kill switches, targeting por rol | N34 (angular) — renderizado condicional |
-| 37 | `file-upload` | Componentes de upload, progreso, thumbnails, servicios de blob storage | N34 (angular), N44 (playwright) |
+| 32 | `typescript` | Tipos TypeScript generados desde OpenAPI, interfaces de DTOs, tipos de error | N33 (react-services) |
+| 33 | `react-services` | Hooks de @tanstack/react-query (useQuery, useMutation), hooks de lógica de negocio | N34 (react) |
+| 34 | `react` | Componentes de UI (function components), páginas, routing (react-router-dom), react-hook-form, tablas, layouts | N35 (i18n), N36 (feature-flags), N37 (file-upload) |
+| 35 | `i18n` | Archivos de localización, react-i18next, formato fecha/moneda, RTL | N34 (react) — wrappers de componentes |
+| 36 | `feature-flags` | Toggles de funcionalidad, A/B testing, kill switches, targeting por rol | N34 (react) — renderizado condicional |
+| 37 | `file-upload` | Componentes de upload, progreso, thumbnails, servicios de blob storage | N34 (react), N44 (playwright) |
 
 ### Fase G — Calidad (Niveles 38–44)
 
@@ -200,8 +200,8 @@ openapi.json ──► Generación de tipos ──► Interfaces TS ──► Se
 Cada nivel frontend depende del anterior:
 
 - **N32 (typescript)**: Lee `openapi.json` y genera interfaces, tipos de request/response, tipos de error y constantes de endpoint.
-- **N33 (angular-services)**: Usa los tipos del N32 para crear servicios tipados con @ngneat/query.
-- **N34 (angular)**: Consume los servicios del N33 en componentes y páginas.
+- **N33 (react-services)**: Usa los tipos del N32 para crear hooks tipados con @tanstack/react-query.
+- **N34 (react)**: Consume los hooks del N33 en componentes y páginas.
 - **N35–N37**: Envuelven los componentes con i18n, feature flags y file upload según corresponda.
 
 ### 3. Cómo se generan los tipos desde OpenAPI
@@ -251,140 +251,121 @@ El proceso de generación de tipos sigue estos pasos:
      | 'INTERNAL_ERROR';
    ```
 
-### 4. Cómo los servicios corresponden a los endpoints
+### 4. Cómo los hooks corresponden a los endpoints
 
-Cada endpoint en el OpenAPI spec genera un servicio específico siguiendo esta convención:
+Cada endpoint en el OpenAPI spec genera un hook específico siguiendo esta convención:
 
-| Endpoint | Método | Servicio generado |
+| Endpoint | Método | Hook generado |
 |----------|--------|-------------------|
-| `GET /api/v1/usuarios` | Listar | `injectUsuariosListar(params)` → `injectQuery` |
-| `GET /api/v1/usuarios/{id}` | Obtener | `injectUsuarioObtener(id)` → `injectQuery` |
-| `POST /api/v1/usuarios` | Crear | `injectUsuarioCrear()` → `injectMutation` |
-| `PUT /api/v1/usuarios/{id}` | Actualizar | `injectUsuarioActualizar()` → `injectMutation` |
-| `DELETE /api/v1/usuarios/{id}` | Eliminar | `injectUsuarioEliminar()` → `injectMutation` |
+| `GET /api/v1/usuarios` | Listar | `useUsuariosListar(params)` → `useQuery` |
+| `GET /api/v1/usuarios/{id}` | Obtener | `useUsuarioObtener(id)` → `useQuery` |
+| `POST /api/v1/usuarios` | Crear | `useUsuarioCrear()` → `useMutation` |
+| `PUT /api/v1/usuarios/{id}` | Actualizar | `useUsuarioActualizar()` → `useMutation` |
+| `DELETE /api/v1/usuarios/{id}` | Eliminar | `useUsuarioEliminar()` → `useMutation` |
 
-**Patrón de implementación del servicio:**
+**Patrón de implementación del hook:**
 
 ```typescript
 // Endpoint: GET /api/v1/usuarios
-// Servicio: injectUsuariosListar
+// Hook: useUsuariosListar
 
-import { injectQuery } from '@ngneat/query';
-import { inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/core/http/api-client';
 import type { ListarUsuariosParams, ListarUsuariosResponse } from '@/types';
 
-export function injectUsuariosListar() {
-  const query = injectQuery();
-  const http = inject(HttpClient);
-
-  return (params: ListarUsuariosParams) =>
-    query({
-      queryKey: ['usuarios', 'listar', params],
-      queryFn: () =>
-        http.get<ListarUsuariosResponse>('/api/v1/usuarios', {
-          params: new HttpParams({ fromObject: { ...params } }),
-        }),
-    });
+export function useUsuariosListar(params: ListarUsuariosParams) {
+  return useQuery({
+    queryKey: ['usuarios', 'listar', params],
+    queryFn: () =>
+      apiFetch<ListarUsuariosResponse>('/api/v1/usuarios', {
+        query: params,
+      }),
+  });
 }
 ```
 
 **Reglas de generación:**
 
-- `GET` → `injectQuery` con `queryKey` que incluye el nombre del recurso y los parámetros.
-- `POST`, `PUT`, `DELETE`, `PATCH` → `injectMutation` con `onSuccess` que invalida las queries relacionadas.
+- `GET` → `useQuery` con `queryKey` que incluye el nombre del recurso y los parámetros.
+- `POST`, `PUT`, `DELETE`, `PATCH` → `useMutation` con `onSuccess` que invalida las queries relacionadas.
 - El `queryKey` sigue el patrón `[recurso, acción, ...identificadores]`.
-- Los servicios exponen el resultado completo de @ngneat/query (`data`, `isLoading`, `isError`, `error`, `refetch`).
+- Los hooks exponen el resultado completo de @tanstack/react-query (`data`, `isLoading`, `isError`, `error`, `refetch`).
 
-### 5. Cómo los componentes usan los servicios
+### 5. Cómo los componentes usan los hooks
 
-Los componentes consumen los servicios siguiendo el patrón de contenedor/presentación o inyección directa:
+Los componentes consumen los hooks directamente en función components:
 
 **Patrón de componente con lista:**
 
-```typescript
-// pages/usuarios/listar-usuarios.component.ts
-import { Component, signal, inject } from '@angular/core';
-import { injectUsuariosListar } from '@/services/usuarios';
+```tsx
+// pages/usuarios/UsuariosList.tsx
+import { useState } from 'react';
+import { useUsuariosListar } from '@/features/usuarios/hooks/use-usuarios';
+import { SkeletonTable } from '@/shared/components/SkeletonTable';
+import { ErrorBanner } from '@/shared/components/ErrorBanner';
+import { UsuarioRow } from './UsuarioRow';
+import { Pagination } from '@/shared/components/Pagination';
 
-@Component({
-  selector: 'app-listar-usuarios',
-  standalone: true,
-  template: `
-    @if (query.isLoading()) {
-      <app-skeleton-table />
-    } @else if (query.isError()) {
-      <app-error-banner [message]="query.error()?.message ?? ''" />
-    } @else {
-      <table>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Rol</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (usuario of query.data()?.data ?? []; track usuario.id) {
-            <app-usuario-row [usuario]="usuario" />
-          }
-        </tbody>
-        <tfoot>
-          <app-pagination
-            [page]="page()"
-            [total]="query.data()?.total ?? 0"
-            (pageChange)="page.set($event)" />
-        </tfoot>
-      </table>
-    }
-  `,
-})
-export class ListarUsuariosComponent {
-  private readonly listar = injectUsuariosListar();
-  readonly page = signal(1);
-  readonly query = this.listar({ page: this.page(), limit: 10 });
+export function UsuariosList() {
+  const [page, setPage] = useState(1);
+  const query = useUsuariosListar({ page, limit: 10 });
+
+  if (query.isLoading) return <SkeletonTable />;
+  if (query.isError) return <ErrorBanner message={query.error?.message ?? ''} />;
+
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {(query.data?.data ?? []).map((usuario) => (
+          <UsuarioRow key={usuario.id} usuario={usuario} />
+        ))}
+      </tbody>
+      <tfoot>
+        <Pagination page={page} total={query.data?.total ?? 0} onPageChange={setPage} />
+      </tfoot>
+    </table>
+  );
 }
 ```
 
 **Patrón de componente con mutación:**
 
-```typescript
-// components/usuarios/crear-usuario-form.component.ts
-import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { injectUsuarioCrear } from '@/services/usuarios';
+```tsx
+// components/usuarios/CrearUsuarioForm.tsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useUsuarioCrear } from '@/features/usuarios/hooks/use-usuarios';
+import { crearUsuarioSchema } from '@/features/usuarios/usuarios.schema';
 import type { CrearUsuarioRequest } from '@/types';
+import { ErrorAlert } from '@/shared/components/ErrorAlert';
 
-@Component({
-  selector: 'app-crear-usuario-form',
-  standalone: true,
-  imports: [ReactiveFormsModule],
-  template: `
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <!-- campos del formulario -->
-      <button type="submit" [disabled]="mutation.isPending()">
-        {{ mutation.isPending() ? 'Guardando...' : 'Crear Usuario' }}
-      </button>
-      @if (mutation.isError()) {
-        <app-error-alert [message]="mutation.error()?.message ?? ''" />
-      }
-    </form>
-  `,
-})
-export class CrearUsuarioFormComponent {
-  private readonly fb = inject(FormBuilder);
-  private readonly crear = injectUsuarioCrear();
-  readonly mutation = this.crear();
-  readonly form = this.fb.group<CrearUsuarioRequest>({
-    // campos del formulario
+export function CrearUsuarioForm() {
+  const mutation = useUsuarioCrear();
+  const { register, handleSubmit } = useForm<CrearUsuarioRequest>({
+    resolver: zodResolver(crearUsuarioSchema),
   });
 
-  onSubmit() {
-    if (this.form.valid) {
-      this.mutation.mutate(this.form.getRawValue() as CrearUsuarioRequest);
-    }
-  }
+  const onSubmit = (data: CrearUsuarioRequest) => {
+    mutation.mutate(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {/* campos del formulario con register(...) */}
+      <button type="submit" disabled={mutation.isPending}>
+        {mutation.isPending ? 'Guardando...' : 'Crear Usuario'}
+      </button>
+      {mutation.isError && <ErrorAlert message={mutation.error?.message ?? ''} />}
+    </form>
+  );
 }
 ```
 
@@ -394,7 +375,7 @@ El flujo de errores desde la base de datos hasta la UI sigue esta cadena:
 
 ```
 DB (código SQL) → SP → Handler → API (código HTTP + error code) → 
-Servicio (captura en isError) → Componente (renderiza ErrorBanner/ErrorAlert)
+Hook (captura en isError) → Componente (renderiza ErrorBanner/ErrorAlert)
 ```
 
 ## Prompt templates por fase
@@ -438,8 +419,8 @@ Activa agent-frontend con los siguientes parámetros:
 - Módulo: [NOMBRE_MODULO]
 - Ruta del openapi.json: [RUTA]
 - Incluir niveles desde N32 hasta N37
-- UI Framework: [Angular]
-- Librería de componentes: [Angular Material / NG-Zorro / PrimeNG]
+- UI Framework: [React]
+- Librería de componentes: [Radix UI / shadcn/ui]
 
 Espera a que agent-frontend confirme que todos los niveles han completado y los gates han pasado.
 
@@ -504,8 +485,8 @@ Activa agent-frontend para implementar el frontend del módulo [NOMBRE_MODULO].
 ## Parámetros
 - Módulo: [NOMBRE_MODULO]
 - Ruta openapi: [RUTA_OPENAPI_JSON]
-- Stack frontend: [Angular]
-- Librería UI: [Angular Material / NG-Zorro / PrimeNG]
+- Stack frontend: [React]
+- Librería UI: [Radix UI / shadcn/ui]
 - Requiere i18n: [SI/NO]
 - Requiere feature flags: [SI/NO]
 - Requiere file upload: [SI/NO]
@@ -516,7 +497,7 @@ Desde N32 (typescript) hasta N37 (file-upload) si aplica.
 
 ## Reglas
 - Generar tipos desde openapi.json.
-- Servicios con @ngneat/query (o alternativa del stack).
+- Hooks con @tanstack/react-query (o alternativa del stack).
 - Componentes con manejo de loading, empty, error states.
 - El estado vacío debe mostrar un mensaje amigable.
 - El estado de error debe mostrar el mensaje del backend.
@@ -544,14 +525,14 @@ Verifica la integración backend ↔ frontend del módulo [NOMBRE_MODULO].
 - [ ] Los arrays están tipados como Array<T> o T[]
 
 ### Servicios vs Endpoints
-- [ ] Cada endpoint GET tiene un servicio injectQuery
-- [ ] Cada endpoint POST/PUT/DELETE tiene un servicio injectMutation
+- [ ] Cada endpoint GET tiene un hook useQuery
+- [ ] Cada endpoint POST/PUT/DELETE tiene un hook useMutation
 - [ ] Los queryKeys incluyen recurso + acción + identificadores
 - [ ] Las mutations invalidan las queries relacionadas en onSuccess
 
 ### Componentes vs Servicios
-- [ ] Cada pantalla de lista usa su servicio injectQuery correspondiente
-- [ ] Cada formulario de creación/edición usa su servicio injectMutation
+- [ ] Cada pantalla de lista usa su hook useQuery correspondiente
+- [ ] Cada formulario de creación/edición usa su hook useMutation
 - [ ] Los componentes manejan isLoading (skeleton/spinner)
 - [ ] Los componentes manejan isError (banner/alert)
 - [ ] Los componentes manejan datos vacíos (empty state)

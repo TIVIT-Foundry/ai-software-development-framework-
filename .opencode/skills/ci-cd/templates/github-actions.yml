@@ -1,6 +1,6 @@
 # ============================================================================
 # GitHub Actions — CI/CD Full Pipeline
-# Stacks: Python 3.12 (FastAPI) + Angular 18+ (pnpm) + Bun (TypeScript)
+# Stacks: Python 3.12 (FastAPI) + React 18+ (Vite, pnpm) + Bun (TypeScript)
 # Stages: lint → test → security-scan → build → docker-push → deploy
 # ============================================================================
 # Usage:
@@ -159,9 +159,9 @@ jobs:
           path: backend/htmlcov/
           retention-days: 7
 
-  # ── FRONTEND LINT (Angular) ─────────────────────────────────
+  # ── FRONTEND LINT (React) ─────────────────────────────────
   frontend-lint:
-    name: Angular Lint
+    name: React Lint
     needs: changes
     if: ${{ needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
@@ -181,13 +181,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: ESLint
-        run: pnpm ng lint
+        run: pnpm eslint . --max-warnings=0
       - name: TypeScript check
         run: pnpm tsc --noEmit
 
-  # ── FRONTEND TEST (Angular) ─────────────────────────────────
+  # ── FRONTEND TEST (React) ─────────────────────────────────
   frontend-test:
-    name: Angular Tests
+    name: React Tests
     needs: frontend-lint
     runs-on: ubuntu-latest
     defaults:
@@ -206,11 +206,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Unit tests
-        run: pnpm ng test --code-coverage --watch=false --browsers=ChromeHeadless
+        run: pnpm vitest run --coverage
       - name: Upload frontend coverage
         uses: codecov/codecov-action@v4
         with:
-          flags: angular
+          flags: react
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
 
@@ -357,9 +357,9 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-  # ── BUILD ANGULAR DOCKER ────────────────────────────────────
+  # ── BUILD REACT DOCKER ────────────────────────────────────
   build-frontend:
-    name: Build Angular Image
+    name: Build React Image
     needs: [security-scan]
     if: |
       github.event_name == 'push' &&

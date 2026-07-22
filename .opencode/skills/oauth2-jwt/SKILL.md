@@ -1,6 +1,6 @@
 ---
 name: oauth2-jwt
-description: 'OAuth2/JWT authentication and authorization: token issuance, validation, scopes, refresh tokens, and Keycloak integration patterns. Trigger: When implementing token-based auth, OAuth2 flows, or JWT validation in FastAPI/Bun/Angular.'
+description: 'OAuth2/JWT authentication and authorization: token issuance, validation, scopes, refresh tokens, and Keycloak integration patterns. Trigger: When implementing token-based auth, OAuth2 flows, or JWT validation in FastAPI/Bun/React.'
 version: 1.0
 metadata:
   phase:
@@ -24,7 +24,7 @@ metadata:
 
 ## Purpose
 
-Define how OAuth2/JWT is implemented across FastAPI, Bun, and Angular services, including token validation, scopes, refresh flows, and secure storage.
+Define how OAuth2/JWT is implemented across FastAPI, Bun, and React services, including token validation, scopes, refresh flows, and secure storage.
 
 ## When to use this skill
 
@@ -57,8 +57,8 @@ Activate when:
 |----------|------|-------------|
 | Token service | `src/shared/auth/token.py` / `token.ts` | Issue/validate JWTs |
 | Middleware | `src/shared/auth/jwt_middleware.*` | Protect routes |
-| Angular interceptor | `src/app/core/auth.interceptor.ts` | Attach tokens |
-| Guard | `src/app/core/auth.guard.ts` | Route protection |
+| Fetch wrapper | `src/core/api/fetch-client.ts` | Attach tokens |
+| Guard | `src/core/auth/RequireAuth.tsx` | Route protection |
 
 ## Example: FastAPI dependency
 

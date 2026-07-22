@@ -251,68 +251,51 @@ def listar_paginado(page: int, page_size: int, search: str | None):
     return PagedResult(items=[p.to_dto() for p in items], total=total, page=page, page_size=page_size)
 ```
 
-### Frontend: uso con @ngneat/query y signals (Angular)
+### Frontend: uso con @tanstack/react-query (React)
 
 ```typescript
-// Servicio: src/app/products/services/productos.service.ts
-import { injectQuery } from '@ngneat/query';
-import { signal } from '@angular/core';
-import { inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+// Hook: src/features/products/hooks/use-productos.query.ts
+import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '../../../core/api/fetch-client';
 
 export function toQueryString(params: PagedRequest): string {
-  return new HttpParams({ fromObject: params as Record<string, unknown> }).toString();
+  return new URLSearchParams(params as Record<string, string>).toString();
 }
 
-export class ProductosService {
-  private readonly http = inject(HttpClient);
-  private readonly query = injectQuery();
-
-  getProductos(params: PagedRequest) {
-    return this.query({
-      queryKey: ['productos', params],
-      queryFn: () =>
-        this.http
-          .get<ApiResponse<PagedResult>>(`/api/v1/productos?${toQueryString(params)}`)
-          .toPromise(),
-    });
-  }
-}
-
-// Componente: src/app/products/pages/productos-listado/productos-listado.component.ts
-import { Component, inject, signal } from '@angular/core';
-import { ProductosService } from '../../services/productos.service';
-
-@Component({
-  selector: 'app-productos-listado',
-  template: `
-    @if (query.isLoading()) {
-      <app-skeleton />
-    } @else {
-      <app-tabla [items]="query.data()?.data?.items ?? []" />
-      <app-paginador
-        [currentPage]="query.data()?.pagination?.page ?? 1"
-        [totalPages]="query.data()?.pagination?.totalPages ?? 1"
-        (pageChange)="page.set($event); refetch()"
-      />
-      <span>Total: {{ query.data()?.pagination?.total }} registros</span>
-    }
-  `,
-})
-export class ProductosListadoComponent {
-  private readonly productosService = inject(ProductosService);
-
-  readonly page = signal(1);
-  readonly pageSize = 20;
-
-  readonly query = this.productosService.getProductos({
-    page: this.page(),
-    pageSize: this.pageSize,
+export function useProductos(params: PagedRequest) {
+  return useQuery({
+    queryKey: ['productos', params],
+    queryFn: () => apiFetch<ApiResponse<PagedResult>>(`/api/v1/productos?${toQueryString(params)}`),
   });
+}
+```
 
-  refetch() {
-    this.query.updateQueryKey(['productos', { page: this.page(), pageSize: this.pageSize }]);
+```tsx
+// Página: src/features/products/pages/ProductosListado.tsx
+import { useState } from 'react';
+import { useProductos } from '../hooks/use-productos.query';
+
+export function ProductosListado() {
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+
+  const query = useProductos({ page, pageSize });
+
+  if (query.isLoading) {
+    return <Skeleton />;
   }
+
+  return (
+    <>
+      <Tabla items={query.data?.data?.items ?? []} />
+      <Paginador
+        currentPage={query.data?.pagination?.page ?? 1}
+        totalPages={query.data?.pagination?.totalPages ?? 1}
+        onPageChange={(next) => setPage(next)}
+      />
+      <span>Total: {query.data?.pagination?.total} registros</span>
+    </>
+  );
 }
 ```
 

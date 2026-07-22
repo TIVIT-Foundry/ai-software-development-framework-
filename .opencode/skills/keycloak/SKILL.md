@@ -33,14 +33,14 @@ Activate this skill when:
 - Configuring JWT token validation
 - Implementing role-based access control with Keycloak roles
 - Managing multi-tenant realms in Keycloak
-- Implementing token refresh in frontend (Angular) and backend (FastAPI)
+- Implementing token refresh in frontend (React) and backend (FastAPI)
 - Syncing users between Keycloak and application database
 
 **Do not** activate when:
 
 - Using simple JWT without Keycloak (use `authentication`)
 - Only implementing basic RBAC (use `authorization`)
-- Working with frontend-only auth patterns (use `angular`)
+- Working with frontend-only auth patterns (use `react`)
 
 ## Relation to other skills
 
@@ -49,7 +49,7 @@ Activate this skill when:
 | `authentication` | Predecesora | Base JWT/OAuth2 patterns |
 | `authorization` | Complementaria | RBAC implementation details |
 | `security` | Complementaria | General security patterns |
-| `angular` | Consumidora | Frontend Keycloak integration |
+| `react` | Consumidora | Frontend Keycloak integration |
 | `backend-api` | Consumidora | Backend token validation |
 
 ## Critical Rules
@@ -68,7 +68,7 @@ Activate this skill when:
 3. **Set up RBAC** — Map Keycloak roles to application permissions
 4. **Configure token refresh** — Refresh tokens before expiry
 5. **Implement user sync** — Sync Keycloak users to application database
-6. **Add Angular interceptor** — HTTP interceptor for token injection
+6. **Add React fetch wrapper** — Typed `apiFetch` for token injection
 
 ## Code patterns
 
@@ -233,114 +233,104 @@ async def refresh_token(request: RefreshRequest):
         )
 ```
 
-### Angular HTTP Interceptor
+### React Fetch Wrapper with Refresh-on-401
 
 ```typescript
-import { Injectable, inject } from '@angular/core';
-import {
-  HttpRequest,
-  HttpHandler,
-  HttpEvent,
-  HttpInterceptorFn,
-  HttpErrorResponse
-} from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject, from } from 'rxjs';
-import { switchMap, catchError, filter, take } from 'rxjs/operators';
+// core/auth/keycloak-auth.store.ts
+import { create } from 'zustand';
 
-@Injectable({ providedIn: 'root' })
-export class KeycloakAuthService {
-  private accessToken = signal<string | null>(null);
-  private refreshToken = signal<string | null>(null);
-  
-  private isRefreshing = false;
-  private refreshTokenSubject = new BehaviorSubject<string | null>(null);
-  
-  private http = inject(HttpClient);
-  
-  async initialize(): Promise<void> {
-    // Check for existing tokens in storage
-    const storedAccess = localStorage.getItem('access_token');
-    const storedRefresh = localStorage.getItem('refresh_token');
-    
-    if (storedAccess && storedRefresh) {
-      this.accessToken.set(storedAccess);
-      this.refreshToken.set(storedRefresh);
-    }
-  }
-  
-  getToken(): string | null {
-    return this.accessToken();
-  }
-  
-  async login(username: string, password: string): Promise<void> {
-    const response = await firstValueFrom(
-      this.http.post<TokenResponse>('/api/auth/login', { username, password })
-    );
-    
-    this.setTokens(response);
-  }
-  
-  async refresh(): Promise<string> {
-    const refresh = this.refreshToken();
-    if (!refresh) {
-      throw new Error('No refresh token available');
-    }
-    
-    const response = await firstValueFrom(
-      this.http.post<TokenResponse>('/api/auth/refresh', { refresh_token: refresh })
-    );
-    
-    this.setTokens(response);
-    return response.access_token;
-  }
-  
-  private setTokens(response: TokenResponse): void {
-    this.accessToken.set(response.access_token);
-    this.refreshToken.set(response.refresh_token);
-    localStorage.setItem('access_token', response.access_token);
-    localStorage.setItem('refresh_token', response.refresh_token);
-  }
-  
-  logout(): void {
-    this.accessToken.set(null);
-    this.refreshToken.set(null);
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-  }
+interface TokenResponse {
+  access_token: string;
+  refresh_token: string;
 }
 
-export const keycloakInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(KeycloakAuthService);
-  const token = authService.getToken();
-  
-  if (!token) {
-    return next(req);
-  }
-  
-  const authReq = req.clone({
-    setHeaders: { Authorization: `Bearer ${token}` }
+interface KeycloakAuthState {
+  accessToken: string | null;
+  refreshToken: string | null;
+  initialize: () => void;
+  login: (username: string, password: string) => Promise<void>;
+  refresh: () => Promise<string>;
+  logout: () => void;
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
-  
-  return next(authReq).pipe(
-    catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !req.url.includes('/auth/refresh')) {
-        return from(authService.refresh()).pipe(
-          switchMap(newToken => {
-            const retryReq = req.clone({
-              setHeaders: { Authorization: `Bearer ${newToken}` }
-            });
-            return next(retryReq);
-          }),
-          catchError(() => {
-            authService.logout();
-            return throwError(() => error);
-          })
-        );
-      }
-      return throwError(() => error);
-    })
-  );
-};
+  if (!res.ok) throw new Error(`Auth request failed (${res.status})`);
+  return res.json() as Promise<T>;
+}
+
+export const useKeycloakAuthStore = create<KeycloakAuthState>((set, get) => ({
+  accessToken: null,
+  refreshToken: null,
+
+  initialize: () => {
+    const storedAccess = localStorage.getItem('access_token');
+    const storedRefresh = localStorage.getItem('refresh_token');
+    if (storedAccess && storedRefresh) {
+      set({ accessToken: storedAccess, refreshToken: storedRefresh });
+    }
+  },
+
+  login: async (username, password) => {
+    const response = await postJson<TokenResponse>('/api/auth/login', { username, password });
+    setTokens(response, set);
+  },
+
+  refresh: async () => {
+    const refreshToken = get().refreshToken;
+    if (!refreshToken) throw new Error('No refresh token available');
+
+    const response = await postJson<TokenResponse>('/api/auth/refresh', { refresh_token: refreshToken });
+    setTokens(response, set);
+    return response.access_token;
+  },
+
+  logout: () => {
+    set({ accessToken: null, refreshToken: null });
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  },
+}));
+
+function setTokens(response: TokenResponse, set: (partial: Partial<KeycloakAuthState>) => void): void {
+  set({ accessToken: response.access_token, refreshToken: response.refresh_token });
+  localStorage.setItem('access_token', response.access_token);
+  localStorage.setItem('refresh_token', response.refresh_token);
+}
+```
+
+```typescript
+// core/api/keycloak-fetch.ts — apiFetch with automatic refresh-and-retry on 401
+import { useKeycloakAuthStore } from '../auth/keycloak-auth.store';
+
+export async function keycloakFetch(input: RequestInfo, init: RequestInit = {}): Promise<Response> {
+  const { accessToken, refresh, logout } = useKeycloakAuthStore.getState();
+
+  const withAuth = (token: string | null): RequestInit => ({
+    ...init,
+    headers: { ...init.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+
+  const res = await fetch(input, withAuth(accessToken));
+
+  const isRefreshCall = typeof input === 'string' && input.includes('/auth/refresh');
+  if (res.status === 401 && !isRefreshCall) {
+    try {
+      const newToken = await refresh();
+      return fetch(input, withAuth(newToken));
+    } catch {
+      logout();
+      return res;
+    }
+  }
+
+  return res;
+}
+```
 ```
 
 ### User Sync Service
@@ -407,6 +397,6 @@ class KeycloakUserSync:
 - [ ] Token validation with signature verification
 - [ ] RBAC with realm roles
 - [ ] Token refresh implemented
-- [ ] Angular interceptor configured
+- [ ] React fetch wrapper configured
 - [ ] HTTPS enabled in production
 - [ ] User sync service implemented

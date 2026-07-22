@@ -134,8 +134,8 @@ export default defineConfig({
   workers: process.env.CI ? 4 : undefined,
   reporter: [['html', { outputFolder: 'playwright-report' }]],
   use: {
-    // Angular app served by Bun dev server
-    baseURL: process.env.BASE_URL || 'http://localhost:4200',
+    // React (Vite) app served alongside the Bun dev server
+    baseURL: process.env.BASE_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -145,9 +145,9 @@ export default defineConfig({
 });
 ```
 
-## Auth Fixture (JWT/OAuth2 — Angular HttpClient)
+## Auth Fixture (JWT/OAuth2 — React fetch client)
 
-Genera tokens de prueba directamente via API usando Angular `HttpClient` patterns (sin UI login) para máxima velocidad y fiabilidad en CI.
+Genera tokens de prueba directamente via API (sin UI login) para máxima velocidad y fiabilidad en CI.
 
 ```typescript
 // auth.fixture.ts — store auth state once, reuse across tests
@@ -205,10 +205,10 @@ export const test = base.extend<{
 export { expect } from '@playwright/test';
 ```
 
-**Uso en tests E2E** — inyecta cookies/token en el contexto del navegador para que Angular HttpClient lo consuma automáticamente:
+**Uso en tests E2E** — inyecta cookies/token en el contexto del navegador para que el fetch client de React lo consuma automáticamente:
 
 ```typescript
-// tests/e2e/fixtures/angular-auth.fixture.ts
+// tests/e2e/fixtures/react-auth.fixture.ts
 import { test as base } from '@playwright/test';
 import { authenticateViaAPI } from './auth.fixture';
 
@@ -225,7 +225,7 @@ export const test = base.extend({
       storageState: undefined,
     });
 
-    // Inject JWT token into localStorage (Angular AuthService reads it)
+    // Inject JWT token into localStorage (the Zustand auth store reads it)
     const page = await context.newPage();
     await page.goto('/');
     await page.evaluate((token) => {
@@ -644,7 +644,7 @@ services:
 // tests/e2e/utils/e2e-setup.ts
 import { execSync } from 'child_process';
 
-// Bun backend runs on port 8000, Angular on 4200
+// Bun backend runs on port 8000, React (Vite) on 5173
 const API_URL = process.env.API_URL || 'http://localhost:8000';
 
 export async function startE2EStack(): Promise<void> {
@@ -685,8 +685,8 @@ import { startE2EStack, stopE2EStack } from './tests/e2e/utils/e2e-setup';
 
 export default defineConfig({
   use: {
-    // Angular app served by Bun dev server on port 4200
-    baseURL: 'http://localhost:4200',
+    // React (Vite) app served alongside the Bun dev server on port 5173
+    baseURL: 'http://localhost:5173',
   },
 });
 ```

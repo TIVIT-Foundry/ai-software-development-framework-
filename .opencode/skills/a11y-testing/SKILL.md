@@ -24,7 +24,7 @@ metadata:
 
 ## Purpose
 
-Define automated accessibility testing for Angular applications using axe-core, Playwright, and keyboard navigation tests to ensure WCAG 2.2 AA compliance.
+Define automated accessibility testing for React applications using axe-core, Playwright, and keyboard navigation tests to ensure WCAG 2.2 AA compliance.
 
 ## When to use this skill
 

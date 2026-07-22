@@ -261,7 +261,7 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 - `tox.ini` coordina la ejecución de tests en múltiples entornos.
 - `alembic/` gestiona migraciones de base de datos con scripts por versión.
 
-### Angular monorepo
+### React monorepo
 
 ```
 {project-code}/
@@ -273,106 +273,89 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 ├── apps/
 │   ├── web/
 │   │   ├── src/
-│   │   │   ├── app/
-│   │   │   │   ├── core/
-│   │   │   │   │   ├── guards/
-│   │   │   │   │   │   ├── auth.guard.ts
-│   │   │   │   │   │   └── role.guard.ts
-│   │   │   │   │   ├── interceptors/
-│   │   │   │   │   │   ├── auth.interceptor.ts
-│   │   │   │   │   │   └── error.interceptor.ts
-│   │   │   │   │   ├── services/
-│   │   │   │   │   │   ├── auth.service.ts
-│   │   │   │   │   │   └── http.service.ts
-│   │   │   │   │   └── models/
-│   │   │   │   │       └── user.model.ts
-│   │   │   │   ├── shared/
-│   │   │   │   │   ├── components/
-│   │   │   │   │   │   ├── button/
-│   │   │   │   │   │   │   ├── button.component.ts
-│   │   │   │   │   │   │   ├── button.component.html
-│   │   │   │   │   │   │   └── button.component.scss
-│   │   │   │   │   │   └── table/
-│   │   │   │   │   │       ├── table.component.ts
-│   │   │   │   │   │       └── table.component.html
-│   │   │   │   │   ├── directives/
-│   │   │   │   │   │   └── permission.directive.ts
-│   │   │   │   │   └── pipes/
-│   │   │   │   │       └── format-currency.pipe.ts
-│   │   │   │   ├── features/
-│   │   │   │   │   ├── orders/
-│   │   │   │   │   │   ├── pages/
-│   │   │   │   │   │   │   ├── orders-list/
-│   │   │   │   │   │   │   │   ├── orders-list.component.ts
-│   │   │   │   │   │   │   │   └── orders-list.component.html
-│   │   │   │   │   │   │   └── order-detail/
-│   │   │   │   │   │   │       ├── order-detail.component.ts
-│   │   │   │   │   │   │       └── order-detail.component.html
-│   │   │   │   │   │   ├── services/
-│   │   │   │   │   │   │   └── orders.service.ts
-│   │   │   │   │   │   ├── models/
-│   │   │   │   │   │   │   └── order.model.ts
-│   │   │   │   │   │   ├── orders.routes.ts
-│   │   │   │   │   │   └── orders.module.ts
-│   │   │   │   │   └── products/
-│   │   │   │   │       ├── pages/
-│   │   │   │   │       │   └── products-list/
-│   │   │   │   │       │       └── products-list.component.ts
-│   │   │   │   │       ├── services/
-│   │   │   │   │       │   └── products.service.ts
-│   │   │   │   │       └── products.routes.ts
-│   │   │   │   ├── app.component.ts
-│   │   │   │   ├── app.component.html
-│   │   │   │   ├── app.config.ts
-│   │   │   │   └── app.routes.ts
+│   │   │   ├── core/
+│   │   │   │   ├── auth/
+│   │   │   │   │   ├── RequireAuth.tsx
+│   │   │   │   │   ├── RequireRole.tsx
+│   │   │   │   │   └── use-auth.ts
+│   │   │   │   ├── http/
+│   │   │   │   │   ├── api-client.ts
+│   │   │   │   │   └── query-client.ts
+│   │   │   │   └── types/
+│   │   │   │       └── user.types.ts
+│   │   │   ├── shared/
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── Button/
+│   │   │   │   │   │   ├── Button.tsx
+│   │   │   │   │   │   └── Button.module.scss
+│   │   │   │   │   └── Table/
+│   │   │   │   │       ├── Table.tsx
+│   │   │   │   │       └── Table.module.scss
+│   │   │   │   ├── hooks/
+│   │   │   │   │   └── use-permission.ts
+│   │   │   │   └── utils/
+│   │   │   │       └── format-currency.ts
+│   │   │   ├── features/
+│   │   │   │   ├── orders/
+│   │   │   │   │   ├── pages/
+│   │   │   │   │   │   ├── OrdersList.tsx
+│   │   │   │   │   │   └── OrderDetail.tsx
+│   │   │   │   │   ├── hooks/
+│   │   │   │   │   │   └── use-orders.ts
+│   │   │   │   │   ├── types/
+│   │   │   │   │   │   └── order.types.ts
+│   │   │   │   │   └── orders.routes.tsx
+│   │   │   │   └── products/
+│   │   │   │       ├── pages/
+│   │   │   │       │   └── ProductsList.tsx
+│   │   │   │       ├── hooks/
+│   │   │   │       │   └── use-products.ts
+│   │   │   │       └── products.routes.tsx
+│   │   │   ├── App.tsx
+│   │   │   ├── routes.tsx
 │   │   │   ├── assets/
 │   │   │   │   ├── i18n/
 │   │   │   │   │   ├── en.json
 │   │   │   │   │   └── es.json
 │   │   │   │   └── images/
-│   │   │   ├── environments/
-│   │   │   │   ├── environment.ts
-│   │   │   │   ├── environment.development.ts
-│   │   │   │   └── environment.production.ts
 │   │   │   ├── styles/
 │   │   │   │   ├── _variables.scss
 │   │   │   │   ├── _mixins.scss
 │   │   │   │   └── styles.scss
 │   │   │   ├── index.html
-│   │   │   └── main.ts
-│   │   ├── angular.json
+│   │   │   └── main.tsx
+│   │   ├── vite.config.ts
 │   │   ├── tsconfig.json
 │   │   ├── tsconfig.app.json
-│   │   ├── tsconfig.spec.json
+│   │   ├── tsconfig.node.json
 │   │   ├── package.json
-│   │   ├── karma.conf.js
+│   │   ├── vitest.config.ts
 │   │   ├── .eslintrc.json
 │   │   ├── Dockerfile
 │   │   └── README.md
 │   └── admin/
 │       ├── src/
-│       │   └── app/
-│       │       ├── features/
-│       │       │   └── dashboard/
-│       │       └── app.component.ts
-│       ├── angular.json
+│       │   ├── features/
+│       │   │   └── dashboard/
+│       │   └── App.tsx
+│       ├── vite.config.ts
 │       └── package.json
 ├── libs/
 │   ├── ui-components/
 │   │   ├── src/
 │   │   │   ├── lib/
-│   │   │   │   ├── button/
-│   │   │   │   ├── table/
+│   │   │   │   ├── Button/
+│   │   │   │   ├── Table/
 │   │   │   │   └── form-controls/
 │   │   │   └── index.ts
 │   │   ├── package.json
-│   │   └── ng-package.json
+│   │   └── tsup.config.ts
 │   ├── auth/
 │   │   ├── src/
 │   │   │   └── lib/
-│   │   │       ├── auth.service.ts
-│   │   │       ├── auth.guard.ts
-│   │   │       └── auth.interceptor.ts
+│   │   │       ├── use-auth.ts
+│   │   │       ├── RequireAuth.tsx
+│   │   │       └── api-client.ts
 │   │   └── package.json
 │   └── shared-utils/
 │       ├── src/
@@ -394,14 +377,14 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 ```
 
 **Observaciones:**
-- Se usa **Angular standalone components** (sin NgModules en features nuevas) con `app.config.ts` standalone bootstrap.
-- Los feature modules se cargan con **lazy loading** vía `loadChildren` en `*.routes.ts`.
-- `core/` contiene servicios singleton (auth, interceptors, guards); `shared/` contiene componentes/pipes/directives reutilizables.
-- `environments/` separa configuración por ambiente (development, production, staging).
-- `libs/` aloja bibliotecas publicables (`ng-package.json`) reutilizables entre apps.
-- `nx.json` coordina caching, affected commands y task orchestration en monorepos Angular.
+- Se usan **function components + hooks** (sin clases) con `App.tsx` como raíz de providers (React Query, Router).
+- Los feature modules se cargan con **code-splitting** vía `React.lazy()` + `Suspense` en `*.routes.tsx`.
+- `core/` contiene hooks singleton y clientes (auth, `apiFetch`, query client); `shared/` contiene componentes/hooks/utils reutilizables.
+- La configuración por ambiente se maneja vía `import.meta.env` (`.env`, `.env.development`, `.env.production`) leído por Vite.
+- `libs/` aloja bibliotecas publicables (bundleadas con `tsup`) reutilizables entre apps.
+- `nx.json` coordina caching, affected commands y task orchestration en monorepos React.
 - `tsconfig.base.json` define path aliases compartidos (`@app/core`, `@app/shared`, `@libs/ui-components`).
-- `assets/i18n/` contiene archivos de traducción consumidos por `@ngx-translate/core`.
+- `assets/i18n/` contiene archivos de traducción consumidos por `react-i18next`.
 - Los estilos globales viven en `src/styles/` con parciales SCSS (`_variables.scss`, `_mixins.scss`).
 
 ### Bun (TypeScript) monorepo
@@ -555,7 +538,7 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 - `tsconfig.base.json` define `paths` aliases y `compilerOptions` compartidos (strict mode, `moduleResolution: bundler`).
 - `src/` layout estándar; el entry point es `src/index.ts` que re-exports la API pública.
 
-### Monorepo multi-stack (Bun backend + Angular frontend + Python AI/ML)
+### Monorepo multi-stack (Bun backend + React frontend + Python AI/ML)
 
 ```
 {project-code}/
@@ -566,22 +549,17 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 │       ├── ci-ai.yml
 │       └── security-scan.yml
 ├── apps/
-│   ├── web/                          # Angular frontend
+│   ├── web/                          # React frontend
 │   │   ├── src/
-│   │   │   ├── app/
-│   │   │   │   ├── core/
-│   │   │   │   ├── shared/
-│   │   │   │   ├── features/
-│   │   │   │   │   ├── orders/
-│   │   │   │   │   └── products/
-│   │   │   │   ├── app.component.ts
-│   │   │   │   ├── app.config.ts
-│   │   │   │   └── app.routes.ts
-│   │   │   ├── environments/
-│   │   │   │   ├── environment.ts
-│   │   │   │   └── environment.production.ts
-│   │   │   └── main.ts
-│   │   ├── angular.json
+│   │   │   ├── core/
+│   │   │   ├── shared/
+│   │   │   ├── features/
+│   │   │   │   ├── orders/
+│   │   │   │   └── products/
+│   │   │   ├── App.tsx
+│   │   │   ├── routes.tsx
+│   │   │   └── main.tsx
+│   │   ├── vite.config.ts
 │   │   ├── tsconfig.json
 │   │   ├── package.json
 │   │   └── Dockerfile
@@ -630,11 +608,11 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 │       ├── Dockerfile
 │       └── README.md
 ├── libs/
-│   ├── ui-components/                # Angular UI lib
+│   ├── ui-components/                # React UI lib
 │   │   ├── src/
 │   │   │   └── lib/
 │   │   ├── package.json
-│   │   └── ng-package.json
+│   │   └── tsup.config.ts
 │   ├── shared-ts/                    # Bun/TS shared contracts
 │   │   ├── src/
 │   │   │   ├── index.ts
@@ -649,7 +627,7 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 │       │       └── exceptions.py
 │       └── pyproject.toml
 ├── packages/
-│   ├── sdk-client/                   # TS SDK para consumir API desde Angular
+│   ├── sdk-client/                   # TS SDK para consumir API desde React
 │   │   ├── src/
 │   │   │   ├── index.ts
 │   │   │   └── client.ts
@@ -686,15 +664,15 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 ```
 
 **Observaciones:**
-- **Tres stacks coexisten**: Angular (`apps/web`), Bun/TypeScript (`apps/api`), Python/FastAPI (`apps/ai-orchestrator`).
-- **OpenAPI spec** en `packages/openapi-spec/` es el contrato compartido (source of truth); `scripts/generate-sdk.sh` genera el SDK TypeScript consumido por Angular.
+- **Tres stacks coexisten**: React (`apps/web`), Bun/TypeScript (`apps/api`), Python/FastAPI (`apps/ai-orchestrator`).
+- **OpenAPI spec** en `packages/openapi-spec/` es el contrato compartido (source of truth); `scripts/generate-sdk.sh` genera el SDK TypeScript consumido por React.
 - **CI separado por stack**: workflows independientes (`ci-backend.yml`, `ci-frontend.yml`, `ci-ai.yml`) para paralelismo y caches diferenciados.
 - **Makefile** orquesta comandos跨-stack: `make dev` levanta los 3 servicios, `make test` corre tests de los 3 stacks, `make lint` aplica Biome (TS) + ruff/mypy (Python).
 - **nx.json** coordina affected builds y caching considerando dependencias entre apps y libs de distintos stacks.
-- `libs/` se divide por lenguaje: `ui-components` (Angular), `shared-ts` (Bun), `shared-py` (Python).
+- `libs/` se divide por lenguaje: `ui-components` (React), `shared-ts` (Bun), `shared-py` (Python).
 - `infra/` centraliza Terraform con módulos reutilizables y environments separados.
 - `docs/adr/` guarda Architecture Decision Records documentando decisiones como la adopción del multi-stack monorepo.
-- El AI/ML core en Python expone endpoints consumidos por el Bun backend (BFF pattern), no directamente por Angular.
+- El AI/ML core en Python expone endpoints consumidos por el Bun backend (BFF pattern), no directamente por React.
 
 ## Convenciones de nomenclatura
 

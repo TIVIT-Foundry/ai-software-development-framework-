@@ -116,7 +116,7 @@ docker compose build --no-cache api  # Rebuild service
 2. `docker compose up -d`
 3. `docker compose ps` — verify all healthy
 4. `curl http://localhost:8000/health` — verify API running
-5. Run frontend dev server separately: `ng serve` (Angular) o `bun --watch src/main.ts` (Bun backend)
+5. Run frontend dev server separately: `vite` (React) o `bun --watch src/main.ts` (Bun backend)
 
 ## .dockerignore
 ```

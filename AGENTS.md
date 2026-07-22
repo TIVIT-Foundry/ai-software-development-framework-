@@ -14,7 +14,7 @@ Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 102 skills,
 | AI/ML core | Python + FastAPI |
 | Backend general | Bun (TypeScript) |
 | Orchestration LLM | LangChain/LangGraph |
-| Frontend | Angular |
+| Frontend | React (Vite) |
 | Database | PostgreSQL + pgvector |
 | Cache/Colas | Redis + Kafka |
 | Auth | OAuth2/JWT o Keycloak |

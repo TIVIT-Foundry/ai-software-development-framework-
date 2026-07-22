@@ -1,6 +1,6 @@
 # ============================================================================
 # GitLab CI — Full Pipeline
-# Stacks: Python 3.12 (FastAPI) + Angular 18+ (pnpm) + Bun (TypeScript)
+# Stacks: Python 3.12 (FastAPI) + React 18+ (Vite, pnpm) + Bun (TypeScript)
 # Stages: lint → test → security → build → deploy
 # ============================================================================
 # Usage:
@@ -112,8 +112,8 @@ python-lint:
     paths:
       - backend/.pip-cache/
 
-# ── Angular Lint ──────────────────────────────────────────────
-angular-lint:
+# ── React Lint ──────────────────────────────────────────────
+react-lint:
   stage: lint
   image: node:${NODE_VERSION}
   <<: *rules-frontend
@@ -122,7 +122,7 @@ angular-lint:
     - cd frontend
     - pnpm install --frozen-lockfile
   script:
-    - pnpm ng lint
+    - pnpm eslint . --max-warnings=0
     - pnpm tsc --noEmit
   cache:
     key:
@@ -181,8 +181,8 @@ python-test:
     expire_in: 7 days
   coverage: '/TOTAL.*\s+(\d+\.?\d*%)$/'
 
-# ── Angular Test ──────────────────────────────────────────────
-angular-test:
+# ── React Test ──────────────────────────────────────────────
+react-test:
   stage: test
   image: node:${NODE_VERSION}
   <<: *rules-frontend
@@ -190,10 +190,8 @@ angular-test:
     - corepack enable
     - cd frontend
     - pnpm install --frozen-lockfile
-    - apt-get update && apt-get install -y chromium
-    - export CHROME_BIN=chromium
   script:
-    - pnpm ng test --code-coverage --watch=false --browsers=ChromeHeadless
+    - pnpm vitest run --coverage
   artifacts:
     when: always
     paths:
@@ -286,8 +284,8 @@ build-python:
     - docker push $REGISTRY/$CI_PROJECT_PATH/api:$IMAGE_TAG
     - docker push $REGISTRY/$CI_PROJECT_PATH/api:latest
 
-# ── Build Angular ─────────────────────────────────────────────
-build-angular:
+# ── Build React ─────────────────────────────────────────────
+build-react:
   stage: build
   image: docker:24
   services:

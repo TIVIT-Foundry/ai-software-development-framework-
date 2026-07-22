@@ -1,6 +1,6 @@
 # Project Scaffold Template — Multi-Stack
 
-> Stack: **Python 3.12 / FastAPI** + **Angular 17+** + **Bun (TypeScript)**
+> Stack: **Python 3.12 / FastAPI** + **React 18+** + **Bun (TypeScript)**
 > Database: PostgreSQL 16 + Redis 7 | Orchestration: LangChain/LangGraph
 > IAAS: Terraform | CI/CD: GitHub Actions | Observability: Prometheus + Grafana + OpenTelemetry
 
@@ -97,60 +97,55 @@
 │   ├── .env.example                     # Template for environment variables
 │   └── README.md
 │
-├── frontend/                            # ── Angular 17+ ────────────────────────
+├── frontend/                            # ── React 18+ (Vite) ────────────────────
 │   ├── src/
-│   │   ├── main.ts                      # Angular bootstrap
-│   │   ├── app/
-│   │   │   ├── app.component.ts
-│   │   │   ├── app.config.ts            # Standalone app config (providers, routes)
-│   │   │   ├── app.routes.ts            # Top-level route definitions
-│   │   │   │
-│   │   │   ├── core/                    # Singleton services & guards
-│   │   │   │   ├── auth/
-│   │   │   │   │   ├── auth.service.ts
-│   │   │   │   │   ├── auth.guard.ts
-│   │   │   │   │   └── auth.interceptor.ts
-│   │   │   │   ├── http/
-│   │   │   │   │   ├── api-client.service.ts
-│   │   │   │   │   └── error.interceptor.ts
-│   │   │   │   ├── i18n/
-│   │   │   │   │   ├── translate.loader.ts
-│   │   │   │   │   └── locale/          # Translation files per language
-│   │   │   │   │       ├── en.json
-│   │   │   │   │       └── es.json
-│   │   │   │   └── state/
-│   │   │   │       └── app-state.service.ts
-│   │   │   │
-│   │   │   ├── shared/                  # Shared UI components & directives
-│   │   │   │   ├── components/
-│   │   │   │   │   ├── data-table/
-│   │   │   │   │   ├── confirm-dialog/
-│   │   │   │   │   ├── loading-spinner/
-│   │   │   │   │   └── page-header/
-│   │   │   │   ├── directives/
-│   │   │   │   └── pipes/
-│   │   │   │
-│   │   │   └── features/                # Lazy-loaded feature modules
-│   │   │       ├── users/
-│   │   │       │   ├── users.routes.ts
-│   │   │       │   ├── pages/
-│   │   │       │   │   ├── user-list/
-│   │   │       │   │   │   ├── user-list.component.ts
-│   │   │       │   │   │   ├── user-list.component.html
-│   │   │       │   │   │   └── user-list.component.scss
-│   │   │       │   │   └── user-detail/
-│   │   │       │   │       └── ...
-│   │   │       │   ├── services/
-│   │   │       │   │   └── user.service.ts
-│   │   │       │   ├── models/
-│   │   │       │   │   └── user.model.ts
-│   │   │       │   └── store/
-│   │   │       │       └── user.store.ts
-│   │   │       ├── orders/
-│   │   │       │   └── ...
-│   │   │       └── dashboard/
-│   │   │           └── ...
+│   │   ├── main.tsx                     # React bootstrap (ReactDOM.createRoot)
+│   │   ├── App.tsx                      # Root component (providers, router)
+│   │   ├── routes.tsx                   # Top-level route definitions (react-router-dom)
 │   │   │
+│   │   ├── core/                        # Singleton hooks, clients & guards
+│   │   │   ├── auth/
+│   │   │   │   ├── use-auth.ts
+│   │   │   │   ├── RequireAuth.tsx      # Guard wrapper route (<Outlet />)
+│   │   │   │   └── auth.store.ts        # Zustand store
+│   │   │   ├── http/
+│   │   │   │   ├── api-client.ts        # apiFetch() wrapper
+│   │   │   │   └── query-client.ts      # @tanstack/react-query client
+│   │   │   ├── i18n/
+│   │   │   │   ├── i18n.ts              # react-i18next config
+│   │   │   │   └── locale/              # Translation files per language
+│   │   │   │       ├── en.json
+│   │   │   │       └── es.json
+│   │   │   └── state/
+│   │   │       └── app.store.ts         # Zustand store
+│   │   │
+│   │   ├── shared/                      # Shared UI components & hooks
+│   │   │   ├── components/
+│   │   │   │   ├── data-table/
+│   │   │   │   ├── confirm-dialog/
+│   │   │   │   ├── loading-spinner/
+│   │   │   │   └── page-header/
+│   │   │   ├── hooks/
+│   │   │   └── utils/
+│   │   │
+│   │   └── features/                    # Code-split feature modules (React.lazy)
+│   │       ├── users/
+│   │       │   ├── users.routes.tsx
+│   │       │   ├── pages/
+│   │       │   │   ├── UserList.tsx
+│   │       │   │   └── UserDetail/
+│   │       │   │       └── ...
+│   │       │   ├── hooks/
+│   │       │   │   └── use-users.ts     # react-query queries/mutations
+│   │       │   ├── types/
+│   │       │   │   └── user.types.ts
+│   │       │   └── store/
+│   │       │       └── user.store.ts    # Zustand store
+│   │       ├── orders/
+│   │       │   └── ...
+│   │       └── dashboard/
+│   │           └── ...
+│   │
 │   │   ├── assets/
 │   │   │   ├── images/
 │   │   │   ├── icons/
@@ -160,10 +155,9 @@
 │   │   │       ├── _mixins.scss
 │   │   │       └── styles.scss          # Global styles entry point
 │   │   │
-│   │   └── environments/
-│   │       ├── environment.ts           # Production
-│   │       ├── environment.staging.ts
-│   │       └── environment.local.ts     # Local dev (gitignored)
+│   │   └── config/
+│   │       ├── env.ts                   # Reads import.meta.env (production)
+│   │       └── env.local.ts             # Local dev (gitignored)
 │   │
 │   ├── e2e/                             # Playwright E2E tests
 │   │   ├── page-objects/
@@ -174,15 +168,14 @@
 │   │   │   └── users.spec.ts
 │   │   └── playwright.config.ts
 │   │
-│   ├── angular.json
+│   ├── vite.config.ts                   # Build, dev server, proxy to backend (server.proxy)
 │   ├── tsconfig.json
 │   ├── tsconfig.app.json
-│   ├── tsconfig.spec.json
+│   ├── tsconfig.node.json
 │   ├── .eslintrc.json
 │   ├── .prettierrc
-│   ├── proxy.conf.json                  # Dev server proxy to backend
 │   ├── Dockerfile
-│   ├── nginx.conf                       # Production NGINX config for Angular SPA
+│   ├── nginx.conf                       # Production NGINX config for React SPA
 │   └── README.md
 │
 ├── bun-service/                         # ── Bun (TypeScript) Microservice ──────
@@ -225,7 +218,7 @@
 │   ├── contracts/                       # Inter-service contracts
 │   │   ├── user-events.json
 │   │   └── order-events.json
-│   ├── types/                           # Shared TypeScript types (Angular + Bun)
+│   ├── types/                           # Shared TypeScript types (React + Bun)
 │   │   ├── api-response.ts
 │   │   ├── pagination.ts
 │   │   └── user.ts
@@ -304,8 +297,10 @@
 | Python modules | `snake_case` | `user_service.py`, `test_users_api.py` |
 | Python classes | `PascalCase` | `UserService`, `CreateUserRequest` |
 | Python constants | `UPPER_SNAKE_CASE` | `MAX_PAGE_SIZE` |
-| TypeScript files | `kebab-case` | `user-list.component.ts`, `auth.service.ts` |
-| TypeScript classes | `PascalCase` | `UserService`, `AuthGuard` |
+| TypeScript components | `PascalCase.tsx` | `UserList.tsx`, `RequireAuth.tsx` |
+| TypeScript hooks | `use-{name}.ts` | `use-auth.ts`, `use-users.ts` |
+| TypeScript stores | `{name}.store.ts` | `auth.store.ts`, `user.store.ts` |
+| TypeScript types | `{name}.types.ts` | `user.types.ts` |
 | TypeScript interfaces | `PascalCase` | `UserResponse`, `PaginationMeta` |
 | Database tables | `snake_case`, plural | `users`, `order_items` |
 | Database schemas | `snake_case` | `users`, `orders`, `audit` |
@@ -368,22 +363,17 @@ REDIS_URL=redis://localhost:6379/0
 JWT_SECRET_KEY=change-me-in-production
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
-CORS_ORIGINS=http://localhost:4200,http://localhost:3000
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 LOG_LEVEL=DEBUG
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 ```
 
-**Angular Frontend** (`environment.local.ts`):
-```typescript
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:8000',
-  wsUrl: 'ws://localhost:8000/ws',
-  auth: {
-    issuer: 'http://localhost:8080/auth/realms/app',
-    clientId: 'angular-app',
-  },
-};
+**React Frontend** (`.env.local`):
+```bash
+VITE_API_URL=http://localhost:8000
+VITE_WS_URL=ws://localhost:8000/ws
+VITE_AUTH_ISSUER=http://localhost:8080/auth/realms/app
+VITE_AUTH_CLIENT_ID=react-app
 ```
 
 **Bun Backend** (`.env`):
@@ -400,12 +390,12 @@ LOG_LEVEL=debug
 
 ## Quality Gates
 
-| Gate | Python | Angular | Bun |
+| Gate | Python | React | Bun |
 |------|--------|---------|-----|
-| **Lint** | `ruff check` | `ng lint` (eslint) | `bunx eslint` |
+| **Lint** | `ruff check` | `eslint .` | `bunx eslint` |
 | **Format** | `ruff format` | `prettier --check` | `prettier --check` |
-| **Type check** | `mypy` | `ng build` (strict) | `tsc --noEmit` |
-| **Unit tests** | `pytest` | `ng test --watch=false` | `bun test` |
+| **Type check** | `mypy` | `tsc --noEmit` | `tsc --noEmit` |
+| **Unit tests** | `pytest` | `vitest run` | `bun test` |
 | **Coverage min** | 70% | 70% | 70% |
 | **Integration** | `pytest -m integration` | — | `bun test --integration` |
 | **E2E** | — | Playwright | — |
@@ -444,15 +434,15 @@ cp .env.example .env
 bun install
 bun run src/index.ts
 
-# 5. Angular frontend
+# 5. React frontend
 cd frontend
 bun install
-ng serve --configuration=local --port 4200
+npm run dev -- --port 5173
 
 # 6. Verify
 curl http://localhost:8000/health    # → 200 OK
 curl http://localhost:3000/health    # → 200 OK
-open http://localhost:4200           # → Angular app loads
+open http://localhost:5173           # → React app loads
 ```
 
 ---
@@ -468,9 +458,9 @@ open http://localhost:4200           # → Angular app loads
 | PostgreSQL | 16 | Primary database |
 | pgvector | 0.7.x | Vector similarity search |
 | Redis | 7.x | Cache + message broker |
-| Node.js | 20 LTS | Angular build runtime |
-| Angular | 17.x | Frontend framework (standalone) |
-| Angular Material | 17.x | UI component library |
+| Node.js | 20 LTS | React build runtime |
+| React | 18.x | Frontend framework (function components + hooks) |
+| Vite | 5.x | Build tool & dev server |
 | Bun | 1.1.x | TypeScript backend runtime |
 | Hono | 4.x | Bun HTTP framework |
 | Drizzle ORM | 0.30.x | TypeScript ORM for Bun |

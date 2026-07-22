@@ -12,7 +12,7 @@ metadata:
   - backend-api
   - security
   consumed_by:
-  - angular
+  - react
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency
@@ -398,7 +398,7 @@ CREATE TABLE {schema}.file_metadata (
 - Servicio `IThumbnailService` con generación automática al subir imágenes.
 
 ### F. Consumidores de esta skill
-- `angular` consume los endpoints con un componente `<app-file-upload>`;
+- `react` consume los endpoints con un componente `<FileUpload />`;
 - `security` valida que los archivos cumplen las reglas de seguridad;
 - `database-sp` almacena la metadata de archivos;
 - `playwright` testea el flujo completo de upload/download.

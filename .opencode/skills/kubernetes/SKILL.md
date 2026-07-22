@@ -27,7 +27,7 @@ Define how services are packaged and deployed to Kubernetes in the framework, in
 ## When to use this skill
 
 Activate when:
-- Deploying FastAPI, Bun, or Angular services to Kubernetes
+- Deploying FastAPI, Bun, or React services to Kubernetes
 - Designing namespace strategy per tenant/environment
 - Adding HPA, PDBs, or network policies
 

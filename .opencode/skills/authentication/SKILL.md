@@ -2,7 +2,7 @@
 name: authentication
 description: 'Authentication patterns: token-based auth, session management, identity
   propagation. Covers Keycloak as IdP, OAuth2/OIDC with python-jose + passlib + FastAPI,
-  Angular HTTP interceptors and route guards. Trigger: When implementing login, logout,
+  React fetch wrappers and route guards. Trigger: When implementing login, logout,
   tokens, session management, or auth flow.'
 version: 2.0
 metadata:
@@ -52,7 +52,7 @@ Activate this skill when:
 - Configuring JWT token validation and JWKS endpoints
 - Implementing BFF (Backend-For-Frontend) patterns for auth
 - Setting up passkeys / WebAuthn authentication
-- Configuring silent refresh and token rotation in Angular
+- Configuring silent refresh and token rotation in React
 - Propagating user identity across microservices
 
 Do not activate when:
@@ -511,23 +511,20 @@ async def bff_logout(response: Response):
     return {"status": "ok"}
 ```
 
-**Ejemplo Angular (BFF — sin manejo de tokens)**:
+**Ejemplo React (BFF — sin manejo de tokens)**:
 ```typescript
 // El frontend solo llama al BFF; las cookies se envían automáticamente
 // No hay manejo de tokens en el frontend
 
-// api.service.ts
-@Injectable({ providedIn: 'root' })
-export class ApiService {
-  private http = inject(HttpClient);
-
-  getOrders() {
-    return this.http.get<Order[]>('/bff/api/orders', { withCredentials: true });
-  }
+// core/api/orders.api.ts
+export async function getOrders(): Promise<Order[]> {
+  const res = await fetch('/bff/api/orders', { credentials: 'include' });
+  if (!res.ok) throw new Error('Failed to load orders');
+  return res.json();
 }
 
 // logout
-logout() {
+export function logout() {
   window.location.href = '/bff/logout';
 }
 ```
@@ -579,114 +576,116 @@ async def refresh_token(refresh_request: RefreshRequest):
 - **Refresh token** → cookie httpOnly + SameSite=Strict (rotación obligatoria)
 - **Suspensión de sesión** → service worker con silent refresh antes de expiración
 
-#### Silent Refresh (Frontend Angular)
+#### Silent Refresh (Frontend React)
 
 ```typescript
-// auth.interceptor.ts — HTTP Interceptor para adjuntar tokens
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  private authService = inject(AuthService);
+// core/auth/auth.store.ts — estado de autenticación con refresh automático
+import { create } from 'zustand';
 
-  intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    const token = this.authService.getAccessToken();
-    if (token) {
-      const cloned = req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` },
-      });
-      return next.handle(cloned);
-    }
-    return next.handle(req);
-  }
+interface AuthState {
+  accessToken: string | null;
+  refreshTimeout: ReturnType<typeof setTimeout> | null;
+  login: (username: string, password: string) => Promise<void>;
+  refresh: () => Promise<void>;
+  logout: () => void;
+  isAuthenticated: () => boolean;
 }
 
-// auth.guard.ts — Route Guard para proteger rutas
-@Injectable({ providedIn: 'root' })
-export class AuthGuard implements CanActivate {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-
-  canActivate(): boolean {
-    if (this.authService.isAuthenticated()) {
-      return true;
-    }
-    this.router.navigate(['/login']);
-    return false;
-  }
+async function postAuth(path: string, body?: unknown): Promise<AuthResponse> {
+  const res = await fetch(path, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error('Auth request failed');
+  return res.json();
 }
 
-// auth.service.ts — Servicio de autenticación con refresh automático
-@Injectable({ providedIn: 'root' })
-export class AuthService {
-  private http = inject(HttpClient);
-  private refreshTimeout: ReturnType<typeof setTimeout>;
+export const useAuthStore = create<AuthState>((set, get) => ({
+  accessToken: null,
+  refreshTimeout: null,
 
-  private accessToken: string | null = null;
-  private refreshToken: string | null = null;
+  login: async (username, password) => {
+    const res = await postAuth('/auth/login', { username, password });
+    set({ accessToken: res.access_token });
+    scheduleRefresh(res.expires_in, get, set);
+  },
 
-  login(username: string, password: string): Observable<void> {
-    return this.http.post<AuthResponse>('/auth/login', { username, password }).pipe(
-      tap((res) => {
-        this.setTokens(res.access_token, res.refresh_token);
-        this.scheduleRefresh(res.expires_in);
-      }),
-    );
-  }
+  refresh: async () => {
+    try {
+      const res = await postAuth('/auth/refresh');
+      set({ accessToken: res.access_token });
+      scheduleRefresh(res.expires_in, get, set);
+    } catch {
+      get().logout();
+      throw new Error('Session expired');
+    }
+  },
 
-  refresh(): Observable<void> {
-    return this.http.post<AuthResponse>('/auth/refresh', {}, { withCredentials: true }).pipe(
-      tap((res) => {
-        this.setTokens(res.access_token, res.refresh_token);
-        this.scheduleRefresh(res.expires_in);
-      }),
-      catchError(() => {
-        this.logout();
-        return throwError(() => new Error('Session expired'));
-      }),
-    );
-  }
+  logout: () => {
+    const timeout = get().refreshTimeout;
+    if (timeout) clearTimeout(timeout);
+    set({ accessToken: null, refreshTimeout: null });
+    fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+  },
 
-  private scheduleRefresh(expiresIn: number): void {
-    // Refrescar 30 segundos antes de expirar
-    clearTimeout(this.refreshTimeout);
-    this.refreshTimeout = setTimeout(() => this.refresh().subscribe(), (expiresIn - 30) * 1000);
-  }
+  isAuthenticated: () => !!get().accessToken,
+}));
 
-  getAccessToken(): string | null {
-    return this.accessToken;
-  }
-
-  isAuthenticated(): boolean {
-    return !!this.accessToken;
-  }
-
-  logout(): void {
-    this.accessToken = null;
-    this.refreshToken = null;
-    clearTimeout(this.refreshTimeout);
-    this.http.post('/auth/logout', {}, { withCredentials: true }).subscribe();
-  }
-
-  private setTokens(access: string, refresh: string): void {
-    this.accessToken = access;
-    this.refreshToken = refresh;
-  }
+function scheduleRefresh(
+  expiresIn: number,
+  get: () => AuthState,
+  set: (partial: Partial<AuthState>) => void,
+): void {
+  const prev = get().refreshTimeout;
+  if (prev) clearTimeout(prev);
+  // Refrescar 30 segundos antes de expirar
+  const timeout = setTimeout(() => get().refresh(), (expiresIn - 30) * 1000);
+  set({ refreshTimeout: timeout });
 }
 ```
 
-**Registro del interceptor y guards (app.config.ts):**
 ```typescript
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withRouteInitialization } from '@angular/router';
-import { authInterceptor } from './interceptors/auth.interceptor';
-import { authGuard } from './guards/auth.guard';
+// core/api/fetch-client.ts — adjunta el access token a cada request
+import { useAuthStore } from '../auth/auth.store';
 
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideHttpClient(withInterceptors([authInterceptor])),
-    provideRouter([
-      { path: 'dashboard', canActivate: [authGuard], loadComponent: ... },
-      { path: 'login', loadComponent: ... },
-    ]),
-  ],
-};
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = useAuthStore.getState().accessToken;
+  const res = await fetch(path, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init.headers,
+    },
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<T>;
+}
+```
+
+```tsx
+// core/auth/RequireAuth.tsx — Route Guard para proteger rutas
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuthStore } from './auth.store';
+
+export function RequireAuth() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+}
+```
+
+**Registro en el router (router.tsx):**
+```tsx
+import { createBrowserRouter } from 'react-router-dom';
+import { RequireAuth } from './core/auth/RequireAuth';
+
+const router = createBrowserRouter([
+  {
+    element: <RequireAuth />,
+    children: [{ path: 'dashboard', element: <DashboardPage /> }],
+  },
+  { path: 'login', element: <LoginPage /> },
+]);
 ```

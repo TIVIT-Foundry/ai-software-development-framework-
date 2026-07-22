@@ -1,0 +1,54 @@
+import type {
+  ${ENTITY}ListItem,
+  ${ENTITY}CreateRequest,
+  ${ENTITY}UpdateRequest,
+  ${ENTITY}ListResponse,
+  ${ENTITY}QueryParams,
+} from './${entity}.model';
+
+const BASE_URL = '/api/${entities}';
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+  });
+  if (!res.ok) {
+    const message = await res.text().catch(() => res.statusText);
+    throw new Error(message || `Request failed (${res.status})`);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+function buildQuery(params: ${ENTITY}QueryParams): string {
+  const search = new URLSearchParams();
+  if (params.page) search.set('page', String(params.page));
+  if (params.pageSize) search.set('page_size', String(params.pageSize));
+  if (params.sortBy) search.set('sort_by', params.sortBy);
+  if (params.sortOrder) search.set('sort_order', params.sortOrder);
+  if (params.searchFilter) search.set('search_filter', params.searchFilter);
+  return search.toString();
+}
+
+/**
+ * Typed API client for ${entities}.
+ * For automatic caching, invalidation, and optimistic updates, wrap
+ * these calls with @tanstack/react-query — see the react-services skill.
+ */
+export const ${ENTITY}Api = {
+  list: (params: ${ENTITY}QueryParams = {}): Promise<${ENTITY}ListResponse> =>
+    request<${ENTITY}ListResponse>(`${BASE_URL}?${buildQuery(params)}`),
+
+  get: (id: number): Promise<${ENTITY}ListItem> =>
+    request<${ENTITY}ListItem>(`${BASE_URL}/${id}`),
+
+  create: (body: ${ENTITY}CreateRequest): Promise<${ENTITY}ListItem> =>
+    request<${ENTITY}ListItem>(BASE_URL, { method: 'POST', body: JSON.stringify(body) }),
+
+  update: (id: number, body: ${ENTITY}UpdateRequest): Promise<${ENTITY}ListItem> =>
+    request<${ENTITY}ListItem>(`${BASE_URL}/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  remove: (id: number): Promise<void> =>
+    request<void>(`${BASE_URL}/${id}`, { method: 'DELETE' }),
+};

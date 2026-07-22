@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: 'Code review checklist before creating PRs. Applies to Angular frontend,
+description: 'Code review checklist before creating PRs. Applies to React frontend,
   Bun (TypeScript) backend, and PostgreSQL database layer. Includes Keycloak/OAuth2
   security checks and OpenTelemetry observability. Trigger: Before committing code,
   creating PRs, or when asked to review.'
@@ -63,13 +63,13 @@ mcp_usage: none
 | Logging | Structured logging, no sensitive data, correlation IDs |
 | Security | Keycloak JWT validation, RBAC enforcement, CORS configured |
 
-### Frontend (Angular)
+### Frontend (React)
 | Check | Look For |
 |-------|----------|
-| Components | Standalone components, proper lifecycle hooks (`OnInit`, `OnDestroy`, `OnChanges`) |
-| Signals | Use signals for reactive state, avoid manual `ChangeDetectionStrategy.OnPush` boilerplate |
-| RxJS | Proper subscription management (`takeUntil`, `DestroyRef`), no memory leaks |
-| Templates | Async pipe for observables, `@if`/`@for` control flow, no ngDoCheck overuse |
+| Components | Typed function components, proper `useEffect` cleanup, no class components |
+| State | `useState`/`useReducer` for local state, avoid unnecessary `useMemo`/`useCallback` |
+| Server state | `@tanstack/react-query` (`useQuery`/`useMutation`), no manual `fetch` + `useEffect` for data |
+| Rendering | Explicit `key` on list items, no `index` as key when list can reorder |
 | Accessibility | Labels, ARIA attributes, keyboard navigation |
 
 ## Common Issues to Catch
@@ -78,9 +78,9 @@ mcp_usage: none
 |-------|---------|-----|
 | Missing error handling | `await api.post()` without try/catch | Use Result types or typed exceptions |
 | Hardcoded values | `if (status === 1)` | Use constants/enums |
-| Missing loading state | Button doesn't show loading | Add loading indicator with signals |
+| Missing loading state | Button doesn't show loading | Use `isPending`/`isLoading` from the query/mutation |
 | N+1 queries | Loop with DB call inside | Batch or join |
-| Memory leak | Subscription without `takeUntil` or `DestroyRef` | Auto-unsubscribe pattern |
+| Stale closures | `useEffect` missing deps that reference outdated state | Correct dependency array or functional updates |
 
 ## Checklist por capa
 
@@ -149,47 +149,43 @@ mcp_usage: none
 | **Testing** | ¿Mocks en capa correcta? | Mock en la interfaz inmediata. No mockear BD, mockear repositorio |
 | **Testing** | ¿Bun test runner? | Usar `bun test` nativo. Tests rápidos con `describe`/`it`/`expect` |
 
-### Frontend — Análisis detallado (Angular)
+### Frontend — Análisis detallado (React)
 
 | Categoría | Check | Detalle |
 |-----------|-------|---------|
-| **Componentes** | ¿Standalone components? | Components con `standalone: true`. Evitar NgModules innecesarios |
-| **Componentes** | ¿Lifecycle hooks correctos? | `OnInit` para setup, `OnDestroy` para cleanup, `OnChanges` para inputs reactivos |
-| **Componentes** | ¿DestroyRef para cleanup? | `inject(DestroyRef).onDestroy(...)` o `takeUntilDestroyed()` para auto-unsubscribe |
-| **Componentes** | ¿Signals para estado reactivo? | `signal()`, `computed()`, `effect()` en vez de BehaviorSubjects manuales |
-| **Componentes** | ¿Change detection eficiente? | `OnPush` o signals. Evitar `ngDoCheck` costoso |
-| **Templates** | ¿Control flow moderno? | `@if`, `@for`, `@switch` en vez de `*ngIf`, `*ngFor`, `ngSwitch` |
-| **Templates** | ¿Async pipe? | Siempre `async` pipe en vez de `.subscribe()` manual en templates |
-| **Templates** | ¿Track functions en @for? | `@for (item of items; track item.id)` para performance |
-| **Templates** | ¿Input signals? | `input()`, `input.required()` para inputs tipados y reactivos |
-| **Templates** | ¿Output functions? | `output()` en vez de `@Output()` decorator |
+| **Componentes** | ¿Function components tipados? | Sin clases. Props con `interface` explícita, sin `any` |
+| **Componentes** | ¿`useEffect` con cleanup? | Efectos con side effects (subscripciones, timers, listeners) retornan función de limpieza |
+| **Componentes** | ¿Server state fuera del componente? | Datos de API vía hooks de `react-services` (TanStack Query), no `useEffect` + `fetch` |
+| **Componentes** | ¿Memoización deliberada? | `useMemo`/`useCallback` solo donde hay costo real o children memoizados, no por defecto |
+| **JSX** | ¿Renderizado condicional claro? | `condition && <X />` o ternario, evitar anidamiento profundo de condicionales |
+| **JSX** | ¿`key` estable en listas? | `key={item.id}`, nunca `key={index}` si la lista puede reordenarse |
+| **JSX** | ¿Sin lógica pesada inline en JSX? | Cálculos complejos extraídos a variables/`useMemo` antes del `return` |
 | **Tipos** | ¿Sin `any`? | TypeScript strict mode. `any` requiere justificación documentada |
 | **Tipos** | ¿Interfaces para modelos? | Modelos de datos como interfaces exportadas. No clases para DTOs |
-| **RxJS** | ¿Suscripciones manejadas? | `takeUntilDestroyed()`, `takeUntil(destroy$)`, o `toSignal()` |
-| **RxJS** | ¿Operadores correctos? | `switchMap` para búsquedas, `mergeMap` para paralelo, `concatMap` para secuencial |
-| **RxJS** | ¿Sin subscribe anidado? | Combinar con `switchMap`, `combineLatest`, `forkJoin` en vez de nesting |
-| **RxJS** | ¿Signals vs RxJS? | Estado simple = signals. Streams complejos = RxJS. No mezclar sin razón |
-| **Estado** | ¿Estado levantado correctamente? | Estado compartido en el ancestro común más bajo. Services para estado global |
-| **Estado** | ¿Loading states? | `toSignal()` con estado de loading. Spinner/skeleton mientras carga |
-| **Estado** | ¿Error states? | Error interceptor global. Toast/manejo de error por operación |
+| **Data fetching** | ¿`useQuery`/`useMutation`? | Toda lectura/escritura de API vía TanStack Query, no `fetch` directo en el componente |
+| **Data fetching** | ¿Cache keys correctas? | `queryKey` incluye todos los parámetros que afectan el resultado |
+| **Data fetching** | ¿Invalidación correcta? | Mutations invalidan los `queryKey` relacionados `onSuccess`/`onSettled` |
+| **Estado** | ¿Estado levantado correctamente? | Estado compartido en el ancestro común más bajo. Zustand/Context para estado global |
+| **Estado** | ¿Loading states? | `isLoading`/`isPending` de la query/mutation. Spinner/skeleton mientras carga |
+| **Estado** | ¿Error states? | `isError`/`error` manejado en cada query. Toast/manejo de error por operación |
 | **Estado** | ¿Empty states? | "No hay datos" + ilustración + CTA relevante cuando lista vacía |
-| **Routing** | ¿Lazy loading? | `loadComponent` o `loadChildren` en rutas. No importar todo en módulo raíz |
-| **Routing** | ¿Guards funcionales? | `canActivate` con funciones, no clases |
-| **Routing** | ¿Resolvers cuando aplica? | Datos precargados antes de activar ruta. No loading en componente |
-| **Forms** | ¿Reactive forms? | `FormGroup`, `FormControl`, `FormBuilder`. Validación con validators |
-| **Forms** | ¿Validación inline? | Errores mostrados bajo cada campo. No solo al submit |
-| **Forms** | ¿Typed forms? | `FormGroup<{ name: FormControl<string> }>`. No forms genéricos |
-| **Rendimiento** | ¿OnPush strategy? | Componentes con `changeDetection: OnPush` o signals |
-| **Rendimiento** │ ¿Track functions? | `@for` con `track` para evitar re-renders innecesarios |
+| **Routing** | ¿Code-splitting? | `React.lazy()` + `Suspense` en rutas, o route segments de Next.js. No importar todo en el bundle raíz |
+| **Routing** | ¿Guards como wrapper routes? | `<RequireAuth>`/`<RequirePermission>` como elemento de ruta, no lógica inline por página |
+| **Routing** | ¿Loaders cuando aplica? | Datos precargados antes de activar ruta (`loader` de react-router). No loading en componente |
+| **Forms** | ¿react-hook-form? | `useForm`, `register`/`Controller`. Validación con `zodResolver` |
+| **Forms** | ¿Validación inline? | Errores mostrados bajo cada campo (`formState.errors`). No solo al submit |
+| **Forms** | ¿Schema tipado? | `z.infer<typeof schema>` para el tipo de los valores del form. No forms genéricos sin tipo |
+| **Rendimiento** | ¿Memoización correcta? | `useMemo`/`useCallback`/`React.memo` solo donde hay evidencia de re-render costoso |
+| **Rendimiento** | ¿Listas grandes virtualizadas? | `@tanstack/react-virtual` o similar para listas de cientos+ de items |
 | **Rendimiento** | ¿Imágenes optimizadas? | WebP, lazy loading (`loading="lazy"`), dimensiones explícitas |
 | **Accesibilidad** | ¿Labels? | Todo input tiene `<label>` o `aria-label`. No placeholder como label |
 | **Accesibilidad** | ¿Roles ARIA correctos? | `role="button"` en botones, `role="navigation"` en nav. No sobrecargar |
 | **Accesibilidad** | ¿Contraste? | 4.5:1 texto normal, 3:1 texto grande. Verificar con herramienta |
 | **Accesibilidad** | ¿Teclado? | Todas las acciones disponibles con Tab, Enter, Escape. Focus visible |
 | **Testing** | ¿Test por componente? | Componente principal tiene test de render, interacción, estados |
-| **Testing** | ¿Testing module? | `TestBed.configureTestingModule` con imports necesarios |
-| **Testing** | ¿Signal testing? | Probar computed values y effects con `fixture.detectChanges()` |
-| **Testing** | │ ¿Test de acceso? | Pantallas protegidas redirigen a login sin token |
+| **Testing** | ¿React Testing Library? | `render`/`screen`/`userEvent`, queries por rol/texto accesible, no por clase CSS |
+| **Testing** | ¿Hooks testing? | Hooks de datos probados con `renderHook` + `QueryClientProvider` de test |
+| **Testing** | ¿Test de acceso? | Pantallas protegidas redirigen a login sin token |
 
 ### Seguridad — Análisis detallado (Keycloak / OAuth2)
 
@@ -263,19 +259,19 @@ mcp_usage: none
 | **Missing timeout** | `fetch()` sin AbortController | Hanging requests consumen resources | `AbortSignal.timeout(ms)` en todas las llamadas externas |
 | **No structured logging** | `console.log("User created")` | Imposible filtrar/correlacionar | Logger estructurado: `logger.info({ userId, tenantId }, "User created")` |
 
-### Frontend (Angular)
+### Frontend (React)
 
 | Anti-patrón | Ejemplo | Problema | Solución |
 |-------------|---------|----------|----------|
-| **NgModules innecesarios** | Módulo para cada componente | Boilerplate excesivo, tree-shaking imposible | Standalone components |
-| **Subscribe sin unsubscribe** | `this.api.get().subscribe(data => ...)` | Memory leak | `toSignal()`, `takeUntilDestroyed()`, o `async` pipe |
-| **ngDoCheck costoso** | Cálculo pesado en `ngDoCheck` | Performance degradation | Signals con `computed()` o `OnPush` manual |
-| **Manejo de errores en catch genérico** | `catch (err) { this.error = "Error" }` | Usuario no sabe qué pasó | Mapear errores por código HTTP + mensaje contextual |
-| **Estado derivado en state** | `this.filteredItems = this.items.filter(...)` en setter | Dos fuentes de verdad | `computed(() => this.items().filter(...))` |
-| **No lazy load** | Import de componente pesado en módulo raíz | Bundle grande, First Paint lento | `loadComponent` en rutas |
-| **Form sin validación inline** | Validar al submit, no al escribir | UX pobre | Validación reactiva + errores inline |
-| **Cualquier en templates** | `{{ user?.address?.city }}` sin null check real | Template errors silenciosos | `@if` con null checks explícitos |
-| ** RxJS sin operador de error** | `this.api.get().subscribe({ next: ..., error: ... })` sin complete | Posibles leaks | Manejar complete o usar `finalize` |
+| **`useEffect` como fetch manual** | `useEffect(() => { fetch(...).then(setData) }, [])` | Sin cache, sin cancelación, race conditions | `useQuery` de `@tanstack/react-query` |
+| **`useState` sincronizado con props** | `useEffect(() => setLocal(prop), [prop])` | Dos fuentes de verdad, re-renders extra | Derivar directamente del prop, o `key` para resetear |
+| **Memoización por reflejo** | `useMemo`/`useCallback` en todo sin medir | Complejidad sin beneficio, bugs por deps mal declaradas | Memoizar solo donde hay evidencia de costo |
+| **Manejo de errores en catch genérico** | `catch (err) { setError("Error") }` | Usuario no sabe qué pasó | Mapear errores por código HTTP + mensaje contextual |
+| **Estado derivado duplicado** | `useEffect` que copia `items.filter(...)` a otro state | Dos fuentes de verdad, desincronización | Calcular inline o con `useMemo`, no un segundo `useState` |
+| **No code-splitting** | Import eager de página pesada en el router raíz | Bundle grande, First Paint lento | `React.lazy()` + `Suspense` en rutas |
+| **Form sin validación inline** | Validar al submit, no al escribir | UX pobre | `react-hook-form` con `mode: 'onChange'` + errores inline |
+| **Acceso inseguro sin optional chaining** | `user.address.city` sin verificar null | Crash en runtime | `user?.address?.city` + fallback explícito en JSX |
+| **`useEffect` sin cleanup** | Suscripción/listener/timer sin función de retorno | Memory leak, listeners duplicados | `return () => cleanup()` dentro del efecto |
 
 ### Testing
 
@@ -398,7 +394,7 @@ Formato de resumen:
 |-------|-------------|
 | **Sé constructivo** | Enfócate en el código, no en la persona. "Este método puede optimizarse" no "Esto está mal hecho" |
 | **Explica el por qué** | No solo "cambia esto". Explica: "cambia esto porque causa X problema de seguridad" |
-| **Respeta el contexto** | No impongas preferencias personales. Si el proyecto usa Angular signals, no pidas BehaviorSubjects |
+| **Respeta el contexto** | No impongas preferencias personales. Si el proyecto usa Zustand, no pidas Redux |
 | **Sé oportuno** | Review en < 24h. PRs pequeños < 200 líneas revisados en horas |
 | **PRs pequeños** | < 400 líneas por PR. Bloquea en CI si supera el límite |
 | **Dos pares de ojos** | Cada PR necesita al menos 1 approval. PRs críticos (seguridad, infra) necesitan 2 |

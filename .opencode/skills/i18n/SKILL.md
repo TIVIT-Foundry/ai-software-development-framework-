@@ -1,7 +1,7 @@
 ---
 name: i18n
-description: "Internationalization patterns for frontend applications. Covers @ngx-translate/core, locale file structure, lazy loading by route, fallback chains, pluralization, RTL support, date/number/currency formatting, and key extraction. Trigger: When implementing multi-language support or localization in a frontend application."
-version: 1.0
+description: "Internationalization patterns for frontend applications. Covers react-i18next, locale file structure, lazy loading by route, fallback chains, pluralization, RTL support, date/number/currency formatting, and key extraction. Trigger: When implementing multi-language support or localization in a frontend application."
+version: 2.0
 metadata:
   phase:
   - construction
@@ -9,10 +9,10 @@ metadata:
   - frontend
   enforcement: mandatory
   depends_on:
-  - angular
+  - react
   - typescript
   consumed_by:
-  - angular
+  - react
   - api-first-frontend
   agent_roles:
   - delivery-agent
@@ -24,10 +24,10 @@ metadata:
 
 ## Propósito
 
-Esta skill define cómo implementar internacionalización (i18n) y localización (l10n) en aplicaciones frontend de forma escalable, mantenible y compatible con multi-tenancy.  
+Esta skill define cómo implementar internacionalización (i18n) y localización (l10n) en aplicaciones frontend de forma escalable, mantenible y compatible con multi-tenancy.
 Su función es asegurar que la aplicación pueda soportar múltiples idiomas, formatos regionales y direcciones de texto sin duplicar lógica ni componentes.
 
-Esta skill complementa `angular` (componentes) y `typescript` (tipos). Mientras esos definen la estructura de la UI, esta skill define cómo hacer esa UI multilingüe.
+Esta skill complementa `react` (componentes) y `typescript` (tipos). Mientras esos definen la estructura de la UI, esta skill define cómo hacer esa UI multilingüe.
 
 ## Objetivo
 
@@ -42,14 +42,14 @@ Usa esta skill para responder estas preguntas:
 
 ## Relación con otras skills
 
-- `angular` define los componentes que esta skill internacionaliza.
+- `react` define los componentes que esta skill internacionaliza.
 - `typescript` define los tipos de las claves de traducción.
 - `api-first-frontend` genera tipos que pueden incluir campos localizados.
 - `design-system` define tokens que pueden variar por locale (fuentes RTL, spacing).
 
 ## Qué debe hacer el agente cuando esta skill está activa
 
-1. Configurar la librería de i18n (@ngx-translate/core por defecto).
+1. Configurar la librería de i18n (`react-i18next` por defecto).
 2. Crear la estructura de carpetas de locales con namespaces por módulo.
 3. Definir el tipo TypeScript para las claves de traducción.
 4. Implementar el detector de idioma y el fallback chain.
@@ -61,7 +61,7 @@ Usa esta skill para responder estas preguntas:
 ## Entradas esperadas
 
 Esta skill asume que ya existe:
-- estructura de componentes (`angular`);
+- estructura de componentes (`react`);
 - tipos TypeScript definidos (`typescript`);
 - diseño de sistema (`design-system`).
 
@@ -70,7 +70,7 @@ Si falta esta base, la skill debe pedirla antes de concluir.
 ## Alcance de la fase
 
 La fase sí incluye:
-- configuración de @ngx-translate/core;
+- configuración de `react-i18next`;
 - estructura de locales con namespaces;
 - tipo TypeScript para claves de traducción;
 - lazy loading por ruta;
@@ -100,13 +100,13 @@ La fase no incluye todavía:
 ## Qué decide esta skill y qué delega
 
 Esta skill sí decide:
-- la librería de i18n (@ngx-translate/core por defecto);
+- la librería de i18n (`react-i18next` por defecto);
 - la estructura de carpetas y namespaces;
 - la convención de naming de claves;
 - la estrategia de fallback y lazy loading.
 
 Esta skill delega:
-- la estructura general de componentes a `angular`;
+- la estructura general de componentes a `react`;
 - los tipos TypeScript a `typescript`;
 - el contenido traducido a traductores profesionales;
 - el contenido dinámico desde backend a `backend-api`.
@@ -115,65 +115,70 @@ Esta skill delega:
 
 ### 1. Librería y configuración
 
-**Decisión por defecto**: @ngx-translate/core con TranslateModule.
+**Decisión por defecto**: `react-i18next` con `i18next-http-backend` para carga lazy y `i18next-browser-languagedetector` para detección automática.
 
 ```typescript
-// src/app/app.module.ts
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
-import { HttpClient } from '@angular/common/http';
-import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { AppComponent } from './app.component';
+// src/core/i18n/i18n.ts
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import HttpBackend from 'i18next-http-backend';
+import LanguageDetector from 'i18next-browser-languagedetector';
 
-export function HttpLoaderFactory(http: HttpClient) {
-  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
-}
+i18n
+  .use(HttpBackend)
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    fallbackLng: 'en',
+    ns: ['common'],
+    defaultNS: 'common',
+    backend: { loadPath: '/assets/i18n/{{lng}}/{{ns}}.json' },
+    interpolation: { escapeValue: false }, // React ya escapa por defecto
+    returnEmptyString: false, // clave faltante muestra la clave, no vacío
+  });
 
-@NgModule({
-  imports: [
-    BrowserModule,
-    TranslateModule.forRoot({
-      defaultLanguage: 'en',
-      loader: {
-        provide: TranslateLoader,
-        useFactory: HttpLoaderFactory,
-        deps: [HttpClient],
-      },
-    }),
-  ],
-  declarations: [AppComponent],
-  bootstrap: [AppComponent],
-})
-export class AppModule {}
+export default i18n;
+```
+
+```tsx
+// main.tsx — provider en la raíz de la app
+import './core/i18n/i18n';
+import { Suspense } from 'react';
+
+<Suspense fallback={<div>Loading...</div>}>
+  <App />
+</Suspense>;
 ```
 
 ```typescript
-// src/app/app.module.ts — lazy loading por módulo
-import { TranslateModule } from '@ngx-translate/core';
+// Carga de un namespace adicional por feature (lazy loading por módulo)
+import { useTranslation } from 'react-i18next';
 
-@NgModule({
-  imports: [
-    TranslateModule.forChild({
-      extend: true, // hereda la configuración del root
-    }),
-  ],
-})
-export class FeatureModule {}
+export function UsersPage() {
+  const { t } = useTranslation('users'); // carga el namespace 'users' bajo demanda
+  return <h1>{t('list.title')}</h1>;
+}
 ```
 
 ### 2. Estructura de locales
 
 ```
-/src/assets/i18n/
-├── en.json
-├── es.json
-├── es-MX.json        ← solo overrides específicos de México
-└── pt-BR.json
+/public/assets/i18n/
+├── en/
+│   ├── common.json
+│   └── users.json
+├── es/
+│   ├── common.json
+│   └── users.json
+├── es-MX/
+│   └── common.json      ← solo overrides específicos de México
+└── pt-BR/
+    ├── common.json
+    └── users.json
 ```
 
 Reglas:
-- Un archivo JSON por idioma.
+- Un archivo JSON por namespace y por idioma.
 - Los archivos de locale regional (`es-MX`) solo contienen overrides, no traducciones completas.
 - El locale base (`es`) contiene la traducción completa.
 - El fallback chain es: `es-MX` → `es` → `en`.
@@ -216,12 +221,10 @@ Reglas:
 ### 4. Tipo TypeScript para claves
 
 ```typescript
-// src/app/shared/types/i18n.types.ts
-import en from '../../../assets/i18n/en.json';
+// src/core/i18n/i18n.types.ts
+import common from '../../../public/assets/i18n/en/common.json';
 
 type NestedMessages = { [key: string]: string | NestedMessages };
-
-export type TranslationKey = keyof typeof en;
 
 // Tipo recursivo para claves anidadas (e.g., 'auth.login.title')
 export type DeepTranslationKey<T extends NestedMessages> = {
@@ -230,52 +233,46 @@ export type DeepTranslationKey<T extends NestedMessages> = {
     : K;
 }[keyof T & string] | (keyof T & string);
 
-export type AllTranslationKeys = DeepTranslationKey<typeof en>;
+export type CommonTranslationKey = DeepTranslationKey<typeof common>;
 ```
 
 ```typescript
-// Tipado global para ngx-translate (opcional pero recomendado)
-// src/types/ngx-translate.d.ts
-declare module '@ngx-translate/core' {
-  interface TranslateService {
-    instant(key: AllTranslationKeys, params?: Record<string, unknown>): string;
-    get(key: AllTranslationKeys, params?: Record<string, unknown>): Observable<string>;
+// Tipado global para react-i18next (declara los recursos por namespace)
+// src/types/i18next.d.ts
+import 'i18next';
+import common from '../../public/assets/i18n/en/common.json';
+import users from '../../public/assets/i18n/en/users.json';
+
+declare module 'i18next' {
+  interface CustomTypeOptions {
+    defaultNS: 'common';
+    resources: {
+      common: typeof common;
+      users: typeof users;
+    };
   }
 }
 ```
 
 ### 5. Uso en componentes
 
-```typescript
-// src/app/features/auth/login.component.ts
-import { Component, OnInit } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
+```tsx
+// src/features/auth/LoginPage.tsx
+import { useTranslation } from 'react-i18next';
 
-@Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
-})
-export class LoginComponent implements OnInit {
-  constructor(private translate: TranslateService) {
-    // Establecer idiomas soportados y fallback
-    this.translate.addLangs(['en', 'es', 'pt-BR']);
-    this.translate.setDefaultLang('en');
-    this.translate.use('en');
-  }
+export function LoginPage() {
+  const { t, i18n } = useTranslation();
 
-  ngOnInit() {}
+  return (
+    <div>
+      <h1>{t('auth.login.title')}</h1>
+      <input placeholder={t('auth.login.emailPlaceholder')} />
+      <input placeholder={t('auth.login.passwordPlaceholder')} type="password" />
+      <button>{t('auth.login.submit')}</button>
+      <a href="/forgot-password">{t('auth.login.forgotPassword')}</a>
+    </div>
+  );
 }
-```
-
-```html
-<!-- src/app/features/auth/login.component.html -->
-<div>
-  <h1>{{ 'auth.login.title' | translate }}</h1>
-  <input [placeholder]="'auth.login.emailPlaceholder' | translate" />
-  <input [placeholder]="'auth.login.passwordPlaceholder' | translate" type="password" />
-  <button>{{ 'auth.login.submit' | translate }}</button>
-  <a href="/forgot-password">{{ 'auth.login.forgotPassword' | translate }}</a>
-</div>
 ```
 
 ### 6. Pluralización e interpolación
@@ -283,34 +280,35 @@ export class LoginComponent implements OnInit {
 ```json
 {
   "notifications": {
-    "items": "{count, plural, =1 {# item} other {# items}}",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
     "welcome": "Welcome, {{name}}!",
-    "lastLogin": "Last login: {{date, date}}",
+    "lastLogin": "Last login: {{date, datetime}}",
     "balance": "Balance: {{amount, currency}}"
   }
 }
 ```
 
-```typescript
-// Uso en componente
-@Component({ ... })
-export class DashboardComponent {
-  constructor(private translate: TranslateService) {}
+```tsx
+// Uso en componente — i18next resuelve el plural (_one/_other) automáticamente
+import { useTranslation } from 'react-i18next';
 
-  getCountTranslation(count: number): string {
-    return this.translate.instant('notifications.items', { count });
-  }
+export function Dashboard({ itemCount, userName }: { itemCount: number; userName: string }) {
+  const { t } = useTranslation();
 
-  getWelcome(name: string): string {
-    return this.translate.instant('notifications.welcome', { name });
-  }
+  return (
+    <>
+      <p>{t('notifications.items', { count: itemCount })}</p>
+      <p>{t('notifications.welcome', { name: userName })}</p>
+    </>
+  );
 }
 ```
 
 ### 7. Soporte RTL
 
 ```typescript
-// src/app/shared/utils/rtl.ts
+// src/core/i18n/rtl.ts
 export const RTL_LANGUAGES = ['ar', 'he', 'fa', 'ur'];
 
 export function isRTL(language: string): boolean {
@@ -322,31 +320,27 @@ export function getDirection(language: string): 'rtl' | 'ltr' {
 }
 ```
 
-```typescript
+```tsx
 // Uso en componente raíz
-import { Component } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
-import { getDirection } from '../shared/utils/rtl';
+import { useTranslation } from 'react-i18next';
+import { getDirection } from './core/i18n/rtl';
 
-@Component({
-  selector: 'app-root',
-  template: `<div [dir]="direction"><router-outlet></router-outlet></div>`,
-})
-export class AppComponent {
-  direction: 'ltr' | 'rtl' = 'ltr';
+export function App() {
+  const { i18n } = useTranslation();
+  const direction = getDirection(i18n.language);
 
-  constructor(private translate: TranslateService) {
-    this.translate.onLangChange.subscribe((event) => {
-      this.direction = getDirection(event.lang);
-    });
-  }
+  return (
+    <div dir={direction}>
+      <RouterProvider router={router} />
+    </div>
+  );
 }
 ```
 
 ### 8. Formateo de fechas, números y monedas
 
 ```typescript
-// src/app/shared/utils/formatters.ts
+// src/core/i18n/formatters.ts
 export function formatDate(date: Date, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
@@ -368,112 +362,77 @@ export function formatCurrency(value: number, locale: string, currency: string):
 ```
 
 ```typescript
-// Pipe de Angular para usar en templates
-import { Pipe, PipeTransform } from '@angular/core';
+// Formatters registrados en i18next para usar como {{value, format}} en las claves
+import i18n from './i18n';
+import { formatDate, formatNumber, formatCurrency } from './formatters';
 
-@Pipe({ name: 'formatDate' })
-export class FormatDatePipe implements PipeTransform {
-  transform(date: Date, locale: string): string {
-    return formatDate(date, locale);
-  }
-}
-
-@Pipe({ name: 'formatCurrency' })
-export class FormatCurrencyPipe implements PipeTransform {
-  transform(value: number, locale: string, currency: string): string {
-    return formatCurrency(value, locale, currency);
-  }
-}
+i18n.services.formatter?.add('datetime', (value, lng) => formatDate(value, lng ?? 'en'));
+i18n.services.formatter?.add('currency', (value, lng) => formatCurrency(value, lng ?? 'en', 'USD'));
 ```
 
 ### 9. Componente de cambio de idioma
 
-```typescript
-// src/app/shared/components/language-switcher/language-switcher.component.ts
-import { Component } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
+```tsx
+// src/shared/components/LanguageSwitcher.tsx
+import { useTranslation } from 'react-i18next';
 
-@Component({
-  selector: 'app-language-switcher',
-  template: `
+const LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'pt-BR', name: 'Português (BR)' },
+];
+
+export function LanguageSwitcher() {
+  const { i18n } = useTranslation();
+
+  return (
     <select
       data-testid="language-switcher"
-      [value]="translate.currentLang"
-      (change)="onLanguageChange($event)"
+      value={i18n.language}
+      onChange={(e) => i18n.changeLanguage(e.target.value)}
     >
-      <option *ngFor="let lang of languages" [value]="lang.code">
-        {{ lang.name }}
-      </option>
+      {LANGUAGES.map((lang) => (
+        <option key={lang.code} value={lang.code}>{lang.name}</option>
+      ))}
     </select>
-  `,
-})
-export class LanguageSwitcherComponent {
-  languages = [
-    { code: 'en', name: 'English' },
-    { code: 'es', name: 'Español' },
-    { code: 'pt-BR', name: 'Português (BR)' },
-  ];
-
-  constructor(public translate: TranslateService) {}
-
-  onLanguageChange(event: Event) {
-    const select = event.target as HTMLSelectElement;
-    this.translate.use(select.value);
-  }
+  );
 }
 ```
 
 ### 10. Lazy loading por ruta
 
-```typescript
-// src/app/app-routing.module.ts
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+```tsx
+// router.tsx — code-splitting por ruta; cada página carga su propio namespace con useTranslation('ns')
+import { lazy } from 'react';
 
-const routes: Routes = [
-  {
-    path: 'auth',
-    loadChildren: () =>
-      import('./features/auth/auth.module').then((m) => m.AuthModule),
-  },
-  {
-    path: 'dashboard',
-    loadChildren: () =>
-      import('./features/dashboard/dashboard.module').then((m) => m.DashboardModule),
-  },
-  {
-    path: 'settings',
-    loadChildren: () =>
-      import('./features/settings/settings.module').then((m) => m.SettingsModule),
-  },
-];
+const AuthRoutes = lazy(() => import('./features/auth/auth.routes'));
+const DashboardRoutes = lazy(() => import('./features/dashboard/dashboard.routes'));
+const SettingsRoutes = lazy(() => import('./features/settings/settings.routes'));
 
-@NgModule({
-  imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule],
-})
-export class AppRoutingModule {}
+const router = createBrowserRouter([
+  { path: 'auth/*', element: <AuthRoutes /> },
+  { path: 'dashboard/*', element: <DashboardRoutes /> },
+  { path: 'settings/*', element: <SettingsRoutes /> },
+]);
 ```
 
 ```typescript
-// Carga manual de traducciones por módulo (si se necesitan archivos JSON separados)
-import { TranslateService } from '@ngx-translate/core';
-import { HttpClient } from '@angular/common/http';
+// Carga manual de un namespace bajo demanda (fuera de un componente)
+import i18n from './core/i18n/i18n';
 
-export function loadTranslations(http: HttpClient, translate: TranslateService, lang: string) {
-  return http.get(`./assets/i18n/${lang}.json`).subscribe((translations) => {
-    translate.setTranslation(lang, translations, true);
-  });
+export async function loadNamespace(ns: string): Promise<void> {
+  if (!i18n.hasResourceBundle(i18n.language, ns)) {
+    await i18n.loadNamespaces(ns);
+  }
 }
 ```
 
 ## Preguntas guía
 
 ### 1. Sobre librería
-- ¿Se usa @ngx-translate/core o @angular/localize?
-- ¿Se necesita SSR (Angular Universal)?
-- ¿Se requiere detección de idioma automática?
+- ¿Se usa `react-i18next` o `next-intl` (si el proyecto es Next.js)?
+- ¿Se necesita SSR (Next.js con `next-intl` o `next-i18next`)?
+- ¿Se requiere detección de idioma automática (`i18next-browser-languagedetector`)?
 
 ### 2. Sobre estructura
 - ¿Qué namespaces se necesitan por módulo?
@@ -498,25 +457,26 @@ export function loadTranslations(http: HttpClient, translate: TranslateService, 
 ## Salidas esperadas de esta skill
 
 ### A. Configuración de i18n
-- Archivo `src/app/app.module.ts` con TranslateModule.forRoot() configurado.
-- Archivo `src/app/shared/utils/rtl.ts` con detección de RTL.
-- Archivo `src/app/shared/utils/formatters.ts` con formateo de fechas/números/monedas.
-- Pipes de Angular para formatos (`FormatDatePipe`, `FormatCurrencyPipe`).
+- Archivo `src/core/i18n/i18n.ts` con `react-i18next` configurado.
+- Archivo `src/core/i18n/rtl.ts` con detección de RTL.
+- Archivo `src/core/i18n/formatters.ts` con formateo de fechas/números/monedas.
+- Formatters registrados en i18next para usar `{{value, format}}` en las claves.
 
 ### B. Estructura de locales
-- Carpeta `/src/assets/i18n/{lang}.json` con archivos base en inglés.
+- Carpeta `/public/assets/i18n/{lang}/{ns}.json` con archivos base en inglés.
 - Al menos un locale adicional completo (español).
 - Fallback chains configuradas.
 
 ### C. Tipo TypeScript para claves
-- Archivo `src/app/shared/types/i18n.types.ts` con tipado estricto de claves.
+- Archivo `src/core/i18n/i18n.types.ts` con tipado estricto de claves.
+- Declaración de módulo `src/types/i18next.d.ts` para autocompletado de `t()`.
 
 ### D. Componentes de i18n
-- `<app-language-switcher>` con data-testid.
-- Uso de `TranslateService` y pipe `translate` en al menos una página de ejemplo.
+- `<LanguageSwitcher>` con `data-testid`.
+- Uso de `useTranslation()` en al menos una página de ejemplo.
 
 ### E. Consumidores de esta skill
-- `angular` consume los servicios y pipes de i18n;
+- `react` consume el hook `useTranslation` y el componente `<LanguageSwitcher>`;
 - `api-first-frontend` puede generar tipos con campos localizados;
 - `playwright` verifica que el selector de idioma funciona y que no hay claves sin traducir.
 
@@ -534,14 +494,14 @@ export function loadTranslations(http: HttpClient, translate: TranslateService, 
 
 ## Comportamiento esperado del agente
 
-Cuando el usuario use texto hardcodeado en componentes, el agente debe proponer la extracción a clave de traducción y explicar la convención de naming.  
-Cuando el usuario pregunte si necesita una nueva versión de locale para un dialecto, el agente debe proponer un locale regional con solo los overrides necesarios.  
-Cuando el usuario tenga textos en el backend, el agente debe explicar que i18n del frontend cubre la UI, no el contenido dinámico del servidor.  
+Cuando el usuario use texto hardcodeado en componentes, el agente debe proponer la extracción a clave de traducción y explicar la convención de naming.
+Cuando el usuario pregunte si necesita una nueva versión de locale para un dialecto, el agente debe proponer un locale regional con solo los overrides necesarios.
+Cuando el usuario tenga textos en el backend, el agente debe explicar que i18n del frontend cubre la UI, no el contenido dinámico del servidor.
 Cuando el usuario no considere RTL, el agente debe preguntar si se requieren idiomas RTL y proponer logical CSS properties.
 
 ## Checklist final de la skill
 
-- ¿Se configuró @ngx-translate/core con TranslateModule.forRoot()?
+- ¿Se configuró `react-i18next` con `HttpBackend` y `LanguageDetector`?
 - ¿Se creó la estructura de locales por módulo?
 - ¿Las claves usan naming jerárquico?
 - ¿El tipo TypeScript cobija todas las claves?
@@ -556,7 +516,7 @@ Cuando el usuario no considere RTL, el agente debe preguntar si se requieren idi
 
 Las traducciones iniciales se generan con un LLM y luego se refinan con revisión humana:
 
-**Estructura del archivo de mensajes base (`src/assets/i18n/en.json`)**:
+**Estructura del archivo de mensajes base (`public/assets/i18n/en/common.json`)**:
 
 ```json
 {
@@ -587,7 +547,7 @@ import { execSync } from 'child_process';
 
 const SOURCE_LOCALE = 'en';
 const TARGET_LOCALES = ['es', 'pt-BR'];
-const MESSAGES_DIR = 'src/assets/i18n';
+const MESSAGES_DIR = 'public/assets/i18n';
 
 function translateWithLLM(source: Record<string, unknown>, targetLocale: string): Record<string, unknown> {
   const sourceJson = JSON.stringify(source, null, 2);
@@ -608,13 +568,13 @@ ${sourceJson}`;
 }
 
 function main() {
-  const source = JSON.parse(readFileSync(`${MESSAGES_DIR}/${SOURCE_LOCALE}.json`, 'utf-8'));
+  const source = JSON.parse(readFileSync(`${MESSAGES_DIR}/${SOURCE_LOCALE}/common.json`, 'utf-8'));
 
   for (const locale of TARGET_LOCALES) {
     console.log(`Translating ${SOURCE_LOCALE} → ${locale}...`);
     const translated = translateWithLLM(source, locale);
     writeFileSync(
-      `${MESSAGES_DIR}/${locale}.json`,
+      `${MESSAGES_DIR}/${locale}/common.json`,
       JSON.stringify(translated, null, 2) + '\n',
       'utf-8'
     );
@@ -627,11 +587,11 @@ main();
 
 **Workflow de traducción asistida**:
 
-1. El desarrollador añade claves nuevas solo en `en.json`.
-2. Ejecuta `npm run i18n:translate` para generar los archivos `es.json` y `pt-BR.json` con traducción LLM.
+1. El desarrollador añade claves nuevas solo en `en/common.json`.
+2. Ejecuta `npm run i18n:translate` para generar los archivos `es/common.json` y `pt-BR/common.json` con traducción LLM.
 3. Un revisor humano valida las traducciones generadas, corrigiendo contexto, tono y terminología específica del dominio.
 4. Las traducciones aprobadas se commitean al repositorio.
-5. El CI valida que todas las claves de `en.json` existen en los otros locales (sin claves faltantes).
+5. El CI valida que todas las claves de `en/common.json` existen en los otros locales (sin claves faltantes).
 
 **Validación en CI (`scripts/i18n-validate.ts`)**:
 
@@ -640,7 +600,7 @@ import { readFileSync } from 'fs';
 
 const SOURCE = 'en';
 const LOCALES = ['es', 'pt-BR'];
-const DIR = 'src/assets/i18n';
+const DIR = 'public/assets/i18n';
 
 type Nested = { [k: string]: string | Nested };
 
@@ -651,11 +611,11 @@ function getKeys(obj: Nested, prefix = ''): string[] {
 }
 
 function validate() {
-  const sourceKeys = getKeys(JSON.parse(readFileSync(`${DIR}/${SOURCE}.json`, 'utf-8')));
+  const sourceKeys = getKeys(JSON.parse(readFileSync(`${DIR}/${SOURCE}/common.json`, 'utf-8')));
   const errors: string[] = [];
 
   for (const locale of LOCALES) {
-    const target = JSON.parse(readFileSync(`${DIR}/${locale}.json`, 'utf-8'));
+    const target = JSON.parse(readFileSync(`${DIR}/${locale}/common.json`, 'utf-8'));
     const targetKeys = new Set(getKeys(target));
 
     for (const key of sourceKeys) {
@@ -714,7 +674,7 @@ La coordinación entre `i18n` y `design-system` se realiza a través de **tokens
 **Mapeo RTL → tokens del design-system**:
 
 ```typescript
-// src/app/shared/utils/rtl-tokens.ts
+// src/core/i18n/rtl-tokens.ts
 import { isRTL } from './rtl';
 
 type DirectionTokens = {
@@ -748,39 +708,33 @@ export function getDirectionTokens(locale: string): DirectionTokens {
 
 **Uso en componentes con tokens de dirección**:
 
-```typescript
-import { Component } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
-import { getDirection } from '../utils/rtl';
+```tsx
+import { useTranslation } from 'react-i18next';
+import { getDirection } from '../../core/i18n/rtl';
 
-@Component({
-  selector: 'app-card-with-icon',
-  template: `
+export function CardWithIcon() {
+  const { t, i18n } = useTranslation();
+  const direction = getDirection(i18n.language);
+
+  return (
     <div
-      [style.paddingInlineStart]="'var(--space-inline-start)'"
-      [style.paddingInlineEnd]="'var(--space-inline-end)'"
-      [style.borderInlineStartRadius]="'var(--border-inline-start-radius)'"
-      [style.borderInlineEndRadius]="'var(--border-inline-end-radius)'"
-      [dir]="direction"
+      style={{
+        paddingInlineStart: 'var(--space-inline-start)',
+        paddingInlineEnd: 'var(--space-inline-end)',
+        borderStartStartRadius: 'var(--border-inline-start-radius)',
+        borderStartEndRadius: 'var(--border-inline-end-radius)',
+      }}
+      dir={direction}
     >
-      <span>{{ 'dashboard.cardTitle' | translate }}</span>
+      <span>{t('dashboard.cardTitle')}</span>
     </div>
-  `,
-})
-export class CardWithIconComponent {
-  direction: 'ltr' | 'rtl' = 'ltr';
-
-  constructor(private translate: TranslateService) {
-    this.translate.onLangChange.subscribe((event) => {
-      this.direction = getDirection(event.lang);
-    });
-  }
+  );
 }
 ```
 
 **Reglas de integración con design-system**:
 
-1. Usar **propiedades lógicas CSS** (`margin-inline-start`, `padding-inline-end`, `border-inline-start-radius`) en vez de propiedades físicas (`margin-left`, `padding-right`).
+1. Usar **propiedades lógicas CSS** (`margin-inline-start`, `padding-inline-end`, `border-start-start-radius`) en vez de propiedades físicas (`margin-left`, `padding-right`).
 2. Los **tokens de spacing del design-system** deben usar alias lógicos (`--space-inline-start`) que se resuelven según `dir`.
 3. Los **iconos direccionales** (flechas, breadcrumbs) deben usar `transform: scaleX(-1)` en contexto RTL o variantes SVG específicas.
 4. El **layout del design-system** (flex, grid) debe usar `flex-direction` relativo al `dir` heredado, nunca hardcodear `row` con `direction: ltr`.

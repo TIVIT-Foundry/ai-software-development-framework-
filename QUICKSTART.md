@@ -40,7 +40,7 @@ mi-proyecto/
 ├── src/                   ← Tu código
 │   ├── backend/           ← Python FastAPI (AI/ML core)
 │   ├── api/               ← Bun TypeScript (backend general)
-│   └── web/               ← Angular (frontend)
+│   └── web/               ← React (frontend)
 └── database/
     └── migrations/        ← Migraciones PostgreSQL
 ```
@@ -68,7 +68,7 @@ OpenCode carga `AGENTS.md` y detecta las 83 skills + 4 agentes. Ya estás listo.
 > 2. Fase C (Scaffold): estructura del proyecto
 > 3. Fase D (Especificación): spec de la API
 > 4. Fase E (Backend): base de datos, endpoints, auth
-> 5. Fase F (Frontend): componentes Angular, servicios
+> 5. Fase F (Frontend): componentes React, hooks de datos
 > 6. Fase G (Calidad): tests, revisión, adversarial review
 > 
 > Empecemos con la Fase A. ¿Confirmas?
@@ -109,7 +109,7 @@ Fase C-H (confirmación por bundle — más rápido):
 | **Scaffold** | Estructura del proyecto | `src/`, `database/`, `.env.example` |
 | **Spec** | Especificación API | `specs/users-api.md` con ERD, endpoints, errores |
 | **Backend** | Código del servidor | `handlers/`, `dtos/`, `routes/`, funciones PL/pgSQL |
-| **Frontend** | Componentes Angular | `users-list.component.ts`, `login.component.ts` |
+| **Frontend** | Componentes React | `UsersList.tsx`, `LoginPage.tsx` |
 | **Calidad** | Tests + revisión | Unit tests, integration tests, adversarial review |
 | **Operación** | CI/CD + deploy | `github-actions.yml`, `docker-compose.yml` |
 
@@ -139,29 +139,36 @@ async def login(credentials: LoginRequest):
             "expires_in": token.expires_in}
 ```
 
-```typescript
-// web/src/app/auth/login.component.ts
-@Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
-  templateUrl: './login.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
-export class LoginComponent {
-  private authService = inject(AuthService);
-  private router = inject(Router);
-  
-  form = this.fb.group({
-    username: ['', Validators.required],
-    password: ['', Validators.required],
-  });
-  
-  async onSubmit(): Promise<void> {
-    if (this.form.invalid) return;
-    await this.authService.login(this.form.value);
-    this.router.navigate(['/dashboard']);
-  }
+```tsx
+// web/src/features/auth/LoginPage.tsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../core/auth/auth.store';
+
+const loginSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+
+export function LoginPage() {
+  const login = useAuthStore((s) => s.login);
+  const navigate = useNavigate();
+  const { register, handleSubmit } = useForm({ resolver: zodResolver(loginSchema) });
+
+  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+    await login(values.username, values.password);
+    navigate('/dashboard');
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('username')} />
+      <input type="password" {...register('password')} />
+      <button type="submit">Sign in</button>
+    </form>
+  );
 }
 ```
 
@@ -236,6 +243,6 @@ Al final del día:
 | El agente inventa patrones | El agente sigue patrones validados del framework |
 | Sin estándares de código | Constitution con 9 artículos + anti-patterns bloqueados |
 | Review manual | Adversarial review con 3+ perspectivas automáticas |
-| Stack inconsistente | Stack forzado: Python/Angular/Bun/PostgreSQL |
+| Stack inconsistente | Stack forzado: Python/React/Bun/PostgreSQL |
 | Sin trazabilidad | Evidencia en cadena para compliance |
 | Setup manual cada vez | `.workflow/state.json` — resume automático |

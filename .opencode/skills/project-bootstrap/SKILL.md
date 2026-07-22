@@ -1,6 +1,6 @@
 ---
 name: project-bootstrap
-description: 'Entry point for onboarding to a new Python/FastAPI + Angular + Bun project. Trigger: When starting work on a new project, first-time setup, or project orientation.'
+description: 'Entry point for onboarding to a new Python/FastAPI + React + Bun project. Trigger: When starting work on a new project, first-time setup, or project orientation.'
 when_to_use:
   - Starting a new project from scratch
   - Onboarding to an existing project for the first time
@@ -99,7 +99,7 @@ Entradas opcionales pero recomendadas:
 La fase de project-bootstrap **sí incluye**:
 
 - Ficha del proyecto con tech stack, versiones y restricciones.
-- Entorno de desarrollo configurado (Python FastAPI, Angular, Bun).
+- Entorno de desarrollo configurado (Python FastAPI, React, Bun).
 - Inicialización del repositorio Git con estrategia de branching y protección.
 - Checklist de onboarding para nuevos desarrolladores.
 - Configuración de herramientas de calidad (linting, formatting, git hooks).
@@ -110,7 +110,7 @@ La fase de project-bootstrap **sí incluye**:
 La fase de project-bootstrap **no incluye**:
 
 - Diseño de arquitectura detallada (va a `project-architecture`).
-- Creación de endpoints o lógica de negocio (va a `backend-api`, `angular-services`, etc.).
+- Creación de endpoints o lógica de negocio (va a `backend-api`, `react-services`, etc.).
 - Migraciones de base de datos (va a `database-migrations`).
 - Diseño de APIs (va a `api-first-spec`).
 - Configuración de infraestructura productiva (va a `infrastructure-as-code`).
@@ -156,7 +156,7 @@ La ficha del proyecto es el documento central que contextualiza todo el trabajo 
 | Vertical | Dominio de negocio | "Financial Ops" |
 | Cliente | Organización que recibe el producto | "Empresa ABC S.A.C." |
 | Stack primario | Lenguaje/runtime principal | "Python 3.12 / FastAPI" |
-| Stack secundario | Lenguaje/runtime adicional | "Angular 17+ / TypeScript 5" |
+| Stack secundario | Lenguaje/runtime adicional | "React 18+ / TypeScript 5" |
 | Motor de BD | Base de datos principal | "PostgreSQL 16" |
 | Motor de BD secundario | Base de datos adicional | "Redis 7 (caché)" |
 | Framework de agentes | Si aplica | "Framework Agéntico v1.0" |
@@ -178,19 +178,19 @@ Plantilla multi-stack:
 | Linter | Ruff (lint + format) + mypy |
 | CI | GitHub Actions con `pytest` |
 
-#### Angular 17+ Frontend
+#### React 18+ Frontend
 
 | Campo | Valor |
 |-------|-------|
 | Runtime | Node 20+ (LTS) |
-| Framework | Angular 17+ (standalone components, signals) |
-| UI Library | Angular Material o PrimeNG |
-| Estado | Signals + @ngneat/query (TanStack Query) |
-| HTTP | HttpClient + interceptores |
-| Testing | Vitest/Jest (unit) + Playwright (E2E) |
-| Linter | ESLint (@angular-eslint) + Prettier |
-| Build | `ng build` (esbuild/vite) |
-| CI | GitHub Actions con `ng build` + `ng test` |
+| Framework | React 18+ (function components + hooks), Vite |
+| UI Library | Radix UI / shadcn/ui |
+| Estado | Zustand + @tanstack/react-query |
+| HTTP | `fetch` envuelto en `apiFetch()` |
+| Testing | Vitest + React Testing Library (unit) + Playwright (E2E) |
+| Linter | ESLint (eslint-plugin-react, eslint-plugin-react-hooks) + Prettier |
+| Build | `vite build` |
+| CI | GitHub Actions con `npm run build` + `vitest run` |
 
 #### Bun (TypeScript) Backend
 
@@ -235,38 +235,37 @@ Extensiones VS Code recomendadas:
 - ms-python.mypy-type-checker
 ```
 
-#### Angular Frontend
+#### React Frontend
 
 ```
 Prerrequisitos:
 □ Node.js 20+ (LTS)
 □ Bun 1.1+ (gestor de paquetes y runtime)
-□ Angular CLI 17+ (npx @angular/cli)
-□ VS Code con extensiones Angular + ESLint
-□ Navegador con Angular DevTools
+□ Vite (via `npm create vite@latest`)
+□ VS Code con extensiones ESLint + React
+□ Navegador con React DevTools
 
 Pasos:
 1. cd frontend
-2. npx @angular/cli new <app-name> --style=scss --routing --ssr=false
+2. npm create vite@latest <app-name> -- --template react-ts
 3. cd <app-name>
 4. bun install  (o npm install)
-5. ng add @angular/material   (o: ng add primeng)
-6. copiar src/environments/environment.example.ts → environment.local.ts
-7. ng serve --configuration=local
-8. Verificar: http://localhost:4200 → carga sin errores
+5. bun add @tanstack/react-query zustand react-router-dom react-hook-form zod @hookform/resolvers
+6. copiar .env.example → .env.local
+7. npm run dev
+8. Verificar: http://localhost:5173 → carga sin errores
 
 Archivos clave:
-- angular.json (config de build, serve, test, lint)
-- tsconfig.json + tsconfig.app.json + tsconfig.spec.json
-- .eslintrc.json (@angular-eslint)
+- vite.config.ts (config de build, dev server, plugins)
+- tsconfig.json + tsconfig.app.json + tsconfig.node.json
+- .eslintrc.json (eslint-plugin-react-hooks)
 - .prettierrc
 
 Extensiones VS Code recomendadas:
-- angular.ng-template
-- esbenp.prettier-vscode
 - dbaeumer.vscode-eslint
-- ryanivey.vscode-angular2-switcher
-- natewallace.angular2-vscode-html-syntax
+- esbenp.prettier-vscode
+- burkeholland.simple-react-snippets
+- dsznajder.es7-react-js-snippets
 ```
 
 #### Bun (TypeScript) Backend
@@ -322,8 +321,8 @@ Checklist que todo nuevo miembro del equipo debe completar:
 □ Servicios locales levantados (docker compose up -d)
 □ Migraciones aplicadas
 □ Health check responde 200 OK
-□ Tests unitarios pasando (pytest / bun test / ng test)
-□ Frontend levanta correctamente (ng serve → http://localhost:4200)
+□ Tests unitarios pasando (pytest / bun test / vitest run)
+□ Frontend levanta correctamente (npm run dev → http://localhost:5173)
 
 ### Calidad de código
 □ Pre-commit hooks instalados (husky / lint-staged)
@@ -357,28 +356,27 @@ python_version = "3.12"
 strict = true
 ```
 
-**TypeScript (Angular + Bun):**
+**TypeScript (React + Bun):**
 ```json
-// .eslintrc.json (compartido Angular + Bun)
+// .eslintrc.json (compartido React + Bun)
 {
   "root": true,
-  "ignorePatterns": ["dist/**", "node_modules/**", ".angular/**"],
+  "ignorePatterns": ["dist/**", "node_modules/**"],
   "overrides": [
     {
-      "files": ["*.ts"],
+      "files": ["*.ts", "*.tsx"],
       "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
-        "plugin:@angular-eslint/recommended"
+        "plugin:react/recommended",
+        "plugin:react-hooks/recommended"
       ],
       "rules": {
         "@typescript-eslint/no-unused-vars": "error",
-        "@typescript-eslint/explicit-function-return-type": "warn"
+        "@typescript-eslint/explicit-function-return-type": "warn",
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "warn"
       }
-    },
-    {
-      "files": ["*.html"],
-      "extends": ["plugin:@angular-eslint/template/recommended"]
     }
   ]
 }
@@ -413,7 +411,7 @@ repos:
         entry: ruff format
         language: system
         types: [python]
-      # --- TypeScript (Angular + Bun) ---
+      # --- TypeScript (React + Bun) ---
       - id: eslint
         name: eslint
         entry: bunx eslint --fix
@@ -473,8 +471,8 @@ jobs:
         run: bun test
         working-directory: backend
 
-  # --- Angular Frontend ---
-  angular:
+  # --- React Frontend ---
+  react:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -488,13 +486,13 @@ jobs:
         run: bun install
         working-directory: frontend
       - name: Lint
-        run: bunx ng lint
+        run: bunx eslint .
         working-directory: frontend
       - name: Build
-        run: bunx ng build --configuration=production
+        run: bunx vite build
         working-directory: frontend
       - name: Test
-        run: bunx ng test --watch=false --browsers=ChromeHeadless
+        run: bunx vitest run
         working-directory: frontend
 ```
 
@@ -548,8 +546,8 @@ Cuando esta skill responda, debe producir estos cuatro artefactos:
 
 ### D. Configuración de herramientas y CI (archivos de configuración)
 - `pyproject.toml` con tool.ruff y tool.mypy;
-- `.eslintrc.json` y `.prettierrc` para TypeScript (Angular + Bun);
-- `angular.json`, `tsconfig.json` (frontend);
+- `.eslintrc.json` y `.prettierrc` para TypeScript (React + Bun);
+- `vite.config.ts`, `tsconfig.json` (frontend);
 - `bunfig.toml`, `tsconfig.json` (backend Bun);
 - `.pre-commit-config.yaml`;
 - `.github/workflows/ci.yml` starter;
@@ -638,16 +636,16 @@ Usa esta estructura cuando respondas con el resultado de esta skill:
 
 ## Ejemplos de uso
 
-### Ejemplo 1: Proyecto Python FastAPI + Angular + Bun para ERP Corporativo
+### Ejemplo 1: Proyecto Python FastAPI + React + Bun para ERP Corporativo
 
-**Consulta**: "Estamos arrancando el ERP Corporativo v3 con Python FastAPI, Angular 17 y Bun. Equipo de 6 devs, cliente es Empresa ABC. Necesitamos configurar todo para empezar a desarrollar."
+**Consulta**: "Estamos arrancando el ERP Corporativo v3 con Python FastAPI, React 18 y Bun. Equipo de 6 devs, cliente es Empresa ABC. Necesitamos configurar todo para empezar a desarrollar."
 
 **Respuesta esperada**:
-- Ficha del proyecto: código `ERP`, stack `Python 3.12 / FastAPI / Angular 17+ / Bun`, BD `PostgreSQL 16`, cliente `Empresa ABC S.A.C.`
-- Entorno de desarrollo: Python 3.12, Node 20, Bun 1.1, VS Code con extensiones Python + Angular + ESLint, Docker Desktop, `docker compose up -d` levanta PostgreSQL + Redis, health check en `/health`
-- Git: branching `develop` + feature branches, protección en `main`, conventional commits, `.gitignore` para Python + Node + Angular
-- Herramientas: Ruff (lint + format) + mypy para Python; ESLint (@angular-eslint) + Prettier para TypeScript; `pyproject.toml`, `.eslintrc.json`, `.prettierrc`, pre-commit con `ruff`, `eslint`, `prettier`
-- CI/CD: GitHub Actions con 3 jobs (Python: `pytest` + `ruff check`; Bun: `bun test` + `eslint`; Angular: `ng build` + `ng test`), cobertura mínima 70%
+- Ficha del proyecto: código `ERP`, stack `Python 3.12 / FastAPI / React 18+ / Bun`, BD `PostgreSQL 16`, cliente `Empresa ABC S.A.C.`
+- Entorno de desarrollo: Python 3.12, Node 20, Bun 1.1, VS Code con extensiones Python + React + ESLint, Docker Desktop, `docker compose up -d` levanta PostgreSQL + Redis, health check en `/health`
+- Git: branching `develop` + feature branches, protección en `main`, conventional commits, `.gitignore` para Python + Node + React
+- Herramientas: Ruff (lint + format) + mypy para Python; ESLint (eslint-plugin-react-hooks) + Prettier para TypeScript; `pyproject.toml`, `.eslintrc.json`, `.prettierrc`, pre-commit con `ruff`, `eslint`, `prettier`
+- CI/CD: GitHub Actions con 3 jobs (Python: `pytest` + `ruff check`; Bun: `bun test` + `eslint`; React: `vite build` + `vitest run`), cobertura mínima 70%
 - Equipo: 4 backend, 2 frontend, canal `#erp-dev`, dailies a las 9:30
 - Cliente: requisitos en Jira, aprobación por PM del cliente, deploys a AWS ECS, SLA 99.5%
 - Checklist de onboarding: 16 pasos verificados

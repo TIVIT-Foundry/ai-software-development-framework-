@@ -91,12 +91,11 @@ const ORDER_CREATED: NotificationTemplate = {
 };
 ```
 
-## In-App Notification (Frontend — Angular)
+## In-App Notification (Frontend — React)
 
 ```typescript
-// notification.service.ts
-import { Injectable, inject, NgZone, OnDestroy } from '@angular/core';
-import { Subject, Observable } from 'rxjs';
+// use-notifications-stream.ts
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface Notification {
   id: string;
@@ -107,83 +106,54 @@ export interface Notification {
   receivedAt: string;
 }
 
-@Injectable({ providedIn: 'root' })
-export class NotificationService implements OnDestroy {
-  private readonly zone = inject(NgZone);
-  private readonly destroy$ = new Subject<void>();
-  private readonly notifications$ = new Subject<Notification>();
-  private eventSource: EventSource | null = null;
+export function useNotificationsStream() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
-  /** Observable de notificaciones entrantes (SSE) */
-  get notifications(): Observable<Notification> {
-    return this.notifications$.asObservable();
-  }
+  const connect = useCallback(() => {
+    const eventSource = new EventSource('/api/notifications/stream');
 
-  connect(): void {
-    this.eventSource = new EventSource('/api/notifications/stream');
+    eventSource.onmessage = (event) => {
+      const notification: Notification = JSON.parse(event.data);
+      setNotifications((prev) => [notification, ...prev]);
+    };
 
-    this.zone.runOutsideAngular(() => {
-      this.eventSource!.onmessage = (event) => {
-        const notification: Notification = JSON.parse(event.data);
-        this.zone.run(() => this.notifications$.next(notification));
-      };
-    });
-  }
+    eventSourceRef.current = eventSource;
+  }, []);
 
-  disconnect(): void {
-    this.eventSource?.close();
-    this.eventSource = null;
-  }
+  const disconnect = useCallback(() => {
+    eventSourceRef.current?.close();
+    eventSourceRef.current = null;
+  }, []);
 
-  ngOnDestroy(): void {
-    this.disconnect();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  useEffect(() => {
+    connect();
+    return () => disconnect();
+  }, [connect, disconnect]);
+
+  return { notifications };
 }
 ```
 
 **Uso en componente:**
 
-```typescript
-// notification-list.component.ts
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
-import { NotificationService, Notification } from './notification.service';
+```tsx
+// NotificationList.tsx
+import { useNotificationsStream } from './use-notifications-stream';
 
-@Component({
-  selector: 'app-notification-list',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="notification-list">
-      @for (n of notifications; track n.id) {
-        <div class="notification-item" [class.unread]="!n.read">
-          <strong>{{ n.subject }}</strong>
-          <p>{{ n.body }}</p>
+export function NotificationList() {
+  const { notifications } = useNotificationsStream();
+
+  return (
+    <div className="notification-list">
+      {notifications.map((n) => (
+        <div key={n.id} className={`notification-item${!n.read ? ' unread' : ''}`}>
+          <strong>{n.subject}</strong>
+          <p>{n.body}</p>
         </div>
-      }
+      ))}
     </div>
-  `,
-})
-export class NotificationListComponent implements OnInit, OnDestroy {
-  private readonly notificationService = inject(NotificationService);
-  private readonly destroy$ = new Subject<void>();
-
-  notifications: Notification[] = [];
-
-  ngOnInit(): void {
-    this.notificationService.connect();
-    this.notificationService.notifications
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((n) => this.notifications.unshift(n));
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  );
 }
 ```
 
@@ -470,7 +440,7 @@ Las notificaciones WebSocket delegan la conexión a la skill `real-time` y la l�
                                                                   │ subscribe
 ┌─────────────┐    WS / SSE   ┌─────────────┐    receive    ┌─────▼─────┐
 │  Frontend    │◄──────────────│  real-time   │◄──────────────│  Worker   │
-│  (Angular)   │               │  (pub/sub)   │               │  (notif)  │
+│  (React)     │               │  (pub/sub)   │               │  (notif)  │
 └─────────────┘               └─────────────┘               └───────────┘
 ```
 
@@ -512,15 +482,12 @@ class WebSocketNotificationService:
         )
 ```
 
-**Servicio Angular para notificaciones WS (referencia a skill `real-time`):**
+**Hook React para notificaciones WS (referencia a skill `real-time`):**
 
 ```typescript
-// realtime-notification.service.ts
-import { Injectable, inject, NgZone, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
-import { takeUntil } from 'rxjs/operators';
-import { NotificationService, Notification } from './notification.service';
+// use-realtime-notifications.ts
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Notification } from './use-notifications-stream';
 
 interface WsNotificationPayload {
   template_id: string;
@@ -529,62 +496,52 @@ interface WsNotificationPayload {
   received_at: string;
 }
 
-@Injectable({ providedIn: 'root' })
-export class RealtimeNotificationService implements OnDestroy {
-  private readonly zone = inject(NgZone);
-  private readonly destroy$ = new Subject<void>();
-  private readonly notifications$ = new BehaviorSubject<Notification[]>([]);
-  private socket$!: WebSocketSubject<WsNotificationPayload>;
+export function useRealtimeNotifications() {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const socketRef = useRef<WebSocket | null>(null);
 
-  readonly notifications: Observable<Notification[]> = this.notifications$.asObservable();
+  const connect = useCallback(() => {
+    const socket = new WebSocket('/ws/notifications');
 
-  connect(): void {
-    this.zone.runOutsideAngular(() => {
-      this.socket$ = webSocket<WsNotificationPayload>('/ws/notifications');
+    socket.onmessage = (event) => {
+      const payload: WsNotificationPayload = JSON.parse(event.data);
+      const notification: Notification = {
+        id: crypto.randomUUID(),
+        templateId: payload.template_id,
+        subject: payload.subject,
+        body: payload.body,
+        read: false,
+        receivedAt: payload.received_at,
+      };
 
-      this.socket$.pipe(takeUntil(this.destroy$)).subscribe({
-        next: (payload) => {
-          const notification: Notification = {
-            id: crypto.randomUUID(),
-            templateId: payload.template_id,
-            subject: payload.subject,
-            body: payload.body,
-            read: false,
-            receivedAt: payload.received_at,
-          };
+      setNotifications((prev) => [notification, ...prev]);
 
-          this.zone.run(() => {
-            const current = this.notifications$.getValue();
-            this.notifications$.next([notification, ...current]);
-          });
+      // Notificación del navegador si hay permiso
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        new window.Notification(payload.subject, { body: payload.body });
+      }
+    };
 
-          // Notificación del navegador si hay permiso
-          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            new window.Notification(payload.subject, { body: payload.body });
-          }
-        },
-        error: (err) => console.error('WS notifications error', err),
-      });
-    });
-  }
+    socket.onerror = (err) => console.error('WS notifications error', err);
+    socketRef.current = socket;
+  }, []);
 
-  async markAsRead(id: string): Promise<void> {
+  const markAsRead = useCallback(async (id: string) => {
     await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
-    const current = this.notifications$.getValue();
-    this.notifications$.next(
-      current.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  }
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  }, []);
 
-  disconnect(): void {
-    this.socket$?.complete();
-  }
+  const disconnect = useCallback(() => {
+    socketRef.current?.close();
+    socketRef.current = null;
+  }, []);
 
-  ngOnDestroy(): void {
-    this.disconnect();
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
+  useEffect(() => {
+    connect();
+    return () => disconnect();
+  }, [connect, disconnect]);
+
+  return { notifications, markAsRead };
 }
 ```
 
@@ -688,13 +645,12 @@ interface NotificationPreferenceUpdate {
 }
 ```
 
-**Servicio Angular para preferencias (con @ngneat/query):**
+**Hooks React para preferencias (con @tanstack/react-query):**
 
 ```typescript
-// notification-preferences.service.ts
-import { Injectable, inject } from '@angular/core';
-import { QueryClient, injectQuery, injectMutation } from '@ngneat/query';
-import { NotificationPreferenceUpdate, NotificationPreference } from './notification-preferences.model';
+// use-notification-preferences.ts
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { NotificationPreferenceUpdate, NotificationPreference } from './notification-preferences.model';
 
 const apiClient = {
   get: <T>(url: string) => fetch(url).then((r) => r.json() as Promise<T>),
@@ -702,74 +658,54 @@ const apiClient = {
     fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
 };
 
-@Injectable({ providedIn: 'root' })
-export class NotificationPreferencesService {
-  private readonly queryClient = inject(QueryClient);
+export function useNotificationPreferences(userId: string) {
+  return useQuery({
+    queryKey: ['notification-preferences', userId],
+    queryFn: () => apiClient.get<NotificationPreference[]>(`/api/users/${userId}/notification-preferences`),
+  });
+}
 
-  getPreferences(userId: string) {
-    return injectQuery({
-      queryKey: ['notification-preferences', userId],
-      queryFn: () =>
-        apiClient.get<NotificationPreference[]>(
-          `/api/users/${userId}/notification-preferences`
-        ),
-    });
-  }
+export function useUpdateNotificationPreferences(userId: string) {
+  const queryClient = useQueryClient();
 
-  updatePreferences(userId: string) {
-    return injectMutation({
-      mutationFn: (prefs: NotificationPreferenceUpdate[]) =>
-        apiClient.put(
-          `/api/users/${userId}/notification-preferences`,
-          prefs
-        ),
-      onSuccess: () => {
-        this.queryClient.invalidateQueries({
-          queryKey: ['notification-preferences', userId],
-        });
-      },
-    });
-  }
+  return useMutation({
+    mutationFn: (prefs: NotificationPreferenceUpdate[]) =>
+      apiClient.put(`/api/users/${userId}/notification-preferences`, prefs),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notification-preferences', userId] });
+    },
+  });
 }
 ```
 
 **Uso en componente:**
 
-```typescript
-// notification-preferences.component.ts
-import { Component, inject, input } from '@angular/core';
-import { NotificationPreferencesService } from './notification-preferences.service';
+```tsx
+// NotificationPreferences.tsx
+import { useNotificationPreferences, useUpdateNotificationPreferences } from './use-notification-preferences';
 
-@Component({
-  selector: 'app-notification-preferences',
-  standalone: true,
-  template: `
-    @if (prefs.data(); as preferences) {
-      @for (pref of preferences; track pref.category + pref.channel) {
-        <div class="pref-row">
-          <span>{{ pref.category }} — {{ pref.channel }}</span>
-          <input type="checkbox" [checked]="pref.isOptedIn" (change)="toggle(pref)" />
+interface Pref { category: string; channel: string; isOptedIn: boolean }
+
+export function NotificationPreferences({ userId }: { userId: string }) {
+  const prefs = useNotificationPreferences(userId);
+  const updateMutation = useUpdateNotificationPreferences(userId);
+
+  const toggle = (pref: Pref) => {
+    updateMutation.mutate([{ category: pref.category, channel: pref.channel, isOptedIn: !pref.isOptedIn }]);
+  };
+
+  if (prefs.isLoading) return <p>Cargando...</p>;
+
+  return (
+    <>
+      {prefs.data?.map((pref) => (
+        <div className="pref-row" key={`${pref.category}-${pref.channel}`}>
+          <span>{pref.category} — {pref.channel}</span>
+          <input type="checkbox" checked={pref.isOptedIn} onChange={() => toggle(pref)} />
         </div>
-      }
-    } @else if (prefs.isLoading()) {
-      <p>Cargando...</p>
-    }
-  `,
-})
-export class NotificationPreferencesComponent {
-  userId = input.required<string>();
-
-  private readonly prefsService = inject(NotificationPreferencesService);
-  prefs = this.prefsService.getPreferences(this.userId());
-  updateMutation = this.prefsService.updatePreferences(this.userId());
-
-  toggle(pref: { category: string; channel: string; isOptedIn: boolean }): void {
-    this.updateMutation.mutate([{
-      category: pref.category,
-      channel: pref.channel,
-      isOptedIn: !pref.isOptedIn,
-    }]);
-  }
+      ))}
+    </>
+  );
 }
 ```
 
@@ -961,15 +897,11 @@ async def send_test(
     )
 ```
 
-**Componente Angular de preview:**
+**Componente React de preview:**
 
-```typescript
-// email-preview.component.ts
-import { Component, input, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { switchMap, startWith } from 'rxjs';
-import { signal } from '@angular/core';
+```tsx
+// EmailPreview.tsx
+import { useState } from 'react';
 
 export interface EmailPreviewResult {
   subject: string;
@@ -977,45 +909,35 @@ export interface EmailPreviewResult {
   textBody: string;
 }
 
-@Component({
-  selector: 'app-email-preview',
-  standalone: true,
-  template: `
-    @if (preview(); as p) {
-      <div class="email-preview">
-        <div class="email-preview__subject">{{ p.subject }}</div>
-        <iframe
-          class="email-preview__body"
-          [srcDoc]="p.htmlBody"
-          title="Email preview"
-        />
-      </div>
-    }
-    <button (click)="loadPreview()">Preview</button>
-  `,
-})
-export class EmailPreviewComponent {
-  templateId = input.required<string>();
-  locale = input<string>('es');
-  variables = input<Record<string, string>>({});
+interface EmailPreviewProps {
+  templateId: string;
+  locale?: string;
+  variables?: Record<string, string>;
+}
 
-  private readonly http = inject(HttpClient);
-  private readonly previewTrigger = signal(0);
+export function EmailPreview({ templateId, locale = 'es', variables = {} }: EmailPreviewProps) {
+  const [preview, setPreview] = useState<EmailPreviewResult | null>(null);
 
-  preview = toSignal(
-    this.previewTrigger.asObservable().pipe(
-      switchMap(() =>
-        this.http.post<EmailPreviewResult>(
-          `/api/admin/email-templates/${this.templateId()}/preview`,
-          { locale: this.locale(), variables: this.variables() }
-        )
-      )
-    )
+  const loadPreview = async () => {
+    const res = await fetch(`/api/admin/email-templates/${templateId}/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale, variables }),
+    });
+    setPreview(await res.json());
+  };
+
+  return (
+    <>
+      {preview && (
+        <div className="email-preview">
+          <div className="email-preview__subject">{preview.subject}</div>
+          <iframe className="email-preview__body" srcDoc={preview.htmlBody} title="Email preview" />
+        </div>
+      )}
+      <button onClick={loadPreview}>Preview</button>
+    </>
   );
-
-  loadPreview(): void {
-    this.previewTrigger.update((v) => v + 1);
-  }
 }
 ```
 

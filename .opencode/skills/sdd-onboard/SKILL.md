@@ -10,6 +10,10 @@ metadata:
   enforcement: recommended
   depends_on:
     - governance-constitution
+    - api-first-spec
+    - feature-spec
+    - tasks
+    - converge
   consumed_by:
     - project-bootstrap
   agent_roles:
@@ -33,8 +37,8 @@ Activate this skill when:
 
 **Do not** activate when:
 
-- Explaining a single SDD phase (use phase-specific skills)
-- Configuring SDD tooling (use spec-kit or project-bootstrap)
+- Explaining a single SDD phase (use the phase-specific skill directly: `api-first-spec`/`feature-spec`, `tasks`, or `converge`)
+- Setting up a new project's environment (use `project-bootstrap`)
 - Defining project governance (use `governance-constitution`)
 
 ## SDD Mental Model
@@ -56,14 +60,14 @@ Constitution ──► Specify ──► Plan ──► Tasks ──► Implemen
   (principles)    (what)    (how)   (steps)    (code)       (verify)
 ```
 
-| Phase | Question | Output | Duration |
-|-------|----------|--------|----------|
-| **Constitution** | What principles govern everything? | `constitution.md` | Once per project |
-| **Specify** | What are we building and why? | `spec.md` | 1-4 hours |
-| **Plan** | How will we build it, technically? | `plan.md` | 1-2 hours |
-| **Tasks** | What are the ordered, executable steps? | `tasks.md` | 30 min - 1 hour |
-| **Implement** | Execute each task, test-first | Code + tests | Per sprint |
-| **Converge** | Does the code match the spec? | Acceptance report | At milestones |
+| Phase | Question | Skill | Output | Duration |
+|-------|----------|-------|--------|----------|
+| **Constitution** | What principles govern everything? | `governance-constitution` | `constitution.md` | Once per project |
+| **Specify** | What are we building and why? | `api-first-spec` (has an API) or `feature-spec` (doesn't) | `spec.md` | 1-4 hours |
+| **Plan** | How will we build it, technically? | `framework-conception` / `framework-architecture` | `plan.md` | 1-2 hours |
+| **Tasks** | What are the ordered, executable steps? | `tasks` | `tasks.md` | 30 min - 1 hour |
+| **Implement** | Execute each task, test-first | *(the stack skill for the layer being touched)* | Code + tests | Per sprint |
+| **Converge** | Does the code match the spec? | `converge` | Traceability report | Before each PR |
 
 ## Role-Based Onboarding Path
 
@@ -91,9 +95,9 @@ Constitution ──► Specify ──► Plan ──► Tasks ──► Implemen
 - [ ] Establish spec quality bar for the team.
 
 **Week 2: Govern the workflow**
-- [ ] Run analyze on specs to detect cross-artifact inconsistencies
+- [ ] Run `converge` on in-flight features to catch spec-code drift early
 - [ ] Establish review cadence: daily for tasks, per-feature for specs
-- [ ] Set up SDD CI gates: constitution check, spec-to-code traceability
+- [ ] Require a `converge` report (CONVERGED, no open mismatches) before every PR touching a spec'd feature
 
 ### Architect Path
 
@@ -113,15 +117,14 @@ Constitution ──► Specify ──► Plan ──► Tasks ──► Implemen
 ## SDD Onboarding Checklist
 
 ### Environment Setup
-- [ ] SDD tool installed (Spec Kit CLI or equivalent)
-- [ ] IDE extensions configured (SDD templates, spec validation)
+- [ ] Framework skills available: `api-first-spec`/`feature-spec`, `tasks`, `converge` (`.opencode/skills/`)
 - [ ] Project cloned and running locally
 
 ### Knowledge Foundation
 - [ ] Constitution read and understood
-- [ ] At least 1 existing spec reviewed (see `/specs/` directory)
-- [ ] At least 1 existing plan reviewed (see `/plans/` directory)
-- [ ] At least 1 implementation trace reviewed (see spec→code)
+- [ ] At least 1 existing spec reviewed (see `docs/specs/` and `docs/api-first/`)
+- [ ] At least 1 existing plan/conception artifact reviewed
+- [ ] At least 1 converge report reviewed (see spec→code traceability)
 
 ### First Hands-On
 - [ ] Implement 1 task from existing tasks.md
@@ -173,7 +176,7 @@ Constitution ──► Specify ──► Plan ──► Tasks ──► Implemen
 
 **Symptom:** "It was just a small fix, I didn't need converge."
 **Root cause:** Converge feels like overhead for small changes.
-**Solution:** Automate converge via CI. If it takes <2 min, no one skips it.
+**Solution:** Make `converge` a required step before opening the PR, not optional cleanup. Today it's agent-executed, not a CI gate (see `converge`'s own notes on this) — so the discipline has to be procedural until a deterministic checker exists.
 
 ## Decision table
 
@@ -192,5 +195,5 @@ Constitution ──► Specify ──► Plan ──► Tasks ──► Implemen
 - [ ] Common pitfalls documented with solutions
 - [ ] SDD phases clearly differentiated
 - [ ] Spec-quality bar established
-- [ ] Converge phase automated in CI
+- [ ] Converge phase run (and its report attached) before every PR touching a spec'd feature
 - [ ] Constitution accessible to all team members

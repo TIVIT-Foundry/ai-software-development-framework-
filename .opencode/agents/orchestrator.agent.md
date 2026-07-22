@@ -42,7 +42,7 @@ Carga estos documentos antes de responder cualquier consulta de routing:
 | Cambio transversal al framework | governance → architecture → core-design → security + data → platform → todos los packs afectados |
 | Incidente de seguridad o compliance | governance → security → data-memory-compliance → platform → operations-evolution |
 | Bugfix menor en backend existente | Sin routing: delegar directo a delivery-agent (backend-api) |
-| Bugfix menor en frontend existente | Sin routing: delegar directo a delivery-agent (angular o angular-services) |
+| Bugfix menor en frontend existente | Sin routing: delegar directo a delivery-agent (react o react-services) |
 
 ### 2. Verificar prerequisitos
 

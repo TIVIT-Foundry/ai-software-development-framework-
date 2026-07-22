@@ -1,0 +1,34 @@
+import { useState } from 'react';
+
+import type { ${ENTITY}CreateRequest, ${ENTITY}UpdateRequest } from './${entity}.model';
+
+type ${ENTITY}FormValues = Partial<${ENTITY}CreateRequest & ${ENTITY}UpdateRequest>;
+
+interface ${ENTITY}FormProps {
+  initialValues?: ${ENTITY}UpdateRequest | null;
+  loading?: boolean;
+  onSubmitForm: (values: ${ENTITY}CreateRequest | ${ENTITY}UpdateRequest) => void;
+  onCancel: () => void;
+}
+
+export function ${ENTITY}Form({ initialValues = null, loading = false, onSubmitForm, onCancel }: ${ENTITY}FormProps) {
+  const [values, setValues] = useState<${ENTITY}FormValues>(initialValues ?? {});
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmitForm(values as ${ENTITY}CreateRequest | ${ENTITY}UpdateRequest);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="${entity}-form">
+      <h3>{initialValues ? 'Edit' : 'Create'} ${ENTITY}</h3>
+
+$FORM_FIELDS
+
+      <div className="actions">
+        <button type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save'}</button>
+        <button type="button" onClick={onCancel}>Cancel</button>
+      </div>
+    </form>
+  );
+}

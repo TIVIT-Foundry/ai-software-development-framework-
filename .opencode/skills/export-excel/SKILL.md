@@ -15,7 +15,7 @@ metadata:
   depends_on:
   - database-sp
   - data-access
-  - angular-services
+  - react-services
   consumed_by:
   - agent-fullstack
   agent_roles:
@@ -141,134 +141,89 @@ async def export_entities(params: ExportParams, db: AsyncSession):
     # Return as base64 or stream
 ```
 
-## Frontend Service (Angular + @ngneat/query)
+## Frontend Hooks (React + @tanstack/react-query)
 ```typescript
-@Injectable({ providedIn: 'root' })
-export class ExportService {
-  private readonly http = inject(HttpClient);
-
-  exportEntities(params: ExportParams): Observable<Blob> {
-    return this.http.get('/api/v1/entities/export', {
-      params: toHttpParams(params),
-      responseType: 'blob',
-    });
-  }
-
-  getExportEstimate(params: ExportParams): Observable<ExportEstimate> {
-    return this.http.get<ExportEstimate>('/api/v1/entities/export/estimate', {
-      params: toHttpParams(params),
-    });
-  }
+// export.api.ts
+async function exportEntities(params: ExportParams): Promise<Blob> {
+  const res = await fetch(`/api/v1/entities/export?${toQueryString(params)}`);
+  if (!res.ok) throw new Error('Export failed');
+  return res.blob();
 }
 
-// Hook wrapper con @ngneat/query
-@Injectable({ providedIn: 'root' })
-export class ExportQuery {
-  private readonly queryClient = inject(QueryClient);
-  private readonly exportService = inject(ExportService);
+async function getExportEstimate(params: ExportParams): Promise<ExportEstimate> {
+  const res = await fetch(`/api/v1/entities/export/estimate?${toQueryString(params)}`);
+  if (!res.ok) throw new Error('Estimate failed');
+  return res.json();
+}
 
-  useExportEntities(params: Signal<ExportParams>, enabled: Signal<boolean>) {
-    return injectQuery(() => ({
-      queryKey: computed(() => ['export', 'entities', params()]),
-      queryFn: () => firstValueFrom(this.exportService.exportEntities(params())),
-      enabled,
-      staleTime: Infinity,
-      retry: false,
-    }));
-  }
+// use-export-entities.query.ts
+import { useQuery } from '@tanstack/react-query';
+
+export function useExportEntities(params: ExportParams, enabled: boolean) {
+  return useQuery({
+    queryKey: ['export', 'entities', params],
+    queryFn: () => exportEntities(params),
+    enabled,
+    staleTime: Infinity,
+    retry: false,
+  });
 }
 ```
 
-## Frontend Component (Angular + Ant Design)
-```typescript
-@Component({
-  selector: 'app-export-button',
-  template: `
-    <button
-      nz-button
-      [nzLoading]="isLoading()"
-      [disabled]="disabled() || isLoading()"
-      (click)="handleExport()"
-    >
-      <span nz-icon nzType="download"></span>
-      {{ label() }} {{ estimatedSize() && !isLoading() ? estimatedSize() : '' }}
-    </button>
+## Frontend Component (React + Ant Design)
+```tsx
+import { useEffect, useState } from 'react';
+import { Button, Progress, message } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
+import { useExportEntities } from './use-export-entities.query';
+import { getExportEstimate } from './export.api';
 
-    @if (progress() > 0 && progress() < 100) {
-      <nz-progress
-        [nzPercent]="progress()"
-        [nzShowInfo]="false"
-        [nzStyle]="{ width: '100px' }"
-      ></nz-progress>
+interface ExportButtonProps {
+  params: ExportParams;
+  disabled?: boolean;
+  label?: string;
+}
+
+export function ExportButton({ params, disabled = false, label = 'Exportar Excel' }: ExportButtonProps) {
+  const [enabled, setEnabled] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [estimatedSize, setEstimatedSize] = useState('');
+
+  const exportResult = useExportEntities(params, enabled);
+
+  useEffect(() => {
+    if (exportResult.data) {
+      downloadBlob(exportResult.data);
+      setEnabled(false);
+      setProgress(100);
+      message.success('Exportación completada');
+      const timeout = setTimeout(() => setProgress(0), 3000);
+      return () => clearTimeout(timeout);
     }
+  }, [exportResult.data]);
 
-    @if (progress() === 100) {
-      <nz-progress
-        [nzPercent]="100"
-        nzType="circle"
-        [nzWidth]="24"
-        nzStatus="success"
-      ></nz-progress>
+  useEffect(() => {
+    if (exportResult.error) {
+      setEnabled(false);
+      setProgress(0);
+      message.error(exportResult.error.message || 'Error al exportar');
     }
-  `,
-})
-export class ExportButtonComponent {
-  params = input.required<ExportParams>();
-  disabled = input(false);
-  label = input('Exportar Excel');
+  }, [exportResult.error]);
 
-  private readonly exportQuery = inject(ExportQuery);
-  private readonly message = inject(NzMessageService);
-
-  protected readonly enabled = signal(false);
-  protected readonly progress = signal(0);
-  protected readonly estimatedSize = signal<string>('');
-
-  protected readonly exportResult = this.exportQuery.useExportEntities(
-    this.params,
-    this.enabled
-  );
-
-  protected readonly isLoading = computed(() => this.exportResult.isLoading());
-
-  constructor() {
-    effect(() => {
-      const data = this.exportResult.data();
-      if (data) {
-        this.downloadBlob(data);
-        this.enabled.set(false);
-        this.progress.set(100);
-        this.message.success('Exportación completada');
-        setTimeout(() => this.progress.set(0), 3000);
-      }
-    });
-
-    effect(() => {
-      const error = this.exportResult.error();
-      if (error) {
-        this.enabled.set(false);
-        this.progress.set(0);
-        this.message.error(error.message || 'Error al exportar');
-      }
-    });
-  }
-
-  protected async handleExport(): Promise<void> {
+  const handleExport = async () => {
     try {
-      const estimate = await firstValueFrom(
-        this.exportService.getExportEstimate(toSignalValue(this.params))
-      );
+      const estimate = await getExportEstimate(params);
       const sizeMb = (estimate.estimatedBytes / 1024 / 1024).toFixed(1);
-      this.estimatedSize.set(`(~${sizeMb} MB)`);
+      setEstimatedSize(`(~${sizeMb} MB)`);
     } catch {
       // Ignorar si no hay estimación
     }
 
-    this.progress.set(50);
-    this.enabled.set(true);
-  }
+    setProgress(50);
+    setEnabled(true);
+  };
 
-  private downloadBlob(data: Blob): void {
+  const downloadBlob = (data: Blob): void => {
     const url = window.URL.createObjectURL(data);
     const link = document.createElement('a');
     link.href = url;
@@ -277,7 +232,26 @@ export class ExportButtonComponent {
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-  }
+  };
+
+  return (
+    <>
+      <Button
+        icon={<DownloadOutlined />}
+        loading={exportResult.isLoading}
+        disabled={disabled || exportResult.isLoading}
+        onClick={handleExport}
+      >
+        {label} {estimatedSize && !exportResult.isLoading ? estimatedSize : ''}
+      </Button>
+
+      {progress > 0 && progress < 100 && (
+        <Progress percent={progress} showInfo={false} style={{ width: 100 }} />
+      )}
+
+      {progress === 100 && <Progress percent={100} type="circle" size={24} status="success" />}
+    </>
+  );
 }
 ```
 
@@ -1277,17 +1251,19 @@ async def run_export(job_id: str, request: ExportRequest) -> None:
     )
 ```
 
-#### Frontend — suscripción WebSocket (Angular)
+#### Frontend — suscripción WebSocket (React)
 
 ```typescript
-@Injectable({ providedIn: 'root' })
-export class ExportProgressService {
-  private readonly hubConnection = signal<HubConnection | null>(null);
+// use-export-progress.ts
+import { useCallback, useRef, useState } from 'react';
+import { HubConnectionBuilder, LogLevel, type HubConnection } from '@microsoft/signalr';
 
-  readonly progress = signal(0);
-  readonly status = signal<'idle' | 'processing' | 'completed' | 'failed'>('idle');
+export function useExportProgress() {
+  const connectionRef = useRef<HubConnection | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
 
-  subscribeToJob(jobId: string): void {
+  const subscribeToJob = useCallback((jobId: string) => {
     const connection = new HubConnectionBuilder()
       .withUrl('/hubs/export')
       .withAutomaticReconnect()
@@ -1295,13 +1271,13 @@ export class ExportProgressService {
       .build();
 
     connection.on('ExportProgress', (data: ExportProgress) => {
-      this.progress.set(data.progress);
-      this.status.set('processing');
+      setProgress(data.progress);
+      setStatus('processing');
     });
 
     connection.on('ExportCompleted', (data: ExportComplete) => {
-      this.progress.set(100);
-      this.status.set('completed');
+      setProgress(100);
+      setStatus('completed');
       // Iniciar descarga automática
       const link = document.createElement('a');
       link.href = data.downloadUrl;
@@ -1309,22 +1285,24 @@ export class ExportProgressService {
     });
 
     connection.on('ExportFailed', () => {
-      this.status.set('failed');
+      setStatus('failed');
     });
 
     connection.start().then(() => {
       connection.invoke('SubscribeToJob', jobId);
     });
 
-    this.hubConnection.set(connection);
-  }
+    connectionRef.current = connection;
+  }, []);
 
-  unsubscribe(): void {
-    this.hubConnection()?.stop();
-    this.hubConnection.set(null);
-    this.progress.set(0);
-    this.status.set('idle');
-  }
+  const unsubscribe = useCallback(() => {
+    connectionRef.current?.stop();
+    connectionRef.current = null;
+    setProgress(0);
+    setStatus('idle');
+  }, []);
+
+  return { progress, status, subscribeToJob, unsubscribe };
 }
 ```
 
@@ -1334,55 +1312,40 @@ export class ExportProgressService {
 
 Permitir al usuario elegir qué columnas incluir en la exportación antes de descargar.
 
-#### Modal de selección de columnas (Angular)
+#### Modal de selección de columnas (React)
 
-```typescript
-@Component({
-  selector: 'app-export-column-selector',
-  template: `
-    <nz-modal
-      [nzVisible]="visible()"
-      nzTitle="Seleccionar columnas para exportar"
-      (nzOnCancel)="cancel.emit()"
-      (nzOnOk)="handleSubmit()"
-    >
-      <nz-checkbox-group
-        [ngModel]="selectedKeys()"
-        (ngModelChange)="selectedKeys.set($event)"
-        [nzOptions]="checkboxOptions()"
-      ></nz-checkbox-group>
-    </nz-modal>
-  `,
-})
-export class ExportColumnSelectorComponent {
-  columns = input.required<ColumnOption[]>();
-  visible = input(false);
+```tsx
+import { useEffect, useMemo, useState } from 'react';
+import { Modal, Checkbox } from 'antd';
 
-  submit = output<string[]>();
-  cancel = output<void>();
+interface ExportColumnSelectorProps {
+  columns: ColumnOption[];
+  visible: boolean;
+  onSubmit: (keys: string[]) => void;
+  onCancel: () => void;
+}
 
-  protected readonly selectedKeys = signal<string[]>([]);
+export function ExportColumnSelector({ columns, visible, onSubmit, onCancel }: ExportColumnSelectorProps) {
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
-  protected readonly checkboxOptions = computed(() =>
-    this.columns().map(c => ({
-      label: c.label,
-      value: c.key,
-      checked: c.selected,
-    }))
+  useEffect(() => {
+    setSelectedKeys(columns.filter((c) => c.selected).map((c) => c.key));
+  }, [columns]);
+
+  const checkboxOptions = useMemo(
+    () => columns.map((c) => ({ label: c.label, value: c.key })),
+    [columns],
   );
 
-  constructor() {
-    effect(() => {
-      const initial = this.columns()
-        .filter(c => c.selected)
-        .map(c => c.key);
-      this.selectedKeys.set(initial);
-    });
-  }
-
-  protected handleSubmit(): void {
-    this.submit.emit(this.selectedKeys());
-  }
+  return (
+    <Modal open={visible} title="Seleccionar columnas para exportar" onCancel={onCancel} onOk={() => onSubmit(selectedKeys)}>
+      <Checkbox.Group
+        value={selectedKeys}
+        onChange={(values) => setSelectedKeys(values as string[])}
+        options={checkboxOptions}
+      />
+    </Modal>
+  );
 }
 ```
 
@@ -1497,31 +1460,21 @@ class ColumnMapping:
 
 En aplicaciones multi-idioma, los encabezados del Excel deben respetar el idioma del usuario que solicita la exportación.
 
-#### Frontend — pasar idioma en la request (Angular)
+#### Frontend — pasar idioma en la request (React)
 
 ```typescript
-@Injectable({ providedIn: 'root' })
-export class ExportService {
-  private readonly http = inject(HttpClient);
-  private readonly i18n = inject(I18nService);
+import i18n from '../../core/i18n/i18n';
 
-  exportEntities(params: ExportParams): Observable<{ blob: Blob; filename: string }> {
-    return this.http.get('/api/v1/entities/export', {
-      params: toHttpParams({
-        ...params,
-        language: this.i18n.currentLang(),
-      }),
-      responseType: 'blob',
-      observe: 'response',
-    }).pipe(
-      map(response => {
-        const disposition = response.headers.get('content-disposition');
-        const filenameMatch = disposition?.match(/filename="?(.+?)"?$/);
-        const filename = filenameMatch?.[1] || `export_${Date.now()}.xlsx`;
-        return { blob: response.body!, filename };
-      })
-    );
-  }
+async function exportEntities(params: ExportParams): Promise<{ blob: Blob; filename: string }> {
+  const query = toQueryString({ ...params, language: i18n.language });
+  const res = await fetch(`/api/v1/entities/export?${query}`);
+  if (!res.ok) throw new Error('Export failed');
+
+  const disposition = res.headers.get('content-disposition');
+  const filenameMatch = disposition?.match(/filename="?(.+?)"?$/);
+  const filename = filenameMatch?.[1] || `export_${Date.now()}.xlsx`;
+
+  return { blob: await res.blob(), filename };
 }
 ```
 

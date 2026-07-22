@@ -3,7 +3,7 @@ name: design-system
 description: 'Visual design system: colors, typography, spacing, component wrappers,
   and theming. Trigger: When styling components, choosing colors, or applying visual
   patterns.'
-version: 1.0
+version: 2.0
 metadata:
   phase:
   - inception
@@ -13,7 +13,7 @@ metadata:
   enforcement: mandatory
   depends_on: []
   consumed_by:
-  - angular
+  - react
   - agent-frontend
   - agent-fullstack
   agent_roles:
@@ -25,13 +25,13 @@ mcp_usage: none
 ## Critical Rules
 | Rule | Type | Rationale |
 |------|------|-----------|
-| Use Angular component styles (SCSS) | ALWAYS | Scoped styles, encapsulation via ViewEncapsulation |
+| Use CSS Modules or Tailwind for component styles | ALWAYS | Scoped styles, no global leakage |
 | Use design tokens (not raw values) | ALWAYS | Consistency |
 | Use design system icons | ALWAYS | Visual consistency |
 | Hardcode colors outside tokens | NEVER | Maintainability |
 | Use component wrappers, not UI library directly | ALWAYS | Consistent project-level styling |
 | Wrap new UI library components following wrapper pattern | ALWAYS | Design consistency |
-| Prefer standalone components | ALWAYS | Lazy loading, tree-shaking, simpler imports |
+| Prefer function components with named exports | ALWAYS | Tree-shaking, simpler imports, no default-export ambiguity |
 
 ## Color Tokens
 
@@ -116,123 +116,101 @@ mcp_usage: none
 --sidebar-collapsed-width: 80px;
 ```
 
-## Component Wrapper Pattern (Angular)
-```ts
-// project-button.component.ts — Standalone wrapper for consistent project styling
-import { Component, Input } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
+## Component Wrapper Pattern (React)
+```tsx
+// ProjectButton.tsx — Wrapper for consistent project styling over a Radix/shadcn primitive
+import { Slot } from '@radix-ui/react-slot';
+import type { ButtonHTMLAttributes } from 'react';
 
-@Component({
-  selector: 'app-project-button',
-  standalone: true,
-  imports: [MatButtonModule],
-  template: `
-    <button mat-flat-button [color]="color" [class]="'size-' + size">
-      <ng-content />
-    </button>
-  `,
-  styles: [`
-    .size-large { padding: var(--spacing-md) var(--spacing-lg); font-size: 16px; }
-    .size-small { padding: var(--spacing-xs) var(--spacing-sm); font-size: 12px; }
-  `],
-})
-export class ProjectButtonComponent {
-  @Input() color: 'primary' | 'accent' | 'warn' = 'primary';
-  @Input() size: 'small' | 'large' = 'large';
+interface ProjectButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  color?: 'primary' | 'accent' | 'warn';
+  size?: 'small' | 'large';
+  asChild?: boolean;
+}
+
+export function ProjectButton({ color = 'primary', size = 'large', asChild = false, className, ...props }: ProjectButtonProps) {
+  const Comp = asChild ? Slot : 'button';
+  return (
+    <Comp
+      className={`project-button color-${color} size-${size} ${className ?? ''}`}
+      {...props}
+    />
+  );
 }
 ```
 
-**Directiva de estilos del proyecto** (opcional, para inyectar tokens):
-```ts
-import { Directive, HostBinding } from '@angular/core';
+```css
+/* ProjectButton.module.css */
+.size-large { padding: var(--spacing-md) var(--spacing-lg); font-size: 16px; }
+.size-small { padding: var(--spacing-xs) var(--spacing-sm); font-size: 12px; }
+.color-primary { background: var(--color-primary); color: white; }
+.color-warn { background: var(--color-error); color: white; }
+```
 
-@Directive({ selector: '[appTokenSpacing]', standalone: true })
-export class TokenSpacingDirective {
-  @HostBinding('style.padding') padding = 'var(--spacing-md)';
+**Hook de tokens** (opcional, para leer valores computados en JS, ej. para canvas/charts):
+```ts
+export function useToken(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 ```
 
-## Theme Configuration (Angular Material)
-```ts
-// app.config.ts — Application-wide Material theme
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import {
-  MAT_DATE_LOCALE,
-  MatNativeDateModule,
-} from '@angular/material/core';
-import {
-  ThemePalette,
-  provideTheme,
-} from '@angular/material/core';
+## Theme Configuration (Tailwind + shadcn/ui)
 
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideAnimationsAsync(),
-    importProvidersFrom(MatNativeDateModule),
-    { provide: MAT_DATE_LOCALE, useValue: 'es-MX' },
-  ],
-};
+```ts
+// main.tsx — Application-wide theme provider (dark mode via class strategy)
+import { ThemeProvider } from './core/theme/ThemeProvider';
+
+export function App() {
+  return (
+    <ThemeProvider defaultTheme="light" storageKey="app-theme">
+      {/* ... */}
+    </ThemeProvider>
+  );
+}
 ```
 
-**SCSS theme overrides** (`styles/_theme.scss`):
-```scss
-@use '@angular/material' as mat;
+```tsx
+// ThemeProvider.tsx — minimal light/dark provider (equivalent to next-themes for non-Next.js apps)
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-$project-primary: mat.define-palette(mat.$indigo-palette, #007788);
-$project-accent:  mat.define-palette(mat.$pink-palette);
-$project-warn:    mat.define-palette(mat.$red-palette);
+type Theme = 'light' | 'dark';
+const ThemeContext = createContext<{ theme: Theme; setTheme: (t: Theme) => void } | null>(null);
 
-$project-theme: mat.define-light-theme((
-  color: (
-    primary: $project-primary,
-    accent:  $project-accent,
-    warn:    $project-warn,
-  ),
-  typography: mat.define-typography-config(),
-));
+export function ThemeProvider({ children, defaultTheme = 'light', storageKey = 'theme' }: { children: ReactNode; defaultTheme?: Theme; storageKey?: string }) {
+  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) ?? defaultTheme);
 
-@include mat.core-theme($project-theme);
-@include mat.all-component-themes($project-theme);
-```
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem(storageKey, theme);
+  }, [theme, storageKey]);
 
-**PrimeNG alternative** (`app.config.ts`):
-```ts
-import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeng/themes/aura';
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
+}
 
-export const appConfig: ApplicationConfig = {
-  providers: [
-    providePrimeNG({
-      theme: {
-        preset: Aura,
-        options: {
-          darkModeSelector: '.dark-mode',
-          cssLayer: { name: 'primeng', order: 'tailwind-base, primeng, tailwind-utilities' },
-        },
-      },
-    }),
-  ],
+export const useTheme = () => {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
+  return ctx;
 };
 ```
 
 ## Core Component Catalog
-Wrappers to create for consistent styling (Angular Material / PrimeNG equivalents):
-- MatInput / p-inputText, MatTextarea / p-textarea, MatAutocomplete / p-autoComplete
-- MatSelect / p-dropdown, MatDatePicker / p-calendar, MatTimepicker / p-timepicker
-- MatFormField / p-floatlabel, MatInputNumber / p-inputNumber
-- MatButton / p-button, MatSlideToggle / p-toggleswitch, MatRadio / p-radiobutton, MatCheckbox / p-checkbox
-- MatTable / p-table (generic `T extends object`)
-- MatDialog / p-dialog, MatSidenav / p-sidebar
-- MatCard / p-card, MatChip / p-chip, MatExpansionPanel / p-accordion, MatTabGroup / p-tabview
-- MatProgressBar / p-progressbar, MatAvatar / p-avatar, MatDivider, MatDivider / p-divider
-- MatTypography (directive)
-- MatDescriptionList / p-description, MatConfirmDialog / p-confirmdialog
+Wrappers to create for consistent styling (Radix UI primitives / shadcn/ui equivalents):
+- `Input` / `radix-ui Form.Control`, `Textarea`, `Combobox` / `cmdk`
+- `Select` / `radix-ui Select`, `DatePicker` (react-day-picker), `TimePicker`
+- `FormField` (label + error wrapper), `NumberInput`
+- `Button` / `radix-ui Slot`, `Switch` / `radix-ui Switch`, `RadioGroup` / `radix-ui RadioGroup`, `Checkbox` / `radix-ui Checkbox`
+- `DataTable` (generic `T extends object`, via `@tanstack/react-table`)
+- `Dialog` / `radix-ui Dialog`, `Sidebar` / `radix-ui NavigationMenu`
+- `Card`, `Chip`/`Badge`, `Accordion` / `radix-ui Accordion`, `Tabs` / `radix-ui Tabs`
+- `ProgressBar` / `radix-ui Progress`, `Avatar` / `radix-ui Avatar`, `Divider` / `radix-ui Separator`
+- `Typography` (utility components: `<Heading>`, `<Text>`)
+- `DescriptionList`, `ConfirmDialog` (built on `Dialog`)
 
-## Angular Component Style Patterns
-```scss
-/* SCSS with design tokens — components use ViewEncapsulation.Emulated by default */
-:host {
+## React Component Style Patterns
+```css
+/* Component.module.css — CSS Modules scope styles per component automatically */
+.root {
   display: block;
   padding: var(--spacing-lg);
 }
@@ -242,55 +220,62 @@ Wrappers to create for consistent styling (Angular Material / PrimeNG equivalent
   color: var(--color-text-title);
 }
 ```
+```tsx
+import styles from './Component.module.css';
+
+export function Component() {
+  return <div className={styles.root}><h3 className={styles.title}>Title</h3></div>;
+}
+```
 
 ## Diseño moderno de UI
 
-### 1. Angular UI Libraries — Primitivas de componentes, integración con Material Design
+### 1. React UI Libraries — Primitivas de componentes, integración con Radix/shadcn
 
-Las librerías de UI en Angular ofrecen componentes listos para producción con accesibilidad integrada, theming configurable y soporte multi-tema.
+Las librerías de UI en React ofrecen componentes listos para producción con accesibilidad integrada, theming configurable y soporte multi-tema.
 
-**Angular Material (Material Design):**
-- Se instala vía `ng add @angular/material` y genera schematics para generar componentes
-- Cada componente es un **Módulo standalone** (Angular 15+) o un `NgModule` clásico
-- Ejemplo de anatomía: `MatDialog` usa `MatDialogModule` + `MatDialogRef<T>` + `MatDialogConfig`, estilados con SCSS y Material theming
+**shadcn/ui (recomendado, sobre Radix UI):**
+- No es una dependencia de npm tradicional: se instala componente por componente con `npx shadcn@latest add button`, copiando el código fuente al proyecto (`src/shared/ui/`)
+- Cada componente es una primitiva de Radix UI estilada con Tailwind — el equipo es dueño del código, no depende de una versión externa para cambiar comportamiento
+- Ejemplo de anatomía: `Dialog` usa `@radix-ui/react-dialog` (`Dialog.Root`, `Dialog.Trigger`, `Dialog.Content`) estilado con clases Tailwind + `class-variance-authority` para variantes
 
-**PrimeNG:**
-- Se instala vía `npm install primeng` con themes configurables (Aura, Lara, Nora, etc.)
-- Componentes standalone y directivas (`p-` prefix)
-- Estilos via CSS Layer con integración Tailwind
+**Radix UI (primitivas headless, sin estilos):**
+- Se instala paquete por paquete (`@radix-ui/react-dialog`, `@radix-ui/react-select`, etc.)
+- Cero estilos por defecto — accesibilidad (focus trap, ARIA, teclado) completamente resuelta, estilado 100% libre
+- Base sobre la que se construye shadcn/ui
 
-**NG-ZORRO (Ant Design para Angular):**
-- Se instala vía `ng add ng-zorro-antd`
-- Componentes con `nz-` prefix, theming con less o SCSS
-- Estructura similar a Ant Design React pero adaptada a Angular
+**Ant Design (React):**
+- Se instala vía `npm install antd`
+- Componentes completos con estilos por defecto (menos control granular que Radix, pero setup más rápido)
+- Alternativa cuando se prioriza velocidad de entrega sobre control total del diseño
 
-**Patrón de wrapper en Angular:**
-- Crear componentes standalone en `src/app/shared/components/` que envuelvan el componente de la UI library
-- Aplicar tokens del proyecto via SCSS y configuración de theming
-- Los wrappers exponen una API simplificada y consistente para el equipo
+**Patrón de wrapper en React:**
+- Crear componentes en `src/shared/components/` que envuelvan el componente de la UI library
+- Aplicar tokens del proyecto vía CSS Modules o clases Tailwind mapeadas a `var(--token)`
+- Los wrappers exponen una API de props simplificada y consistente para el equipo
 
 **Estructura de archivos:**
 ```
 src/
-  app/
-    shared/
-      components/          ← wrappers del proyecto (project-button, search-dialog)
-      ui/                  ← primitivas o wrappers reutilizables (ui-button, ui-table)
-    features/
-    core/
+  shared/
+    components/          ← wrappers del proyecto (ProjectButton, SearchDialog)
+    ui/                  ← primitivas shadcn/ui sin modificar (button.tsx, dialog.tsx)
+  features/
+  core/
 ```
 
-**Regla del framework:** Los componentes de `ui/` encapsulan la UI library y NO contienen lógica de negocio. Los wrappers en `shared/components/` aplican tokens, comportamiento y estilos del proyecto.
+**Regla del framework:** Los componentes de `ui/` son las primitivas de shadcn/ui tal cual se generan (no se editan a mano salvo bugfix puntual). Los wrappers en `shared/components/` aplican tokens, comportamiento y estilos del proyecto sobre esas primitivas.
 
 ### 2. Tailwind CSS como vehículo de tokens — clases utilitarias que mapean a design tokens
 
-Tailwind CSS actúa como **capa de entrega** entre los design tokens y el código de los componentes. En vez de escribir `padding: var(--spacing-lg)`, se usa `p-lg` (clase utilitaria que internamente resuelve el token).
+Tailwind CSS actúa como **capa de entrega** entre los design tokens y el código de los componentes. En vez de escribir `style={{ padding: 'var(--spacing-lg)' }}`, se usa `className="p-lg"` (clase utilitaria que internamente resuelve el token).
 
 **Configuración en `tailwind.config.ts`:**
 ```ts
 import type { Config } from 'tailwindcss';
 
 export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -389,9 +374,9 @@ El archivo `tokens.css` es el **único origen de verdad en runtime** para los va
 |------|-----------------|---------|
 | `tokens.css` | Define valores como `--color-primary` | `#007788` |
 | `tailwind.config.ts` | Mapea `primary` → `var(--color-primary)` | `colors: { primary: 'var(--color-primary)' }` |
-| Componente | Usa la clase Tailwind | `class="bg-primary text-white"` |
+| Componente | Usa la clase Tailwind | `className="bg-primary text-white"` |
 
-**Regla:** Cambiar un color → cambiar `tokens.css`. Tailwind y componentes Angular se actualizan automáticamente sin tocar ningún componente.
+**Regla:** Cambiar un color → cambiar `tokens.css`. Tailwind y componentes React se actualizan automáticamente sin tocar ningún componente.
 
 ### 4. Formatos de design tokens — Style Dictionary, estándar DTCG, tokens JSON
 
@@ -413,7 +398,7 @@ El archivo `tokens.css` es el **único origen de verdad en runtime** para los va
     "primary": {
       "$value": "#007788",
       "$type": "color",
-      "$description": "Color primario del proyecto IA Digital"
+      "$description": "Color primario del proyecto"
     },
     "primary-hover": {
       "$value": "#0099aa",
@@ -479,8 +464,8 @@ Figma (Variables / Styles)
 tokens/*.tokens.json
     ↓  Style Dictionary (build)
 tokens.css + tailwind-tokens.js
-    ↓  Tailwind + Angular Material / PrimeNG
-Componentes Angular
+    ↓  Tailwind + shadcn/ui / Radix UI
+Componentes React
 ```
 
 **Configuración en Figma:**
@@ -511,7 +496,7 @@ Storybook es la **fuente de verdad visual** para el equipo de diseño y desarrol
 **Configuración de Storybook con tokens:**
 ```ts
 // .storybook/preview.ts
-import type { Preview } from '@storybook/angular';
+import type { Preview } from '@storybook/react-vite';
 import '../src/styles/tokens.css';
 
 const preview: Preview = {
@@ -539,30 +524,31 @@ const preview: Preview = {
     },
   },
   decorators: [
-    (storyFn, context) => {
-      const theme = context.globals.theme ?? 'light';
-      return `<div class="${theme === 'dark' ? 'dark' : ''}">${storyFn()}</div>`;
-    },
+    (Story, context) => (
+      <div className={context.globals.theme === 'dark' ? 'dark' : ''}>
+        <Story />
+      </div>
+    ),
   ],
 };
 export default preview;
 ```
 
 **Patrón de Story por componente:**
-```ts
-// project-button.stories.ts
-import type { Meta, StoryObj } from '@storybook/angular';
-import { ProjectButtonComponent } from './project-button.component';
+```tsx
+// ProjectButton.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { ProjectButton } from './ProjectButton';
 
-const meta: Meta<ProjectButtonComponent> = {
+const meta: Meta<typeof ProjectButton> = {
   title: 'Shared/ProjectButton',
-  component: ProjectButtonComponent,
+  component: ProjectButton,
   tags: ['autodocs'],
   argTypes: {
     color: {
       control: 'select',
       options: ['primary', 'accent', 'warn'],
-      description: 'Color del botón (Material palette)',
+      description: 'Color del botón',
       table: {
         defaultValue: { summary: 'primary' },
         category: 'Design Token',
@@ -583,34 +569,24 @@ const meta: Meta<ProjectButtonComponent> = {
 };
 export default meta;
 
-type Story = StoryObj<ProjectButtonComponent>;
+type Story = StoryObj<typeof ProjectButton>;
 
 export const Primary: Story = {
-  args: { color: 'primary', size: 'large' },
-  render: (args) => ({
-    props: args,
-    template: `<app-project-button [color]="color" [size]="size">Primario</app-project-button>`,
-  }),
+  args: { color: 'primary', size: 'large', children: 'Primario' },
 };
 
 export const Warn: Story = {
-  args: { color: 'warn', size: 'large' },
-  render: (args) => ({
-    props: args,
-    template: `<app-project-button [color]="color" [size]="size">Eliminar</app-project-button>`,
-  }),
+  args: { color: 'warn', size: 'large', children: 'Eliminar' },
 };
 
 export const AllVariants: Story = {
-  render: () => ({
-    template: `
-      <div style="display:flex;gap:var(--spacing-md)">
-        <app-project-button color="primary" size="large">Primario</app-project-button>
-        <app-project-button color="accent" size="large">Accent</app-project-button>
-        <app-project-button color="warn" size="large">Eliminar</app-project-button>
-      </div>
-    `,
-  }),
+  render: () => (
+    <div style={{ display: 'flex', gap: 'var(--spacing-md)' }}>
+      <ProjectButton color="primary" size="large">Primario</ProjectButton>
+      <ProjectButton color="accent" size="large">Accent</ProjectButton>
+      <ProjectButton color="warn" size="large">Eliminar</ProjectButton>
+    </div>
+  ),
 };
 ```
 
@@ -624,7 +600,7 @@ export const AllVariants: Story = {
 | `@storybook/addon-measure` | Mediciones de spacing con tokens |
 
 **Reglas de Storybook en el framework:**
-- Todo componente wrapper en `shared/components/` DEBE tener su `.stories.ts`
-- Los componentes primitivos de `ui/` se documentan con `autodocs`
-- Las stories deben reference tokens (`var(--spacing-md)`) en vez de valores hardcodeados
-- Los cambios de tokens se refluxean automáticamente via `tokens.css` importado globalmente
+- Todo componente wrapper en `shared/components/` DEBE tener su `.stories.tsx`
+- Los componentes primitivos de `ui/` (shadcn/ui) se documentan con `autodocs`
+- Las stories deben referenciar tokens (`var(--spacing-md)`) en vez de valores hardcodeados
+- Los cambios de tokens se reflejan automáticamente vía `tokens.css` importado globalmente

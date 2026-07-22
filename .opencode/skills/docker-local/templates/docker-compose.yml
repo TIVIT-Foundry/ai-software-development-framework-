@@ -1,6 +1,6 @@
 # ============================================================================
 # Docker Compose — Local Development Environment
-# Stacks: Python FastAPI + Bun (TypeScript) + Angular + PostgreSQL (pgvector)
+# Stacks: Python FastAPI + Bun (TypeScript) + React (Vite) + PostgreSQL (pgvector)
 # Services: API, Bun Backend, Frontend, DB, Redis, Kafka, Keycloak, OTel Collector
 # ============================================================================
 # Usage:
@@ -170,7 +170,7 @@ services:
     profiles:
       - core
 
-  # ── Angular Frontend (Dev Server) ───────────────────────────
+  # ── React Frontend (Vite Dev Server) ───────────────────────────
   frontend:
     build:
       context: ../frontend
@@ -178,7 +178,7 @@ services:
       dockerfile: Dockerfile
     container_name: myapp-frontend
     ports:
-      - "4200:4200"
+      - "5173:5173"
     environment:
       NODE_ENV: development
       API_URL: http://api:8000
@@ -195,7 +195,7 @@ services:
     restart: unless-stopped
     logging: *default-logging
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4200"]
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
       <<: *health-defaults
     profiles:
       - frontend

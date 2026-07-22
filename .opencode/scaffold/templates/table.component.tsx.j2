@@ -1,0 +1,75 @@
+import { useState } from 'react';
+
+import type { ${ENTITY}ListItem } from './${entity}.model';
+
+interface ${ENTITY}TableProps {
+  items: ${ENTITY}ListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  loading?: boolean;
+  onPageChange: (page: number) => void;
+  onSortChange: (sort: { sortBy: string; sortOrder: 'ASC' | 'DESC' }) => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+export function ${ENTITY}Table({
+  items,
+  total,
+  page,
+  pageSize,
+  loading = false,
+  onPageChange,
+  onSortChange,
+  onEdit,
+  onDelete,
+}: ${ENTITY}TableProps) {
+  const [sortState, setSortState] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
+    sortBy: 'createdAt',
+    sortOrder: 'DESC',
+  });
+
+  const totalPages = Math.ceil(total / pageSize) || 1;
+
+  const handleSort = (column: string) => {
+    const nextOrder: 'ASC' | 'DESC' = sortState.sortBy === column && sortState.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+    const next = { sortBy: column, sortOrder: nextOrder };
+    setSortState(next);
+    onSortChange(next);
+  };
+
+  return (
+    <div className="${entity}-table">
+      {items.length === 0 && !loading ? (
+        <p>No ${entities} found</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+$TABLE_HEADERS
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id}>
+$TABLE_CELLS
+                <td>
+                  <button type="button" onClick={() => onEdit(item.id)}>Edit</button>
+                  <button type="button" onClick={() => onDelete(item.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      <div className="pagination">
+        <button disabled={page <= 1} onClick={() => onPageChange(page - 1)}>Previous</button>
+        <span>Page {page} of {totalPages}</span>
+        <button disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>Next</button>
+      </div>
+    </div>
+  );
+}

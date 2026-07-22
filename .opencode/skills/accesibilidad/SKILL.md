@@ -11,7 +11,7 @@ metadata:
   - frontend
   enforcement: mandatory
   depends_on:
-  - angular
+  - react
   - design-system
   consumed_by:
   - agent-frontend
@@ -38,7 +38,7 @@ Garantizar que todas las interfaces cumplan WCAG 2.2 AA, sean operables por tecl
 
 ## Relación con otras skills
 
-- `angular` / `design-system` reciben los patrones de componentes accesibles.
+- `react` / `design-system` reciben los patrones de componentes accesibles.
 - `playwright` ejecuta las auditorías automatizadas con `@axe-core/playwright`.
 - `agent-qa` consume esta skill para validar accesibilidad en el pipeline.
 - `performance` complementa con patrones de carga accesibles (ARIA live regions).
@@ -68,57 +68,75 @@ No incluye: accesibilidad nativa mobile (iOS/Android), testing cognitivo avanzad
 
 ## Technical Design
 
-### ARIA patterns for Angular
+### ARIA patterns for React
 
-```html
-<!-- Button with loading state — ARIA live region -->
-<button
-  [attr.aria-busy]="isLoading"
-  [attr.aria-disabled]="isLoading"
-  (click)="handleSubmit()"
->
-  {{ isLoading ? 'Saving...' : 'Save' }}
-  <span aria-live="polite" class="sr-only">
-    {{ isLoading ? 'Submitting form' : '' }}
+```tsx
+{/* Button with loading state — ARIA live region */}
+<button aria-busy={isLoading} aria-disabled={isLoading} onClick={handleSubmit}>
+  {isLoading ? 'Saving...' : 'Save'}
+  <span aria-live="polite" className="sr-only">
+    {isLoading ? 'Submitting form' : ''}
   </span>
 </button>
 
-<!-- Modal with focus trap (CDK A11yModule) -->
-<div
-  cdkTrapFocus
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="modal-title"
-  aria-describedby="modal-desc"
->
-  <h2 id="modal-title">Confirm</h2>
-  <p id="modal-desc">Are you sure?</p>
-  <button (click)="onClose()">Cancel</button>
-  <button (click)="onConfirm()">Confirm</button>
-</div>
+{/* Modal with focus trap (@radix-ui/react-dialog handles this natively) */}
+<Dialog.Root open={open} onOpenChange={setOpen}>
+  <Dialog.Portal>
+    <Dialog.Overlay />
+    <Dialog.Content aria-describedby="modal-desc">
+      <Dialog.Title>Confirm</Dialog.Title>
+      <p id="modal-desc">Are you sure?</p>
+      <button onClick={onClose}>Cancel</button>
+      <button onClick={onConfirm}>Confirm</button>
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
 ```
 
-### Focus management — CDK A11yModule
+### Focus management — Radix UI primitives / useFocusTrap
 
-```typescript
-// Angular CDK: cdkTrapFocus directive — trap focus within a container
-// Import CdkTrapFocus from @angular/cdk/a11y in your module
+```tsx
+// Radix UI's Dialog/Popover/DropdownMenu manage focus trap and return-focus
+// natively — prefer them over a hand-rolled trap for overlays.
+import * as Dialog from '@radix-ui/react-dialog';
 
-// app.module.ts
-import { CdkTrapFocus } from '@angular/cdk/a11y';
+// For custom containers that aren't a Radix primitive, use a small hook:
+import { useEffect, useRef } from 'react';
 
-@NgModule({
-  imports: [CdkTrapFocus],
-  // ...
-})
-export class AppModule {}
+export function useFocusTrap(active: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
 
-// Usage in template:
-// <div cdkTrapFocus> ... focusable elements ... </div>
+  useEffect(() => {
+    if (!active || !ref.current) return;
+    const container = ref.current;
+    const focusable = container.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    focusable[0]?.focus();
 
-// For skip links, create a directive or use AnchorLink with fragment navigation:
-// <a href="#main-content" class="skip-link">Skip to main content</a>
-// <main id="main-content" tabindex="-1">...</main>
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Tab' || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    container.addEventListener('keydown', handleKeyDown);
+    return () => container.removeEventListener('keydown', handleKeyDown);
+  }, [active]);
+
+  return ref;
+}
+
+// Skip link:
+// <a href="#main-content" className="skip-link">Skip to main content</a>
+// <main id="main-content" tabIndex={-1}>...</main>
 ```
 
 ### Automated testing with axe-core
@@ -148,7 +166,7 @@ test('page has no WCAG violations @a11y', async ({ page }) => {
 ## Salidas esperadas
 
 - Componentes con atributos ARIA correctos.
-- Directiva/servicio de manejo de foco (`cdkTrapFocus`, skip link directive).
+- Hook/componente de manejo de foco (`useFocusTrap`, componente skip link).
 - Test de accesibilidad por página o componente con axe-core.
 - Evidencia de contraste aprobado y navegación por teclado.
 
@@ -179,28 +197,30 @@ Cuando axe-core reporte violaciones, debe corregirlas antes de dar el componente
 ## Ejemplos
 
 ### Ejemplo 1 — Modal accesible
-```html
-<div
-  cdkTrapFocus
-  role="dialog"
-  aria-modal="true"
-  aria-labelledby="dialog-title"
->
-  <h2 id="dialog-title">Delete entity</h2>
-  <p>This action cannot be undone.</p>
-  <button (click)="close()">Cancel</button>
-  <button (click)="confirm()">Delete</button>
-</div>
+```tsx
+<Dialog.Root open={open} onOpenChange={setOpen}>
+  <Dialog.Portal>
+    <Dialog.Overlay />
+    <Dialog.Content aria-labelledby="dialog-title">
+      <Dialog.Title id="dialog-title">Delete entity</Dialog.Title>
+      <p>This action cannot be undone.</p>
+      <button onClick={close}>Cancel</button>
+      <button onClick={confirm}>Delete</button>
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
 ```
 
 ### Ejemplo 2 — Error summary (after form validation)
-```html
-<div role="alert" aria-live="assertive" tabindex="-1" #errorRef>
-  <h2>There are {{ errors.length }} errors</h2>
+```tsx
+const errorRef = useRef<HTMLDivElement>(null);
+
+<div role="alert" aria-live="assertive" tabIndex={-1} ref={errorRef}>
+  <h2>There are {errors.length} errors</h2>
   <ul>
-    @for (error of errors; track error.field) {
-      <li>{{ error.message }}</li>
-    }
+    {errors.map((error) => (
+      <li key={error.field}>{error.message}</li>
+    ))}
   </ul>
 </div>
 ```

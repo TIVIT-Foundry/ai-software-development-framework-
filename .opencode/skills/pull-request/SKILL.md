@@ -56,7 +56,7 @@ Format: `type(scope): description`
 |-------|-------|
 | `api` | Backend (Bun/FastAPI) |
 | `ui` | Frontend genérico |
-| `angular` | Frontend Angular (components, services, routes) |
+| `react` | Frontend React (components, hooks, routes) |
 | `db` | Database |
 | `auth` | Authentication |
 | `authz` | Authorization |
@@ -65,7 +65,7 @@ Format: `type(scope): description`
 ### Examples
 ```
 feat(api): add user profile endpoint
-fix(angular): resolve button alignment in header
+fix(react): resolve button alignment in header
 refactor(db): optimize user query performance
 chore: update dependencies
 ```
@@ -134,16 +134,16 @@ Cada proyecto debe tener un `CHANGELOG.md` en su directorio raíz, siguiendo el 
 - [DB] Nueva query optimizada con joins en `repositories/user_profile_repository.ts`
 
 ### Frontend
-- [Page] Nuevo componente standalone `PerfilPage` con info personal y cambio de contraseña
-- [Component] `PasswordChangeForm` — formulario reactivo con validación inline
-- [Service] `UserProfileService` — query + mutation con signals y `@ngneat/query`
+- [Page] Nuevo componente `PerfilPage` con info personal y cambio de contraseña
+- [Component] `PasswordChangeForm` — formulario con `react-hook-form` y validación inline (`zodResolver`)
+- [Hook] `use-user-profile.ts` — query + mutation con `@tanstack/react-query`
 
 ### Database
 - [Migration] Alembic `versions/2_3_1_add_profile_table.py` — nueva tabla `Profile` y FK a `Users`
 - [Seed] `scripts/seed_profile_defaults.py` — perfiles por defecto para usuarios existentes
 
 ### Tests
-- [Unit] `user.service.spec.ts` — 8 tests nuevos (cobertura 85% → 92%)
+- [Unit] `use-user-profile.test.ts` — 8 tests nuevos (cobertura 85% → 92%)
 - [Integration] `profile.endpoint.spec.ts` — 12 tests, todos los códigos HTTP
 - [E2E] `profile.spec.ts` — flujo completo: ver perfil, editar, cambiar contraseña
 
@@ -177,7 +177,7 @@ Cada proyecto debe tener un `CHANGELOG.md` en su directorio raíz, siguiendo el 
 
 ### Pasos manuales
 1. Iniciar backend: `bun run dev:api`
-2. Iniciar frontend: `bun run dev:web` (o `ng serve` para Angular)
+2. Iniciar frontend: `bun run dev:web` (o `npm run dev` / `vite` para React)
 3. Autenticarse con usuario `test@example.com` / `Test123!`
 4. Navegar a `/perfil`
 5. Verificar que los datos del perfil se cargan correctamente
@@ -252,7 +252,7 @@ Cada commit debe seguir el formato `tipo(scope): mensaje`. Usa tiempo presente, 
 
 ```
 feat(api): add user profile endpoint
-feat(angular): implement password strength indicator component
+feat(react): implement password strength indicator component
 feat(db): create profile table with constraints
 feat(auth): add refresh token rotation
 feat: add health check endpoint for kubernetes probes
@@ -262,7 +262,7 @@ feat: add health check endpoint for kubernetes probes
 
 ```
 fix(api): return 404 when user not found in profile endpoint
-fix(angular): fix button alignment in mobile header
+fix(react): fix button alignment in mobile header
 fix(db): add missing index on profile.user_id
 fix(auth): handle expired token gracefully instead of 500
 fix: resolve CORS error on OPTIONS preflight requests
@@ -280,7 +280,7 @@ docs(contributing): add PR checklist section
 ### style — Formato, estilo, linting
 
 ```
-style(angular): format with prettier and sort imports
+style(react): format with prettier and sort imports
 style: apply eslint --fix across entire codebase
 style(db): normalize SQL formatting in migration files
 ```
@@ -289,7 +289,7 @@ style(db): normalize SQL formatting in migration files
 
 ```
 refactor(api): extract validation logic into middleware
-refactor(angular): convert component to signals-based state
+refactor(react): convert component to hooks-based state
 refactor(db): consolidate duplicate queries into CTE
 refactor: extract pagination helper into shared library
 ```
@@ -298,7 +298,7 @@ refactor: extract pagination helper into shared library
 
 ```
 perf(api): add Redis caching for profile reads
-perf(angular): lazy load profile image component
+perf(react): lazy load profile image component
 perf(db): add composite index on (user_id, created_at)
 perf: reduce image payload with WebP conversion
 ```
@@ -307,7 +307,7 @@ perf: reduce image payload with WebP conversion
 
 ```
 test(api): add unit tests for profile validation
-test(angular): add playwright E2E for profile flow
+test(react): add playwright E2E for profile flow
 test(db): add integration tests for profile queries
 test: add load testing scenario for profile endpoint
 ```
@@ -325,7 +325,7 @@ chore: bump version to 1.2.0
 ### build — Cambios en el sistema de build
 
 ```
-build: update angular.json budgets for bundle size
+build: update vite.config.ts bundle size thresholds
 build: switch to esbuild-based builder for faster builds
 build: configure Docker multi-stage build for smaller images
 ```
@@ -345,14 +345,14 @@ Cuando un commit toca varios componentes:
 ```
 feat(api,db): add profile feature with table and endpoint
 
-feat(angular): implement profile page
+feat(react): implement profile page
 - Password strength meter
 - Inline validation
 - Responsive layout
 
-refactor(angular): extract form components into shared library
+refactor(react): extract form components into shared library
 
-chore(deps): update @angular/core to v18
+chore(deps): update react to v18.3
 ```
 
 ### Errores comunes en mensajes de commit
@@ -360,9 +360,9 @@ chore(deps): update @angular/core to v18
 | Incorrecto | Correcto |
 |------------|----------|
 | `fix bug` | `fix(api): return 400 when email is invalid` |
-| `added new feature` | `feat(angular): add user search autocomplete` |
+| `added new feature` | `feat(react): add user search autocomplete` |
 | `Cambios varios` | `refactor(db): normalize user_address into separate table` |
-| `Update file.ts` | `fix(angular): resolve infinite re-render in UserList` |
+| `Update file.ts` | `fix(react): resolve infinite re-render in UserList` |
 | `WIP` | (nunca hacer commit de WIP, usar squash) |
 
 ## Checklist pre-PR
@@ -373,7 +373,7 @@ Lista detallada de 20+ verificaciones antes de crear un Pull Request.
 
 | # | Check | Cómo verificarlo |
 |---|-------|------------------|
-| 1 | Build compila sin errores | `bun run build` / `ng build` sin warnings que sean errores |
+| 1 | Build compila sin errores | `bun run build` / `vite build` sin warnings que sean errores |
 | 2 | TypeScript type check pasa | `bun run typecheck` / `tsc --noEmit` sin errores |
 | 3 | Linter pasa sin warnings bloqueantes | `bun run lint` sin errores, sin warnings de severidad error |
 | 4 | Tests unitarios pasan | `bun run test:unit` — todos verdes, sin flakes |
@@ -406,10 +406,10 @@ Lista detallada de 20+ verificaciones antes de crear un Pull Request.
 
 | # | Check | Cómo verificarlo |
 |---|-------|------------------|
-| 19 | Componentes responsivos | Probar en 375px, 768px, 1280px sin rupturas (Angular CDK breakpoints) |
-| 20 | Estados cubiertos | Loading, empty, error, success en cada pantalla (signals + @ngneat/query) |
+| 19 | Componentes responsivos | Probar en 375px, 768px, 1280px sin rupturas (breakpoints responsivos con Tailwind/CSS) |
+| 20 | Estados cubiertos | Loading, empty, error, success en cada pantalla (`useState` + `@tanstack/react-query`) |
 | 21 | Accesibilidad mínima | Labels en inputs, roles ARIA, contraste, teclado (axe-core) |
-| 22 | Sin any / tipo implícito | TypeScript strict mode, interfaces para inputs y signals |
+| 22 | Sin any / tipo implícito | TypeScript strict mode, interfaces para props y estado de hooks |
 
 ### PR y Documentación (5 items)
 

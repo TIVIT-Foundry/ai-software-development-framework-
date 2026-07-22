@@ -22,7 +22,7 @@ metadata:
 
 ## Purpose
 
-Define how OpenTelemetry is used to instrument FastAPI, Bun, and Angular services for distributed tracing, metrics, and logs.
+Define how OpenTelemetry is used to instrument FastAPI, Bun, and React services for distributed tracing, metrics, and logs.
 
 ## When to use this skill
 

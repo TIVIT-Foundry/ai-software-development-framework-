@@ -50,6 +50,8 @@ Consulta estas skills para verificar restricciones, sin producir sus artefactos:
 | database-migrations | secundario | [SKILL.md](../skills/database-migrations/SKILL.md) |
 | database-seeding | secundario | [SKILL.md](../skills/database-seeding/SKILL.md) |
 | data-migration | secundario | [SKILL.md](../skills/data-migration/SKILL.md) |
+| feature-spec | primario | [SKILL.md](../skills/feature-spec/SKILL.md) |
+| tasks | primario | [SKILL.md](../skills/tasks/SKILL.md) |
 
 ## Protocolo de ejecución
 

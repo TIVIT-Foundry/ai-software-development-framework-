@@ -40,7 +40,7 @@ Activate this skill when:
 **Do not** activate when:
 
 - Only using direct LLM API calls without orchestration
-- Working with frontend code (use `angular` or `angular-services`)
+- Working with frontend code (use `react` or `react-services`)
 - Implementing basic CRUD operations (use `backend-api`)
 
 ## Relation to other skills

@@ -1,7 +1,7 @@
 ---
 name: ci-cd
 description: 'CI/CD pipeline design: GitHub Actions + GitLab CI, stages (lint → test
-  → build → deploy), Bun/Python/Angular stacks, environment strategy, secrets management,
+  → build → deploy), Bun/Python/React stacks, environment strategy, secrets management,
   artifact versioning, deployment gates, rollback. Trigger: When designing or configuring
   CI/CD pipelines.'
 version: 1.1
@@ -344,10 +344,10 @@ jobs:
       REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
 ```
 
-### 2. Frontend — Angular Build (pnpm)
+### 2. Frontend — React Build (Vite + pnpm)
 
 ```yaml
-name: Angular Frontend CI
+name: React Frontend CI
 
 on:
   push:
@@ -370,7 +370,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm ng lint
+      - run: pnpm eslint . --max-warnings=0
 
   test:
     needs: lint
@@ -389,7 +389,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm ng test --code-coverage --watch=false
+      - run: pnpm vitest run --coverage
 
   build:
     needs: test
@@ -408,10 +408,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm ng build --configuration=production
+      - run: pnpm vite build --mode production
       - uses: actions/upload-artifact@v4
         with:
-          name: angular-dist-${{ github.sha }}
+          name: react-dist-${{ github.sha }}
           path: frontend/dist/
 ```
 
@@ -803,7 +803,7 @@ bun-test:
         coverage_format: cobertura
         path: services/coverage/
 
-# ─── Frontend: Angular ────────────────────────────────────────
+# ─── Frontend: React ────────────────────────────────────────
 frontend-lint:
   stage: lint
   image: node:20
@@ -814,7 +814,7 @@ frontend-lint:
     - cd frontend
     - pnpm install --frozen-lockfile
   script:
-    - pnpm ng lint
+    - pnpm eslint . --max-warnings=0
 
 frontend-test:
   stage: test
@@ -826,7 +826,7 @@ frontend-test:
     - cd frontend
     - pnpm install --frozen-lockfile
   script:
-    - pnpm ng test --code-coverage --watch=false
+    - pnpm vitest run --coverage
 
 # ─── Security scanning ───────────────────────────────────────
 trivy-scan:

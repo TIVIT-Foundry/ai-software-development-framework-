@@ -13,7 +13,7 @@ metadata:
   - error-handling
   consumed_by:
   - backend-api
-  - angular-services
+  - react-services
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency
@@ -374,7 +374,7 @@ class BackpressureMiddleware:
 
 ### F. Consumidores de esta skill
 - `backend-api` consume los middlewares de rate limiting, circuit breaker y bulkhead;
-- `angular-services` implementa retry del lado del cliente cuando recibe 429;
+- `react-services` implementa retry del lado del cliente cuando recibe 429;
 - `error-handling` define la estructura de errores 429 y 503;
 - `load-testing` valida que los rate limits funcionan bajo carga.
 

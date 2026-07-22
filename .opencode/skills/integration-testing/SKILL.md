@@ -1,6 +1,6 @@
 ---
 name: integration-testing
-description: "Integration testing patterns with real dependencies. Covers TestContainers for Python/PostgreSQL + pgvector, Angular TestBed + HttpClientTestingModule, Bun backend con Vitest + testcontainers, contract tests between services, test isolation by tenant, setup/teardown patterns, y parallel execution strategies. Trigger: When writing integration tests, setting up test databases, or testing service boundaries."
+description: "Integration testing patterns with real dependencies. Covers TestContainers for Python/PostgreSQL + pgvector, React Testing Library + MSW for API mocking, Bun backend con Vitest + testcontainers, contract tests between services, test isolation by tenant, setup/teardown patterns, y parallel execution strategies. Trigger: When writing integration tests, setting up test databases, or testing service boundaries."
 version: 1.0
 metadata:
   phase:
@@ -11,7 +11,7 @@ metadata:
   depends_on:
   - unit-testing
   - data-access
-  - angular-services
+  - react-services
   consumed_by:
   - framework-qa-validation
   agent_roles:
@@ -48,8 +48,8 @@ Usa esta skill para responder estas preguntas:
 - `database-migrations` crea el esquema de BD para los tests.
 - `authentication` provee tokens de prueba para endpoints protegidos.
 - `backend-api` define los endpoints que esta skill testea end-to-end.
-- `angular-services` define los servicios Angular (RxJS/TanStack Query) que esta skill testea con `HttpClientTestingModule`.
-- `angular` define los componentes standalone que esta skill testea con `TestBed`.
+- `react-services` define los hooks de datos (TanStack Query) que esta skill testea con `renderHook` + Mock Service Worker (MSW).
+- `react` define los componentes que esta skill testea con React Testing Library.
 - `framework-qa-validation` define la estrategia de testing de la que esta skill forma la capa intermedia.
 - Para operaciones vectoriales (similarity search, embeddings), esta skill testea la integración con la extensión `pgvector` sobre PostgreSQL 16.
 
@@ -63,7 +63,7 @@ Usa esta skill para responder estas preguntas:
 6. Testear middleware (authentication, error handling, validation).
 7. Aislar tests por tenant en multi-tenancy.
 8. Configurar parallel execution strategy.
-9. Para Angular: usar `TestBed` con `provideHttpClient()` + `provideHttpClientTesting()` y servicios reales (no mocks de lógica).
+9. Para React: usar React Testing Library + Mock Service Worker (MSW) para interceptar HTTP a nivel de red, con hooks reales (no mocks de lógica).
 10. Para Bun backend: usar Vitest + `testcontainers` para levantar dependencias reales (PostgreSQL, Redis).
 11. Para pgvector: testear similarity search y operaciones de embeddings contra BD real con vectores de prueba deterministas.
 
@@ -81,7 +81,7 @@ Si falta esta base, la skill debe pedirla antes de concluir.
 
 La fase sí incluye:
 - TestContainers para BD de prueba (PostgreSQL + pgvector);
-- Integration tests de servicios Angular con `HttpClientTestingModule` y `TestBed`;
+- Integration tests de hooks/componentes React con React Testing Library y MSW;
 - Integration tests de backend Bun con Vitest + testcontainers;
 - Tests de operaciones pgvector (similarity search, embeddings, KNN);
 - Contract tests entre servicios;
@@ -206,114 +206,98 @@ async def test_create_user_duplicate_email_returns_conflict(clean_db, client):
     assert response.status_code == 409
 ```
 
-### 3. Integration test de servicio Angular (TestBed + HttpClientTestingModule)
+### 3. Integration test de hook React (renderHook + Mock Service Worker)
 
 ```typescript
-// src/app/features/users/services/users.service.integration.spec.ts
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { firstValueFrom } from 'rxjs';
-import { UsersService } from './users.service';
+// src/features/users/hooks/use-users.integration.test.ts
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
+import { useUsersList } from './use-users-list.query';
 
-describe('UsersService integration', () => {
-  let service: UsersService;
-  let httpMock: HttpTestingController;
+const server = setupServer(); // handlers se definen por test para simular escenarios reales
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [
-        UsersService,
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        // Providers reales (no mocks de lógica de negocio):
-        // { provide: API_BASE_URL, useValue: '/api/v1' },
-      ],
-    });
-    service = TestBed.inject(UsersService);
-    httpMock = TestBed.inject(HttpTestingController);
-  });
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 
-  afterEach(() => {
-    // Verifica que no queden requests pendientes
-    httpMock.verify();
-  });
+function wrapper({ children }: { children: React.ReactNode }) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}
 
-  it('list_WhenEndpointReturnsUsers_EmitsUsersFromAPI', async () => {
+describe('useUsersList integration', () => {
+  it('list_WhenEndpointReturnsUsers_ExposesUsersFromAPI', async () => {
     // Arrange
     const expected = [
       { id: 1, name: 'John Doe', email: 'john@test.com' },
       { id: 2, name: 'Jane Doe', email: 'jane@test.com' },
     ];
+    server.use(
+      http.get('/api/v1/users', () => HttpResponse.json(expected)),
+    );
 
     // Act
-    const promise = firstValueFrom(service.list());
-    const req = httpMock.expectOne('/api/v1/users');
-    req.flush(expected);
-    const result = await promise;
+    const { result } = renderHook(() => useUsersList({}), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     // Assert
-    expect(result).toHaveLength(2);
-    expect(result[0].name).toBe('John Doe');
+    expect(result.current.data).toHaveLength(2);
+    expect(result.current.data?.[0].name).toBe('John Doe');
   });
 
-  it('list_WhenEndpointReturnsError_PropagatesError', async () => {
+  it('list_WhenEndpointReturnsError_ExposesError', async () => {
+    // Arrange
+    server.use(
+      http.get('/api/v1/users', () => HttpResponse.json({ message: 'Internal error' }, { status: 500 })),
+    );
+
     // Act
-    const promise = firstValueFrom(service.list()).catch((e) => e);
-    const req = httpMock.expectOne('/api/v1/users');
-    req.flush({ message: 'Internal error' }, { status: 500, statusText: 'Server Error' });
-    const error = await promise;
+    const { result } = renderHook(() => useUsersList({}), { wrapper });
+    await waitFor(() => expect(result.current.isError).toBe(true));
 
     // Assert
-    expect(error.status).toBe(500);
+    expect(result.current.error).toBeDefined();
   });
 });
 ```
 
-> **Patrón Angular con signals**: si el servicio usa `toSignal()` para exponer estado reactivo, testear el signal dentro de `TestBed.runInInjectionContext(() => { ... })` y leer su valor con `service.users()` después de resolver el mock HTTP.
+### 4. Integration test de componente React con datos reales (React Testing Library + MSW)
 
-### 4. Integration test de componente Angular con providers reales
+```tsx
+// src/features/users/components/UsersList.integration.test.tsx
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
+import { UsersList } from './UsersList';
 
-```typescript
-// src/app/features/users/components/user-list/user-list.component.integration.spec.ts
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { UserListComponent } from './user-list.component';
-import { UsersService } from '../../services/users.service';
+const server = setupServer();
 
-describe('UserListComponent integration', () => {
-  let fixture: ComponentFixture<UserListComponent>;
-  let httpMock: HttpTestingController;
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [UserListComponent],
-      providers: [
-        UsersService,
-        provideHttpClient(),
-        provideHttpClientTesting(),
-      ],
-    }).compileComponents();
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
-    fixture = TestBed.createComponent(UserListComponent);
-    httpMock = TestBed.inject(HttpTestingController);
-  });
-
-  it('ngOnInit_FetchesUsers_DisplaysThemInTemplate', () => {
+describe('UsersList integration', () => {
+  it('render_FetchesUsers_DisplaysThemInDOM', async () => {
     // Arrange
-    const users = [{ id: 1, name: 'John Doe', email: 'john@test.com' }];
+    server.use(
+      http.get('/api/v1/users', () => HttpResponse.json({ data: [{ id: 1, name: 'John Doe', email: 'john@test.com' }] })),
+    );
 
     // Act
-    fixture.detectChanges(); // dispara ngOnInit
-    const req = httpMock.expectOne('/api/v1/users');
-    req.flush(users);
-    fixture.detectChanges(); // propaga el cambio
+    renderWithClient(<UsersList />);
 
     // Assert
-    const listItems = fixture.nativeElement.querySelectorAll('li');
-    expect(listItems.length).toBe(1);
-    expect(listItems[0].textContent).toContain('John Doe');
+    await waitFor(() => expect(screen.getByText('John Doe')).toBeInTheDocument());
   });
 });
 ```
@@ -568,7 +552,7 @@ describe('User API contract', () => {
 });
 ```
 
-> **Contract tests Angular**: en el frontend Angular, los contract tests validan que los tipos generados desde el OpenAPI spec (`api-first-frontend`) coinciden con las respuestas reales del backend. Usar `HttpTestingController` para interceptar y validar el schema con `zod` dentro del `TestBed`.
+> **Contract tests React**: en el frontend React, los contract tests validan que los tipos generados desde el OpenAPI spec (`api-first-frontend`) coinciden con las respuestas reales del backend. Usar MSW para interceptar la respuesta real y validar el schema con `zod` dentro del test.
 
 ### 8. Test isolation por tenant
 
@@ -627,7 +611,7 @@ export default defineConfig({
 - ¿Se validan los schemas de request/response con Zod/o schemas similares?
 - ¿Los contract tests corren en el pipeline de CI?
 - ¿Se valida que el backend y frontend usan el mismo contrato?
-- ¿Los tipos Angular generados desde OpenAPI coinciden con las respuestas reales del backend?
+- ¿Los tipos React generados desde OpenAPI coinciden con las respuestas reales del backend?
 
 ### 3. Sobre isolation
 - ¿Los tests por tenant son completamente aislados?
@@ -656,7 +640,7 @@ export default defineConfig({
 - Al menos 1 test por endpoint (happy path + error path).
 - Al menos 1 contract test por API.
 - Al menos 1 test de isolation por tenant (si aplica).
-- Al menos 1 test de servicio Angular con `HttpClientTestingModule` por feature.
+- Al menos 1 test de hook React con MSW por feature.
 - Al menos 1 test de repository Bun con BD real por feature.
 - Al menos 1 test de operaciones pgvector (similarity search) si la feature usa embeddings.
 
@@ -682,7 +666,7 @@ export default defineConfig({
 - Los tests corren en CI con timeouts extendidos.
 - La BD de prueba se levanta con TestContainers o equivalente.
 - Los tests son idempotentes (pueden ejecutarse más de una vez).
-- Los tests de servicios Angular usan `HttpClientTestingModule` con `HttpTestingController` y verifican requests pendientes (`httpMock.verify()`).
+- Los tests de hooks React usan MSW (`setupServer`) y verifican estados `isSuccess`/`isError` con `waitFor`.
 - Los tests de backend Bun usan Vitest + testcontainers con BD real (no mocks de repositorio).
 - Los tests de pgvector usan vectores deterministas y validan los operadores de distancia contra BD real.
 
@@ -698,7 +682,7 @@ Cuando el usuario no valide el contract de la API, el agente debe proponer contr
 - ¿Se configuró TestContainers o equivalente para BD de prueba?
 - ¿Se configuró httpx + pytest para API tests (Python)?
 - ¿Se configuró Vitest + testcontainers para integration tests (Bun)?
-- ¿Se configuró `TestBed` + `provideHttpClientTesting()` para servicios Angular?
+- ¿Se configuró MSW (`setupServer`) para los hooks/componentes React?
 - ¿Las migraciones se aplican automáticamente antes de los tests?
 - ¿Los datos de seed se ejecutan antes de cada test o suite?
 - ¿El cleanup se ejecuta después de cada test o suite?

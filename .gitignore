@@ -182,3 +182,4 @@ docker-compose.override.yml
 # OpenCode (cache y archivos temporales)
 # ============================================
 .opencode/cache/
+CLAUDE.md

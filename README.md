@@ -27,7 +27,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 | **AI/ML Core** | Python 3.12 / FastAPI |
 | **Backend General** | Bun (TypeScript) |
 | **Orchestration LLM** | LangChain / LangGraph |
-| **Frontend** | Angular 17+, TypeScript |
+| **Frontend** | React 18+ (Vite), TypeScript |
 | **Database** | PostgreSQL 16 + pgvector |
 | **Cache/Colas** | Redis + Kafka |
 | **Auth** | OAuth2/JWT / Keycloak |
@@ -48,7 +48,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 4. **El orchestrator planifica**: descompone tu solicitud en fases (gobernanza → diseño → backend → frontend → testing)
 5. **Los agentes ejecutan**: design diseña, delivery implementa, control valida
 6. **Tú confirmas** en puntos clave (15 confirmaciones en modo Hybrid)
-7. **Obtienes código listo para producción**: FastAPI + Angular + PostgreSQL, con tests, CI/CD, y seguridad
+7. **Obtienes código listo para producción**: FastAPI + React + PostgreSQL, con tests, CI/CD, y seguridad
 
 📖 **[Guía completa de flujo de usuario →](QUICKSTART.md)**
 
@@ -93,7 +93,7 @@ Vertical: Productividad / Gestión interna de tareas.
 
 Tecnologías:
 - Backend: Python 3.12 con FastAPI
-- Frontend: Angular con TypeScript
+- Frontend: React con TypeScript
 - Base de datos: PostgreSQL
 
 El primer módulo es Gestión de Tareas:
@@ -154,7 +154,7 @@ El primer módulo es Gestión de Tareas:
 - **Framework** (12): governance, discovery, conception, architecture, core-design, pack-design, data-memory-compliance, security, platform, scaffold-implementation, qa-validation, operations-evolution
 - **Gobernanza** (3): governance-constitution, sdd-onboard, documentation
 - **Backend** (12): backend-api, bun-backend, data-access, api-integration, api-gateway, app-bootstrap, shared-libs, error-handling, file-upload, real-time, api-resilience, notifications
-- **Frontend** (11): angular, angular-services, microfrontend, design-system, typescript, export-excel, accesibilidad, i18n, feature-flags, mobile-pwa, angular-upgrade
+- **Frontend** (11): react, react-services, microfrontend, design-system, typescript, export-excel, accesibilidad, i18n, feature-flags, mobile-pwa, react-upgrade
 - **Database** (9): database-modeling, database-audit, database-security, database-sp, database-migrations, database-seeding, data-migration, pgvector, postgresql-backup
 - **Testing/Calidad** (9): unit-testing, integration-testing, load-testing, security-testing, playwright, code-review, review-adversarial, uat-acceptance, a11y-testing
 - **API/Spec** (9): openapi-docs, api-first-spec, api-first-backend, api-first-frontend, api-first-testing, api-catalog, api-versioning, api-resilience, api-contracts
@@ -166,7 +166,7 @@ El primer módulo es Gestión de Tareas:
 - **Arquitectura** (6): project-architecture, repo-structure, graphql, docker-local, performance, api-versioning
 - **Meta-Skills** (4): agent-backend, agent-frontend, agent-fullstack, agent-qa
 
-**Nuevas skills del catálogo expandido:** `bun-backend`, `redis`, `terraform`, `github-actions`, `gitlab-ci`, `kubernetes`, `prometheus-grafana`, `opentelemetry`, `langfuse`, `pgvector`, `postgresql-backup`, `oauth2-jwt`, `api-contracts`, `mobile-pwa`, `angular-upgrade`, `a11y-testing`
+**Nuevas skills del catálogo expandido:** `bun-backend`, `redis`, `terraform`, `github-actions`, `gitlab-ci`, `kubernetes`, `prometheus-grafana`, `opentelemetry`, `langfuse`, `pgvector`, `postgresql-backup`, `oauth2-jwt`, `api-contracts`, `mobile-pwa`, `react-upgrade`, `a11y-testing`
 
 ---
 

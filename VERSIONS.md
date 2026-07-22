@@ -9,6 +9,7 @@
 
 | Versión | Fecha | Skills | Notas |
 |---------|-------|--------|-------|
+| 3.0.0 | 2026-07-21 | 103 | Migración de frontend: Angular → React (Vite), ver ADR-004 |
 | 2.0.0 | 2026-07-17 | 102 | Catálogo expandido, scaffold Angular + backend dual |
 | 1.0.0 | 2026-07-16 | 76 | Versión inicial consolidada |
 
@@ -20,7 +21,8 @@
 | Backend general | Bun | 1.1 | 1.1+ |
 | Framework HTTP Python | FastAPI | 0.110 | Latest |
 | Framework HTTP Bun | Elysia / Hono | Latest | Latest |
-| Frontend | Angular | 17 | 18 |
+| Frontend | React | 18 | 18+ |
+| Frontend build | Vite | 5 | Latest |
 | Base de datos | PostgreSQL | 15 | 16 |
 | Extensión vectorial | pgvector | 0.7 | Latest |
 | Caché/Colas | Redis | 7.0 | 7.2 |
@@ -38,6 +40,6 @@
 
 ## Notas de compatibilidad
 
-- Angular 17+ es obligatorio para usar standalone components y signals.
+- React 18+ es obligatorio para `useTransition`/`useId` y concurrent features. Next.js es la variante aceptada cuando se necesita SSR/SSG (ver skill `react`).
 - PostgreSQL 15+ requerido para `pgvector` y funciones modernas.
 - Bun se usa como runtime general; Python se mantiene para el core AI/ML.

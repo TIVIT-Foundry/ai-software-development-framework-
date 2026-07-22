@@ -18,7 +18,7 @@ metadata:
   - hu-template
   consumed_by:
   - api-first-spec
-  - angular
+  - react
   - design-system
   agent_roles:
   - design-agent
@@ -47,7 +47,7 @@ Usa esta skill para responder estas preguntas:
 - `hu-template` aporta las historias de usuario que definen qué pantallas prototipar.
 - `design-system` aporta los tokens de color, tipografía y spacing que el prototipo debe usar.
 - `api-first-spec` consume el prototipo validado para diseñar los endpoints que sirven los datos mostrados.
-- `angular` consume el prototipo como referencia visual para implementar los componentes reales.
+- `react` consume el prototipo como referencia visual para implementar los componentes reales.
 - Esta skill no reemplaza a `design-system`; solo traduce tokens a CSS para el prototipo.
 
 ## Qué debe hacer el agente cuando esta skill está activa
@@ -83,7 +83,7 @@ La fase sí incluye:
 - Documento de decisiones de UI.
 
 La fase no incluye todavía:
-- Código Angular de producción;
+- Código React de producción;
 - Conexión a APIs reales;
 - Tests unitarios o E2E (eso es `playwright`);
 - Tokens compilados para producción (eso es `design-system`).
@@ -110,7 +110,7 @@ Esta skill sí decide:
 Esta skill delega:
 - Los colores exactos y tipografía → `design-system`;
 - Los datos y endpoints → `api-first-spec`;
-- Los componentes Angular reales → `angular`;
+- Los componentes React reales → `react`;
 - Los flujos E2E → `playwright`.
 
 ## Qué debe definir el diseño
@@ -254,7 +254,7 @@ Todo prototipo debe incluir estos estados por pantalla:
 
 ### D. Consumidores de esta skill
 - `api-first-spec` — usa las pantallas para definir los endpoints necesarios;
-- `angular` — usa el prototipo como referencia visual para componentes;
+- `react` — usa el prototipo como referencia visual para componentes;
 - `playwright` — usa los `data-testid` como selectores E2E.
 
 ## Criterios de calidad
@@ -330,4 +330,4 @@ Respuesta esperada:
 
 ## Notas de edición
 
-Esta skill fue expandida desde 72 líneas a contenido completo con sistema de tokens, componentes interactivos, estados de UI, y ejemplos concretos. Los principios de zero dependencias y offline-first se mantienen del contenido original. Se agregó conexión explícita con `design-system`, `api-first-spec`, `angular` y `playwright`.
+Esta skill fue expandida desde 72 líneas a contenido completo con sistema de tokens, componentes interactivos, estados de UI, y ejemplos concretos. Los principios de zero dependencias y offline-first se mantienen del contenido original. Se agregó conexión explícita con `design-system`, `api-first-spec`, `react` y `playwright`.

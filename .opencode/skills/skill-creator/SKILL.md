@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: 'Creates new AI agent skills following framework conventions (Python/Angular/Bun). Includes
+description: 'Creates new AI agent skills following framework conventions (Python/React/Bun). Includes
   frontmatter templates, naming conventions, content guidelines, and sync instructions.
   Trigger: When asked to create a new skill, add agent instructions, or document patterns
   for AI.'
@@ -66,7 +66,7 @@ A skill encapsulates a **reusable pattern** that an AI agent can follow when a s
 
 Ask yourself:
 1. **Is this a new pattern?** Check `depends_on` of related skills to avoid duplication.
-2. **Is this framework-specific or general?** General patterns (Angular, SQL) go in `skills/`. Framework-specific patterns (multi-tenant routing) go in `skills/framework-*`.
+2. **Is this framework-specific or general?** General patterns (React, SQL) go in `skills/`. Framework-specific patterns (multi-tenant routing) go in `skills/framework-*`.
 3. **Who will use it?** Machine (automated trigger) or human (manual activation)?
 4. **What layer does it affect?** frontend, backend, database, testing, e2e, process, or governance?
 
@@ -76,7 +76,7 @@ If the pattern is new, framework-relevant, and used 3+ times → **proceed**.
 
 | Type | Pattern | Examples |
 |------|---------|----------|
-| Generic technology | `{technology}` | `angular`, `typescript`, `docker-local` |
+| Generic technology | `{technology}` | `react`, `typescript`, `docker-local` |
 | Workflow | `{action}-{target}` | `skill-creator`, `api-first-spec`, `code-review` |
 | Domain aspect | `{domain}-{aspect}` | `database-sp`, `database-audit`, `framework-security` |
 | Agent orchestrator | `agent-{role}` | `agent-backend`, `agent-fullstack` |
@@ -176,7 +176,7 @@ For technical stack skills, additionally include:
 
 ```
 ## Multi-stack patterns
-[Examples for Python FastAPI, Angular, Bun TypeScript]
+[Examples for Python FastAPI, React, Bun TypeScript]
 
 ## Configuration
 [Environment variables, config files, dependencies]
@@ -353,7 +353,7 @@ def sync_manifest():
 2. **Framework-* skills are mandatory**: Skills starting with `framework-` must have `enforcement: mandatory`.
 3. **Consumer-first**: Design skills with their consumers in mind (what does `api-first-frontend` need from `api-first-spec`?).
 4. **Concrete over abstract**: An example with real code is worth 3 paragraphs of explanation.
-5. **Keep skills up-to-date**: When a technology changes (e.g., Angular 19 signals), update the corresponding skill. See `framework-operations-evolution` for deprecation policy.
+5. **Keep skills up-to-date**: When a technology changes (e.g., React 19 features), update the corresponding skill. See `framework-operations-evolution` for deprecation policy.
 6. **Test every skill**: After creating a skill, run the validators. A skill that doesn't pass `check-content-quality` will produce noise in every agent session.
 
 ## Antipatterns
@@ -375,7 +375,7 @@ Before marking a new skill as complete:
 - [ ] **Frontmatter complete** — all required fields present and valid.
 - [ ] **Description has "Trigger:" clause** — ≥ 20 characters after "Trigger:".
 - [ ] **`depends_on` and `consumed_by` wired** — both lists populated (or explicitly empty).
-- [ ] **Multi-stack examples** — at least 2 stacks for technical skills (e.g., Python + Bun, Python + Angular).
+- [ ] **Multi-stack examples** — at least 2 stacks for technical skills (e.g., Python + Bun, Python + React).
 - [ ] **assets/ and references/ created** — even if empty initially.
 - [ ] **SKILLS-MANIFEST.md updated** — skill appears in catalog table and auto-invoke table if applicable.
 - [ ] **Validators pass** — `check-content-quality.py`, `check-skill-ids.py`, `run-all.sh`.

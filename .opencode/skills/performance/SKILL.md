@@ -1,7 +1,7 @@
 ---
 name: performance
 description: 'Performance patterns: pagination, caching, query optimization, large
-  data handling. Covers backend (Python/FastAPI, Bun) and frontend (Angular). Trigger:
+  data handling. Covers backend (Python/FastAPI, Bun) and frontend (React). Trigger:
   When implementing pagination, caching, query optimization, or large data handling.'
 version: 2.0
 metadata:
@@ -52,23 +52,19 @@ mcp_usage: none
 }
 ```
 
-## Frontend Pagination (Angular Signals + HttpClient)
+## Frontend Pagination (React + @tanstack/react-query)
 ```typescript
-// signal-based state with Angular signals
-@Component({ ... })
-export class EntityListComponent {
-  private http = inject(HttpClient);
-  page = signal(1);
-  filters = signal<Filters>({});
+// hook-based state, refetches automatically when page/filters change
+export function useEntityList() {
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<Filters>({});
 
-  entities = toSignal(
-    toObservable(computed(() => ({ page: this.page(), filters: this.filters() }))).pipe(
-      switchMap(({ page, filters }) =>
-        this.http.get<PaginatedResponse<Entity>>('/api/entities', { params: { page, ...filters } })
-      )
-    ),
-    { initialValue: { data: { items: [] }, pagination: null } }
-  );
+  const query = useQuery({
+    queryKey: ['entities', page, filters],
+    queryFn: () => apiFetch<PaginatedResponse<Entity>>(`/api/entities?${buildQuery({ page, ...filters })}`),
+  });
+
+  return { ...query, page, setPage, filters, setFilters };
 }
 ```
 
@@ -283,44 +279,26 @@ export async function updateEntity(id: number, data: Partial<Entity>): Promise<v
 | **Write-behind** | High write throughput, tolerance for inconsistency | Buffer writes, periodic flush |
 | **Explicit invalidation** | Event-driven changes | Invalidate on UPDATE/DELETE |
 
-## Frontend Caching (Angular)
+## Frontend Caching (React)
 
 ```typescript
-// Angular HttpClient with response caching interceptor
-@Injectable()
-export class CachingInterceptor implements HttpInterceptor {
-  private cache = new Map<string, { response: HttpResponse<unknown>; timestamp: number }>();
-
-  intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    if (req.method !== 'GET') return next.handle(req);
-
-    const cached = this.cache.get(req.urlWithParams);
-    if (cached && Date.now() - cached.timestamp < 300_000) { // 5 min
-      return of(cached.response.clone());
-    }
-
-    return next.handle(req).pipe(
-      tap(event => {
-        if (event instanceof HttpResponse) {
-          this.cache.set(req.urlWithParams, { response: event.clone(), timestamp: Date.now() });
-        }
-      })
-    );
-  }
+// @tanstack/react-query caches by queryKey natively — no custom interceptor needed
+export function useStatusList() {
+  return useQuery({
+    queryKey: ['catalogs', 'status'],
+    queryFn: () => apiFetch<Status[]>('/api/catalogs/status'),
+    staleTime: 5 * 60_000, // reference data: long stale time, 5 min
+    gcTime: 30 * 60_000,
+  });
 }
-
-// Usage: reference data with long stale time
-statusList$ = this.http.get<Status[]>('/api/catalogs/status').pipe(
-  shareReplay({ bufferSize: 1, refCount: true })  // cache last emission
-);
 ```
 
 ## Large Data Handling
 | Scenario | Technique |
 |----------|-----------|
 | Large exports | Stream / chunked response |
-| Long lists in UI | Virtual scrolling (`cdk-virtual-scroll-viewport`) |
-| Infinite lists | Cursor-based pagination |
+| Long lists in UI | Virtual scrolling (`@tanstack/react-virtual`) |
+| Infinite lists | Cursor-based pagination (`useInfiniteQuery`) |
 | Heavy computations | Background jobs / queues (BullMQ / Redis) |
 | Large file uploads | Chunked upload + presigned URLs (S3) |
 
@@ -488,156 +466,130 @@ class CDNCacheMiddleware(BaseHTTPMiddleware):
 | `If-None-Match` | Request | Sends previous ETag → 304 if unchanged |
 | `If-Modified-Since` | Request | Sends previous date → 304 if unchanged |
 
-## Angular Performance Patterns
+## React Performance Patterns
 
-### OnPush Change Detection
+### React.memo + Deliberate Memoization
 
-```typescript
-// Always use OnPush — reduces change detection cycles dramatically
-@Component({
-  selector: 'app-entity-detail',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (entity(); as e) {
-      <h2>{{ e.name }}</h2>
-      <p>{{ e.description }}</p>
-    } @else if (loading()) {
-      <app-skeleton />
-    }
-  `,
-})
-export class EntityDetailComponent {
-  entity = input.required<Entity | null>();
-  loading = input(false);
-}
-```
+```tsx
+// React.memo skips re-render when props are referentially equal
+export const EntityDetail = React.memo(function EntityDetail({ entity, loading }: EntityDetailProps) {
+  if (loading) return <Skeleton />;
+  if (!entity) return null;
 
-### Angular Signals
-
-```typescript
-// Computed signals — automatically derive reactive state
-@Component({ ... })
-export class DashboardComponent {
-  private filterService = inject(FilterService);
-
-  // Derived state — no manual subscription needed
-  startDate = signal(new Date());
-  endDate = signal(new Date());
-
-  filteredEntities = toSignal(
-    toObservable(computed(() => ({ start: this.startDate(), end: this.endDate() }))).pipe(
-      switchMap(({ start, end }) =>
-        this.http.get<Entity[]>('/api/entities', { params: { start, end } })
-      )
-    ),
-    { initialValue: [] }
+  return (
+    <>
+      <h2>{entity.name}</h2>
+      <p>{entity.description}</p>
+    </>
   );
+});
+```
 
-  // Computed for derived UI state
-  entityCount = computed(() => this.filteredEntities().length);
-  hasResults = computed(() => this.entityCount() > 0);
+### Derived State with useMemo + TanStack Query
+
+```tsx
+// Derived state recomputed only when its dependencies change
+export function Dashboard() {
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+
+  const { data: filteredEntities = [] } = useQuery({
+    queryKey: ['entities', startDate, endDate],
+    queryFn: () => apiFetch<Entity[]>(`/api/entities?${buildQuery({ start: startDate, end: endDate })}`),
+  });
+
+  const entityCount = useMemo(() => filteredEntities.length, [filteredEntities]);
+  const hasResults = entityCount > 0;
+
+  // ...
 }
 ```
 
-### Lazy Loading with loadComponent
+### Code-Splitting with React.lazy
 
-```typescript
-// router.routes.ts — lightweight lazy loading
-export const routes: Routes = [
-  {
-    path: 'dashboard',
-    loadComponent: () => import('./features/dashboard/dashboard.component')
-      .then(m => m.DashboardComponent),
-  },
-  {
-    path: 'entities',
-    loadComponent: () => import('./features/entities/entity-list.component')
-      .then(m => m.EntityListComponent),
-  },
-  {
-    path: 'reports',
-    loadChildren: () => import('./features/reports/reports.routes')
-      .then(m => m.REPORT_ROUTES),  // lazy-loaded child routes
-  },
-];
+```tsx
+// router.tsx — lightweight code-splitting per route
+import { lazy } from 'react';
+
+const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage'));
+const EntityListPage = lazy(() => import('./features/entities/EntityListPage'));
+const ReportsRoutes = lazy(() => import('./features/reports/reports.routes'));
+
+const router = createBrowserRouter([
+  { path: 'dashboard', element: withSuspense(<DashboardPage />) },
+  { path: 'entities', element: withSuspense(<EntityListPage />) },
+  { path: 'reports/*', element: withSuspense(<ReportsRoutes />) }, // lazy-loaded child routes
+]);
 ```
 
-### NgRx — Selectors & Memoization
+### Zustand — Selectors & Memoization
 
 ```typescript
-// Feature state — selectors are memoized by default (no recomputation if inputs unchanged)
-import { createFeatureSelector, createSelector } from '@ngrx/store';
-
-export const selectEntityFeature = createFeatureSelector<EntityState>('entities');
-
-export const selectVisibleEntities = createSelector(
-  selectEntityFeature,
-  (state) => state.items.filter(e => e.status === 'active'),
-);
-
-export const selectEntityCount = createSelector(
-  selectVisibleEntities,
-  (items) => items.length,  // derived selector — recomputes only when visible entities change
-);
-
-// Component — OnPush + signals from store = minimal change detection
-@Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    @if (entities(); as list) {
-      <app-entity-list [items]="list" />
-    }
-    <span>{{ count() }} active</span>
-  `,
-})
-export class EntityContainerComponent {
-  private store = inject(Store);
-  entities = this.store.selectSignal(selectVisibleEntities);  // signal binding
-  count = this.store.selectSignal(selectEntityCount);
+// Selectors re-render the component only when the selected slice changes
+interface EntityState {
+  items: Entity[];
 }
 
-// Entity Cache — avoid refetching already-loaded entities
-// @ngrx/entity provides normalized cache + ids array for O(1) lookups
+export const useEntityStore = create<EntityState>(() => ({ items: [] }));
+
+// Memoized derived selector (recomputes only when `items` reference changes)
+const selectVisibleEntities = (state: EntityState) => state.items.filter((e) => e.status === 'active');
+const selectEntityCount = (state: EntityState) => selectVisibleEntities(state).length;
+```
+
+```tsx
+// Component — selecting a slice avoids re-rendering on unrelated store changes
+export function EntityContainer() {
+  const entities = useEntityStore(useShallow(selectVisibleEntities));
+  const count = useEntityStore(selectEntityCount);
+
+  return (
+    <>
+      <EntityList items={entities} />
+      <span>{count} active</span>
+    </>
+  );
+}
 ```
 
 | Pattern | Benefit |
 |---------|---------|
-| Memoized selectors | No recomputation when inputs unchanged |
-| `selectSignal()` (NgRx 18+) | Signal-based store reads — OnPush-friendly |
-| `@ngrx/entity` | Normalized cache, O(1) by id, no duplicate fetches |
-| `@ngrx/component-store` | Local state for feature components, automatic cleanup |
+| `useShallow` selector | No re-render when the selected slice is shallow-equal |
+| `React.memo` | Skips re-render when props are referentially equal |
+| `@tanstack/react-query` cache | Normalized cache by `queryKey`, no duplicate fetches |
+| Zustand slice per feature | Local state for feature components, no boilerplate cleanup |
 
-### Virtual Scrolling with CDK
+### Virtual Scrolling with @tanstack/react-virtual
 
-```typescript
-import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+```tsx
+import { useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
-@Component({
-  template: `
-    <cdk-virtual-scroll-viewport itemSize="48" class="viewport">
-      @for (item of items(); track item.id) {
-        <div class="list-item">{{ item.name }}</div>
-      }
-    </cdk-virtual-scroll-viewport>
-  `,
-  styles: [`
-    .viewport { height: 600px; width: 100%; }
-    .list-item { height: 48px; display: flex; align-items: center; }
-  `],
-})
-export class EntityListComponent {
-  items = input.required<Entity[]>();
+export function EntityList({ items }: { items: Entity[] }) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 48,
+  });
+
+  return (
+    <div ref={parentRef} className="viewport" style={{ height: 600, overflow: 'auto' }}>
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+        {virtualizer.getVirtualItems().map((virtualRow) => (
+          <div
+            key={items[virtualRow.index].id}
+            className="list-item"
+            style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, height: 48 }}
+          >
+            {items[virtualRow.index].name}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
-```
-
-```html
-<!-- For very large lists (10k+), use trackBy for ngFor -->
-<cdk-virtual-scroll-viewport itemSize="56" class="entity-list">
-  <div *cdkVirtualFor="let entity of entities; trackBy: trackById"
-       class="entity-row">
-    {{ entity.name }}
-  </div>
-</cdk-virtual-scroll-viewport>
 ```
 
 ## Core Web Vitals
@@ -650,84 +602,69 @@ Core Web Vitals are user experience metrics defined by Google. They determine SE
 | **INP** (Interaction to Next Paint) | Interaction latency (replaces FID) | ≤ 200ms | > 500ms |
 | **CLS** (Cumulative Layout Shift) | Visual stability (elements jumping) | ≤ 0.1 | > 0.25 |
 
-### LCP — Optimization (Angular)
+### LCP — Optimization (React)
 
-```typescript
+```tsx
 // 1. Preload critical resources in index.html
 // <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin />
 // <link rel="preload" href="/hero.webp" as="image" />
 
-// 2. Use ngLazyLoadImage or native loading="lazy" for below-fold images
-<img [src]="heroImage()" loading="eager" fetchpriority="high" alt="Hero" />
-<img [src]="item.image" loading="lazy" alt="Item" />
+// 2. Native loading="lazy"/fetchpriority for below-fold vs. hero images
+<img src={heroImage} loading="eager" fetchPriority="high" alt="Hero" />
+<img src={item.image} loading="lazy" alt="Item" />
 
 // 3. Inline critical CSS, defer non-critical
-// angular.json → budgets: increase initial bundle warning to 500kb
+// vite.config.ts → build.cssCodeSplit / rollup manualChunks to control bundle size
 
-// 4. Use Angular's built-in image optimization with NgOptimizedImage
-import { NgOptimizedImage } from '@angular/common';
-
-@Component({
-  imports: [NgOptimizedImage],
-  template: `<img [ngSrc]="heroImage()" width="1200" height="600" priority />`
-})
+// 4. Explicit width/height (or aspect-ratio) prevents layout jank while the LCP image loads
+<img src={heroImage} width={1200} height={600} fetchPriority="high" alt="Hero" />
 ```
 
-### INP — Optimization (Angular)
+### INP — Optimization (React)
 
-```typescript
-// 1. Unzone.js or Zoneless change detection for instant feedback
-// Angular 19+: use provideExperimentalZonelessChangeDetection()
+```tsx
+// 1. React 18+ automatic batching = fewer renders per interaction by default
 
-// 2. OnPush + signals = automatic INP optimization
-// No zone.js overhead, no unnecessary change detection
+// 2. useTransition marks non-urgent updates as low priority — keeps input responsive
+function FilterPanel() {
+  const [filter, setFilter] = useState('');
+  const [isPending, startTransition] = useTransition();
 
-// 3. Defer heavy computation
-@Component({ ... })
-export class FilterComponent {
-  private zone = inject(NgZone);
+  const onFilterChange = (value: string) => {
+    setFilter(value); // urgent: input stays responsive
 
-  onFilterChange(value: string) {
-    // Zoneless: signals update UI immediately
-    this.filter.set(value);
-
-    // Heavy computation off the main thread
-    this.zone.runOutsideAngular(() => {
-      requestIdleCallback(() => {
-        this.analytics.trackFilterChange(value);
-      });
+    startTransition(() => {
+      // Non-urgent: heavy filtering/analytics deferred without blocking typing
+      analytics.trackFilterChange(value);
     });
-  }
+  };
+
+  return <input value={filter} onChange={(e) => onFilterChange(e.target.value)} />;
 }
 
-// 4. Web Workers for CPU-intensive tasks
+// 3. Web Workers for CPU-intensive tasks
 const worker = new Worker(new URL('./filter.worker', import.meta.url));
 worker.postMessage({ items, filter });
-worker.onmessage = (e) => this.filteredResults.set(e.data);
+worker.onmessage = (e) => setFilteredResults(e.data);
 ```
 
-### CLS — Optimization (Angular)
+### CLS — Optimization (React)
 
-```typescript
+```tsx
 // 1. Reserve space for images (aspect-ratio or fixed dimensions)
-@Component({
-  template: `
-    <div class="image-container">
-      @if (imageUrl(); as url) {
-        <img [src]="url" alt="Product" />
-      } @else {
-        <div class="skeleton"></div>
-      }
+function ProductImage({ imageUrl }: { imageUrl: string | null }) {
+  return (
+    <div className="image-container">
+      {imageUrl ? <img src={imageUrl} alt="Product" /> : <div className="skeleton" />}
     </div>
-  `,
-  styles: [`
-    .image-container { aspect-ratio: 16 / 9; width: 100%; overflow: hidden; }
-    .skeleton { width: 100%; height: 100%; background: #e5e7eb; }
-  `],
-})
+  );
+}
 ```
 
 ```css
+.image-container { aspect-ratio: 16 / 9; width: 100%; overflow: hidden; }
+.skeleton { width: 100%; height: 100%; background: #e5e7eb; }
+
 /* 2. Font loading: font-display: swap */
 @font-face {
   font-family: 'Inter';
@@ -736,7 +673,7 @@ worker.onmessage = (e) => this.filteredResults.set(e.data);
 }
 
 /* 3. Avoid layout shifts from async data */
-.skeleton {
+.skeleton-pulse {
   width: 100%;
   height: 48px;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -744,34 +681,32 @@ worker.onmessage = (e) => this.filteredResults.set(e.data);
 }
 ```
 
-```typescript
-// 4. Angular animations — prevent CLS by reserving final dimensions
-//    Use animations on stable containers (after layout settled), never on
-//    elements that change box size during initial render.
-import { trigger, transition, style, animate } from '@angular/animations';
-
-@Component({
-  animations: [
-    trigger('panel', [
-      // Fixed height in :enter — no layout shift when content arrives
-      transition(':enter', [
-        style({ opacity: 0, height: '200px' }),  // reserve height upfront
-        animate('200ms ease-out', style({ opacity: 1, height: '200px' })),
-      ]),
-      // Avoid animating width/height on data-bound elements — that causes CLS.
-      // Animate opacity/transform only after the element has its final size.
-    ]),
-  ],
-  template: `
-    <div @panel class="panel">
-      @if (data(); as d) { <app-content [data]="d" /> }
-      @else { <div class="skeleton"></div> }
+```tsx
+// 4. Reserve final dimensions before animating — never animate width/height
+//    on elements that change box size during initial render.
+function StablePanel({ data }: { data: Data | null }) {
+  return (
+    <div className="panel" style={{ height: 200 }}> {/* CSS reserves space — animation is cosmetic */}
+      {data ? (
+        <div className="panel-content panel-content--enter">
+          <Content data={data} />
+        </div>
+      ) : (
+        <div className="skeleton" />
+      )}
     </div>
-  `,
-  styles: [`.panel { height: 200px; }`],  // CSS reserves space — animation is cosmetic
-})
-export class StablePanelComponent {
-  data = input<Data | null>(null);
+  );
+}
+```
+
+```css
+/* Animate opacity/transform only — height is already fixed by .panel */
+.panel-content--enter {
+  animation: fade-in 200ms ease-out;
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 ```
 
@@ -824,7 +759,7 @@ onCLS((metric) => reportMetric('CLS', metric));
 | CLS | ≤ 0.1 | web-vitals |
 | First Contentful Paint (FCP) | ≤ 1.8s | Lighthouse |
 | Total Blocking Time (TBT) | ≤ 200ms | Lighthouse |
-| Bundle size (initial) | ≤ 500 KB | Angular CLI build analyzer |
+| Bundle size (initial) | ≤ 500 KB | `vite-bundle-visualizer` / `rollup-plugin-visualizer` |
 | Time to Interactive (TTI) | ≤ 3.5s | Lighthouse |
 
 ### Database SLOs

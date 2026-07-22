@@ -18,6 +18,8 @@ metadata:
   - api-first-backend
   - api-first-frontend
   - api-first-testing
+  - tasks
+  - converge
   agent_roles:
   - design-agent
   - orchestrator-agent
@@ -40,6 +42,8 @@ The spec is produced **before any code** is written. It aligns product (HUs), ba
 | `api-first-frontend` | **Consumes** | Uses the spec to generate TS types, hooks, components |
 | `api-first-testing` | **Consumes** | Uses the spec to generate E2E and API test cases |
 | `api-catalog` | **Consumes** | Uses spec endpoints to build the full API catalog |
+| `tasks` | **Consumes** | Breaks this spec into ordered, verifiable implementation tasks |
+| `converge` | **Consumes** | Verifies the final implementation matches this spec |
 
 ## Document Structure (9 sections)
 

@@ -137,13 +137,13 @@ Think of this project as a **3-layer system**:
    - Kafka event producers/consumers
    - Redis caching layer
 
-3. **Frontend** (`src/web/`) — Angular
-   - Standalone components with signals
-   - @ngneat/query for server state
-   - Reactive forms with Zod validation
+3. **Frontend** (`src/web/`) — React (Vite)
+   - Function components with hooks
+   - @tanstack/react-query for server state
+   - react-hook-form with Zod validation
 
 ## Data Flow
-User → Angular → Bun API → (Kafka events) → Python AI → pgvector
+User → React → Bun API → (Kafka events) → Python AI → pgvector
                     ↓
                   Redis cache
                     ↓
@@ -159,7 +159,7 @@ User → Angular → Bun API → (Kafka events) → Python AI → pgvector
 |-----------|---------|----------|-------|
 | `src/ai/` | AI orchestrator | Python | AI team |
 | `src/api/` | General backend | TypeScript/Bun | Backend team |
-| `src/web/` | Frontend SPA | Angular | Frontend team |
+| `src/web/` | Frontend SPA | React | Frontend team |
 | `database/` | Migrations, seeds | SQL | Data team |
 | `infra/` | Terraform, K8s | HCL | DevOps |
 | `docs/` | Documentation | Markdown | Everyone |

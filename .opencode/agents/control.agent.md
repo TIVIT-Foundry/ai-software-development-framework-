@@ -54,6 +54,7 @@ Carga el SKILL.md correspondiente antes de producir artefactos de cada área:
 | code-review | secundario | [SKILL.md](../skills/code-review/SKILL.md) |
 | security | secundario | [SKILL.md](../skills/security/SKILL.md) |
 | keycloak | primario | [SKILL.md](../skills/keycloak/SKILL.md) |
+| converge | primario | [SKILL.md](../skills/converge/SKILL.md) |
 
 ## Protocolo de ejecución
 
@@ -151,6 +152,7 @@ Para revisiones de seguridad formales:
 |----------|------|-----------|-----------|
 | Unit tests pasan | Bloqueante | ✅ | pytest output |
 | Integration tests pasan | Bloqueante | ✅ | pytest output |
+| Converge report: CONVERGED | Bloqueante (si hay spec) | ✅ | reporte de `converge` |
 | Security scan sin critical | Bloqueante | ✅ | semgrep/snyk output |
 | Accesibilidad WCAG AA | Recomendado | ⏳ Pendiente | — |
 | Cobertura mínima 70% | Recomendado | ✅ | 82% |

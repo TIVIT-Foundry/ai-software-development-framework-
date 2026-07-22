@@ -26,7 +26,7 @@ Provide concrete GitHub Actions patterns for the framework's CI/CD: lint, test, 
 
 Activate when:
 - The project hosts code on GitHub
-- A new pipeline is needed for Python/FastAPI, Bun/TypeScript, or Angular
+- A new pipeline is needed for Python/FastAPI, Bun/TypeScript, or React
 - Reusable workflows must be standardized
 
 ## Relation to other skills

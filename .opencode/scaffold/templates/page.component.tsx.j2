@@ -1,0 +1,127 @@
+import { useCallback, useEffect, useState } from 'react';
+
+import { ${ENTITY}List } from './${entity}-list';
+import { ${ENTITY}Form } from './${entity}-form';
+import { ${ENTITY}Api } from './${entity}.api';
+import type {
+  ${ENTITY}ListItem,
+  ${ENTITY}QueryParams,
+  ${ENTITY}CreateRequest,
+  ${ENTITY}UpdateRequest,
+} from './${entity}.model';
+
+export function ${ENTITY}Page() {
+  const [items, setItems] = useState<${ENTITY}ListItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [searchFilter, setSearchFilter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<${ENTITY}ListItem | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const params: ${ENTITY}QueryParams = {
+      page,
+      pageSize,
+      searchFilter: searchFilter || undefined,
+    };
+    try {
+      const response = await ${ENTITY}Api.list(params);
+      setItems(response.items);
+      setTotal(response.total);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load ${entities}');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, searchFilter]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleSearch = (value: string) => {
+    setSearchFilter(value);
+    setPage(1);
+  };
+
+  const handleCreate = () => {
+    setEditingItem(null);
+    setShowForm(true);
+  };
+
+  const handleEdit = (id: number) => {
+    setEditingItem(items.find((i) => i.id === id) ?? null);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Delete ${ENTITY}?')) return;
+    try {
+      await ${ENTITY}Api.remove(id);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete ${entity}');
+    }
+  };
+
+  const handleSubmit = async (values: ${ENTITY}CreateRequest | ${ENTITY}UpdateRequest) => {
+    try {
+      if (editingItem) {
+        await ${ENTITY}Api.update(editingItem.id, values as ${ENTITY}UpdateRequest);
+      } else {
+        await ${ENTITY}Api.create(values as ${ENTITY}CreateRequest);
+      }
+      setShowForm(false);
+      setEditingItem(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save ${entity}');
+    }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingItem(null);
+  };
+
+  return (
+    <div className="${entity}-page">
+      <h2>${ENTITIES}</h2>
+
+      {error && <div className="error">{error}</div>}
+
+      <${ENTITY}List
+        items={items}
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        loading={loading}
+        error={error}
+        onSearch={handleSearch}
+        onPageChange={setPage}
+        onSortChange={() => load()}
+        onCreate={handleCreate}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      {showForm && (
+        <div className="modal-overlay" onClick={handleCancel}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <${ENTITY}Form
+              initialValues={editingItem}
+              loading={loading}
+              onSubmitForm={handleSubmit}
+              onCancel={handleCancel}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

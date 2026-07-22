@@ -4,7 +4,7 @@ Scaffolding Generator for TIVIT Foundry Framework.
 
 Parses an api-first-spec markdown document and generates:
 - Backend: Python FastAPI + SQLAlchemy 2.0 OR Bun (TypeScript) + Elysia + postgres.js
-- Frontend: Angular (standalone components, signals, reactive forms)
+- Frontend: React + Vite (function components, hooks)
 - Database: PostgreSQL DDL + functions
 - Tests: Playwright E2E
 
@@ -484,46 +484,29 @@ def pg_update_set(field):
     return f"        {sn} = p_{sn}"
 
 
-# ─── Angular helpers ─────────────────────────────────────────────────────────
+# ─── React (JSX) helpers ─────────────────────────────────────────────────────
 
-def ng_table_headers(fields):
+def jsx_table_headers(fields):
     lines = []
     for f in fields:
         cn = field_camel(f)
         label = f["name"].replace("_", " ").title()
-        lines.append(f'          <th (click)="onSort(\'{cn}\')">{label}</th>')
+        lines.append(f"              <th onClick={{() => handleSort('{cn}')}}>{label}</th>")
     return "\n".join(lines)
 
 
-def ng_table_cells(fields):
+def jsx_table_cells(fields):
     lines = []
     for f in fields:
         cn = field_camel(f)
-        lines.append(f'            <td>{{{{ item.{cn} }}}}</td>')
+        lines.append(f"                <td>{{item.{cn}}}</td>")
     return "\n".join(lines)
 
 
-def ng_form_controls(fields):
+def jsx_form_fields(fields):
     lines = []
     for f in fields:
-        sn = field_snake(f)
         cn = field_camel(f)
-        validators = []
-        nullable = f["type"].strip("`").endswith("?")
-        if not nullable:
-            validators.append("Validators.required")
-        max_match = re.search(r"(\d+)\s*(?:chars|characters|max)", f.get("desc", ""), re.IGNORECASE)
-        if max_match:
-            validators.append(f"Validators.maxLength({max_match.group(1)})")
-        validators_str = ", ".join(validators) if validators else "[]"
-        lines.append(f"      {sn}: [values?.{cn} ?? null, {validators_str}],")
-    return "\n".join(lines)
-
-
-def ng_form_fields(fields):
-    lines = []
-    for f in fields:
-        sn = field_snake(f)
         label = re.sub(r"([A-Z])", r" \1", f["name"]).strip().title()
         base = normalize_spec_type(f["type"])
         if base in ("int", "integer"):
@@ -534,8 +517,23 @@ def ng_form_fields(fields):
             input_type = "checkbox"
         else:
             input_type = "text"
+        nullable = f["type"].strip("`").endswith("?")
+        required = "" if nullable else " required"
+        if input_type == "checkbox":
+            value_expr = (
+                f"checked={{Boolean(values.{cn})}} "
+                f"onChange={{(e) => setValues((v) => ({{ ...v, {cn}: e.target.checked }}))}}"
+            )
+        else:
+            value_expr = (
+                f"value={{values.{cn} ?? ''}} "
+                f"onChange={{(e) => setValues((v) => ({{ ...v, {cn}: e.target.value }}))}}"
+            )
         lines.append(
-            f"""  <div class=\"field\">\n    <label for=\"{sn}\">{label}</label>\n    <input id=\"{sn}\" formControlName=\"{sn}\" type=\"{input_type}\" />\n  </div>"""
+            f'      <div className="field">\n'
+            f'        <label htmlFor="{cn}">{label}</label>\n'
+            f'        <input id="{cn}" type="{input_type}" {value_expr}{required} />\n'
+            f"      </div>"
         )
     return "\n".join(lines)
 
@@ -739,7 +737,7 @@ def build_context(spec, entity):
     if "record_status" not in existing_snakes:
         py_response_lines.append("    record_status: str")
 
-    # ── TypeScript / Angular ──
+    # ── TypeScript / React ──
     ts_lines = []
     for f in all_fields:
         ts_lines.append(ts_field_decl(f))
@@ -784,11 +782,10 @@ def build_context(spec, entity):
 
     field_csv = ", ".join(field_snake(f) for f in business_fields)
 
-    # ── Angular extra ──
-    table_headers = ng_table_headers(business_fields)
-    table_cells = ng_table_cells(business_fields)
-    form_controls = ng_form_controls(business_fields)
-    form_fields = ng_form_fields(business_fields)
+    # ── React (JSX) extra ──
+    table_headers = jsx_table_headers(business_fields)
+    table_cells = jsx_table_cells(business_fields)
+    form_fields = jsx_form_fields(business_fields)
 
     # ── Bun extra ──
     bun_create_lines = [bun_zod_field(f) for f in business_fields]
@@ -831,10 +828,9 @@ def build_context(spec, entity):
         "FN_PARAMS_CREATE": ",\n".join(fn_params_create_lines),
         "FN_PARAMS_UPDATE": ",\n".join(fn_params_update_lines),
 
-        # Angular
+        # React
         "TABLE_HEADERS": table_headers,
         "TABLE_CELLS": table_cells,
-        "FORM_CONTROLS": form_controls,
         "FORM_FIELDS": form_fields,
 
         # Bun
@@ -923,47 +919,31 @@ def generate(spec, output_dir, backend="python"):
         else:
             raise ValueError(f"Unsupported backend: {backend}")
 
-        # ── Frontend (Angular) ──
+        # ── Frontend (React + Vite) ──
         frontend_dir = output / "frontend"
         write_file(
             frontend_dir / f"{entity_camel}.model.ts",
             load_template("model.ts.j2").safe_substitute(ctx),
         )
         write_file(
-            frontend_dir / f"{entity_camel}.service.ts",
-            load_template("service.ts.j2").safe_substitute(ctx),
+            frontend_dir / f"{entity_camel}.api.ts",
+            load_template("api.ts.j2").safe_substitute(ctx),
         )
         write_file(
-            frontend_dir / f"{entity_camel}-list.component.ts",
-            load_template("component.ts.j2").safe_substitute(ctx),
+            frontend_dir / f"{entity_camel}-list.tsx",
+            load_template("component.tsx.j2").safe_substitute(ctx),
         )
         write_file(
-            frontend_dir / f"{entity_camel}-list.component.html",
-            load_template("component.html.j2").safe_substitute(ctx),
+            frontend_dir / f"{entity_camel}-table.tsx",
+            load_template("table.component.tsx.j2").safe_substitute(ctx),
         )
         write_file(
-            frontend_dir / f"{entity_camel}-table.component.ts",
-            load_template("table.component.ts.j2").safe_substitute(ctx),
+            frontend_dir / f"{entity_camel}-form.tsx",
+            load_template("form.component.tsx.j2").safe_substitute(ctx),
         )
         write_file(
-            frontend_dir / f"{entity_camel}-table.component.html",
-            load_template("table.component.html.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / f"{entity_camel}-form.component.ts",
-            load_template("form.component.ts.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / f"{entity_camel}-form.component.html",
-            load_template("form.component.html.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / f"{entity_camel}-page.component.ts",
-            load_template("page.component.ts.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / f"{entity_camel}-page.component.html",
-            load_template("page.component.html.j2").safe_substitute(ctx),
+            frontend_dir / f"{entity_camel}-page.tsx",
+            load_template("page.component.tsx.j2").safe_substitute(ctx),
         )
         write_file(
             frontend_dir / "index.ts",

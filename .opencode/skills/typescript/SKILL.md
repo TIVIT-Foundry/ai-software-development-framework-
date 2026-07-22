@@ -12,8 +12,8 @@ metadata:
   depends_on:
   - openapi-docs
   consumed_by:
-  - angular
-  - angular-services
+  - react
+  - react-services
   - api-first-frontend
   agent_roles:
   - design-agent
@@ -153,14 +153,17 @@ enum EntityStatus {
 }
 ```
 
-## Component Input Types
+## Component Props Types
 ```typescript
-// Use @Input() with explicit type for Angular component inputs
-@Component({ ... })
-export class EntityDetailComponent {
-  @Input({ required: true }) entityId!: number;
-  @Input({ required: true }) onClose!: () => void;
-  @Input() data: EntityDetail | null = null;
+// Explicit props interface for React function components
+interface EntityDetailProps {
+  entityId: number;
+  onClose: () => void;
+  data?: EntityDetail | null;
+}
+
+export function EntityDetail({ entityId, onClose, data = null }: EntityDetailProps) {
+  // ...
 }
 ```
 
@@ -255,25 +258,26 @@ async function fetchOrders(): Promise<ApiResponse<OrderDetail[]>> { /* ... */ }
 type UsersResult = AsyncResult<typeof fetchUsers>;
 // → ApiResponse<UserDetail[]> (no Promise<ApiResponse<UserDetail[]>>)
 
-// Uso en servicios Angular con signals: inferir el tipo de data sin repetirlo
-function createQueryStore<T extends (...args: unknown[]) => Promise<unknown>>(
-  queryFn: T,
-) {
-  // signal() con el tipo desenvuelto por Awaited, sin Promise wrapper
-  const data = signal<Awaited<ReturnType<T>> | null>(null);
-  const loading = signal(false);
-
-  async function load(...args: Parameters<T>): Promise<void> {
-    loading.set(true);
-    try {
-      const result = await queryFn(...(args as unknown[]));
-      data.set(result as Awaited<ReturnType<T>>);
-    } finally {
-      loading.set(false);
-    }
-  }
-
-  return { data: data.asReadonly(), loading: loading.asReadonly(), load };
+// Uso en un store Zustand: inferir el tipo de data sin repetirlo
+function createQueryStore<T extends (...args: unknown[]) => Promise<unknown>>(queryFn: T) {
+  // el tipo desenvuelto por Awaited, sin Promise wrapper
+  return create<{
+    data: Awaited<ReturnType<T>> | null;
+    loading: boolean;
+    load: (...args: Parameters<T>) => Promise<void>;
+  }>((set) => ({
+    data: null,
+    loading: false,
+    load: async (...args) => {
+      set({ loading: true });
+      try {
+        const result = await queryFn(...(args as unknown[]));
+        set({ data: result as Awaited<ReturnType<T>> });
+      } finally {
+        set({ loading: false });
+      }
+    },
+  }));
 }
 
 // Promesas anidadas: Awaited las desenvuelve todas
@@ -387,7 +391,7 @@ const ApiResponseSchema = z.discriminatedUnion('success', [
 ]);
 type ApiResponse = z.infer<typeof ApiResponseSchema>;
 
-// Integración con formularios Angular
+// Integración con react-hook-form
 const LoginFormSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
@@ -452,7 +456,7 @@ function transition<S extends ApprovalStep['step']>(
   return map[current] as TransitionMap[S];
 }
 
-// Uso en Angular: estado de carga con signals
+// Uso en React: estado de carga con useState/useReducer
 type QueryState<T> =
   | { status: 'idle' }
   | { status: 'loading' }

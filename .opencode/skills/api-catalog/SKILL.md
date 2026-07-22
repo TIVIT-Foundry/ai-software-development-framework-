@@ -228,8 +228,8 @@ rg "use(Get|Create|Update|Delete|Search)Users" src/hooks/ -l
 # 2) Encontrar qué componente consume cada hook
 rg -l "useGetUsers" src/components/ src/pages/
 
-# 3) Extraer la ruta del componente (asume Angular Router con loadComponent)
-rg "path.*users" src/app/app.routes.ts
+# 3) Extraer la ruta del componente (asume react-router-dom)
+rg "path.*users" src/router.tsx
 ```
 
 ```bash

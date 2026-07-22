@@ -2,7 +2,7 @@
 name: security
 description: 'Security patterns for applications: input validation, authorization,
   CORS, SQL injection prevention, XSS, CSP. Covers OWASP Top 10 controls for
-  Angular, Bun, Keycloak, and Python FastAPI. Trigger: When implementing
+  React, Bun, Keycloak, and Python FastAPI. Trigger: When implementing
   validation, authorization, CORS, security headers, or securing APIs and UI.'
 version: 2.0
 metadata:
@@ -18,7 +18,7 @@ metadata:
   - authorization
   - database-security
   - backend-api
-  - angular
+  - react
   agent_roles:
   - control-agent
   - design-agent
@@ -30,7 +30,7 @@ mcp_usage: none
 
 | Capa | Tecnologías |
 |------|-------------|
-| Frontend | Angular (17+) |
+| Frontend | React (18+, Vite) |
 | Backend | Bun (TypeScript) |
 | Auth | Keycloak (OAuth2/OIDC) |
 | Backend API | Python FastAPI |
@@ -109,7 +109,7 @@ const result = await pool.query(`SELECT * FROM users WHERE email = '${email}'`);
 |-------|------|--------------|
 | Backend (Bun) | Zod | `{ code: "VAL_001", path: ["field"], message: "..." }` |
 | Backend (Python) | Pydantic | Pydantic validation error |
-| Frontend (Angular) | Reactive Forms + Zod | Inline form field error |
+| Frontend (React) | react-hook-form + Zod | Inline form field error |
 
 ### Bun — Zod validation middleware
 
@@ -176,44 +176,42 @@ async def create_user(user: CreateUser):
 
 ## 3. XSS Prevention
 
-### Angular — Sanitización automática + DomSanitizer
+### React — Sanitización automática + DOMPurify
 
-Angular escapa por defecto todo contenido interpolado en templates. Para contenido HTML dinámico, usar `DomSanitizer`:
+React escapa por defecto todo contenido interpolado en JSX (`{expression}`). Para contenido HTML dinámico, usar `dangerouslySetInnerHTML` únicamente con `DOMPurify`:
 
-```typescript
-import { Component } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+```tsx
+import DOMPurify from 'dompurify';
 
-@Component({ ... })
-export class ArticleComponent {
-  constructor(private sanitizer: DomSanitizer) {}
-
-  // SEGURO: sanitización explícita del contenido HTML
-  getSafeHtml(rawHtml: string): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(rawHtml);
-  }
-
-  // PELIGRO: nunca confiar en input del usuario sin sanitizar
-  // this.sanitizer.bypassSecurityTrustUrl(userInput) ← NUNCA
+interface ArticleProps {
+  content: string; // HTML crudo, potencialmente inseguro
 }
 
-// En el template (HTML):
-// <div [innerHTML]="getSafeHtml(article.content)"></div>
+export function Article({ content }: ArticleProps) {
+  // SEGURO: sanitización explícita del contenido HTML
+  const safeHtml = DOMPurify.sanitize(content);
+
+  // PELIGRO: nunca usar dangerouslySetInnerHTML sin sanitizar
+  // <div dangerouslySetInnerHTML={{ __html: content }} /> ← NUNCA
+
+  return <div dangerouslySetInnerHTML={{ __html: safeHtml }} />;
+}
 ```
 
 **Template injection prevention:**
-```typescript
+```tsx
 // PELIGRO: binding directo a contenido del usuario en atributos de seguridad
-// <a [href]="userProvidedUrl">Link</a>
+// <a href={userProvidedUrl}>Link</a>
 
-// SEGURO: usar bypassSecurityTrustUrl solo con whitelist
-getSafeUrl(url: string): SafeUrl {
+// SEGURO: validar contra whitelist antes de usar como href
+function getSafeUrl(url: string): string {
   const allowedDomains = ['https://app.example.com', 'https://docs.example.com'];
-  const parsed = new URL(url);
-  if (!allowedDomains.includes(parsed.origin)) {
-    return this.sanitizer.bypassSecurityTrustUrl('about:blank');
+  try {
+    const parsed = new URL(url);
+    return allowedDomains.includes(parsed.origin) ? url : 'about:blank';
+  } catch {
+    return 'about:blank';
   }
-  return this.sanitizer.bypassSecurityTrustUrl(url);
 }
 ```
 
@@ -222,23 +220,13 @@ getSafeUrl(url: string): SafeUrl {
 Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://keycloak.example.com;
 ```
 
-### Angular CSP Configuration
+### CSP en apps React (Vite)
 
-```typescript
-// angular.json — configurar CSP para producción
-{
-  "projects": {
-    "app": {
-      "architect": {
-        "build": {
-          "options": {
-            "contentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
-          }
-        }
-      }
-    }
-  }
-}
+El CSP de una SPA se aplica a nivel de servidor/reverse-proxy (nginx, CDN), no en el build de Vite — ver `api-gateway` para la configuración de nginx. Para desarrollo local, se puede fijar vía meta tag en `index.html`:
+
+```html
+<!-- index.html — solo como fallback para dev; en producción el header HTTP tiene prioridad -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
 ```
 
 ### Bun — CSP middleware
@@ -274,129 +262,94 @@ export function securityHeaders(req: Request): Response | void {
 
 ---
 
-## 4. Angular Security Patterns
+## 4. React Security Patterns
 
 ### Route Guards — Protección de rutas
 
-```typescript
-import { Injectable } from '@angular/core';
-import { CanActivate, Router, ActivatedRouteSnapshot } from '@angular/router';
-import { KeycloakService } from 'keycloak-angular';
+```tsx
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useKeycloak } from './keycloak-context';
 
-@Injectable({ providedIn: 'root' })
-export class AuthGuard implements CanActivate {
-  constructor(
-    private keycloak: KeycloakService,
-    private router: Router,
-  ) {}
-
-  async canActivate(route: ActivatedRouteSnapshot): Promise<boolean> {
-    const requiredRoles = route.data['roles'] as string[] | undefined;
-
-    if (!this.keycloak.isLoggedIn()) {
-      await this.keycloak.login();
-      return false;
-    }
-
-    if (requiredRoles && requiredRoles.length > 0) {
-      const userRoles = this.keycloak.getUserRoles();
-      const hasRole = requiredRoles.some(role => userRoles.includes(role));
-      if (!hasRole) {
-        this.router.navigate(['/unauthorized']);
-        return false;
-      }
-    }
-
-    return true;
-  }
+interface RequireAuthProps {
+  roles?: string[];
 }
 
-// Registro en app.routes.ts
-const routes: Routes = [
+export function RequireAuth({ roles }: RequireAuthProps) {
+  const { isLoggedIn, userRoles, login } = useKeycloak();
+  const location = useLocation();
+
+  if (!isLoggedIn) {
+    login();
+    return null;
+  }
+
+  if (roles && roles.length > 0) {
+    const hasRole = roles.some((role) => userRoles.includes(role));
+    if (!hasRole) return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <Outlet />;
+}
+
+// Registro en router.tsx
+const router = createBrowserRouter([
   {
-    path: 'admin',
-    canActivate: [AuthGuard],
-    data: { roles: ['admin'] },
-    loadChildren: () => import('./admin/admin.routes').then(m => m.ADMIN_ROUTES),
+    element: <RequireAuth roles={['admin']} />,
+    children: [{ path: 'admin/*', element: <AdminRoutes /> }],
   },
   {
-    path: 'dashboard',
-    canActivate: [AuthGuard],
-    loadChildren: () => import('./dashboard/dashboard.routes').then(m => m.DASHBOARD_ROUTES),
+    element: <RequireAuth />,
+    children: [{ path: 'dashboard/*', element: <DashboardRoutes /> }],
   },
-];
+]);
 ```
 
-### HTTP Interceptor — JWT injection y refresh
+### Fetch Wrapper — JWT injection y refresh
 
 ```typescript
-import { Injectable } from '@angular/core';
-import {
-  HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse,
-} from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, filter, take, switchMap } from 'rxjs/operators';
-import { KeycloakService } from 'keycloak-angular';
+import { useKeycloakAuthStore } from './keycloak-auth.store';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  private isRefreshing = false;
-  private refreshTokenSubject = new BehaviorSubject<string | null>(null);
+let isRefreshing = false;
+let refreshWaiters: ((token: string | null) => void)[] = [];
 
-  constructor(private keycloak: KeycloakService) {}
+export async function secureFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  // No inyectar token en peticiones externas
+  if (!path.startsWith('/api/')) return fetch(path, init);
 
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // No inyectar token en peticiones externas
-    if (!req.url.startsWith('/api/')) {
-      return next.handle(req);
-    }
+  const { accessToken, refresh, login } = useKeycloakAuthStore.getState();
+  const withAuth = (token: string | null): RequestInit => ({
+    ...init,
+    headers: { ...init.headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
 
-    const token = this.keycloak.getKeycloakInstance().token;
-    if (token) {
-      req = this.addToken(req, token);
-    }
+  const res = await fetch(path, withAuth(accessToken));
+  if (res.status !== 401 || path.includes('/auth/refresh')) return res;
 
-    return next.handle(req).pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 401 && !req.url.includes('/auth/refresh')) {
-          return this.handle401Error(req, next);
-        }
-        return throwError(() => error);
-      }),
-    );
+  const newToken = await waitForRefresh(refresh, login);
+  return newToken ? fetch(path, withAuth(newToken)) : res;
+}
+
+async function waitForRefresh(
+  refresh: () => Promise<string>,
+  login: () => void,
+): Promise<string | null> {
+  if (!isRefreshing) {
+    isRefreshing = true;
+    refresh()
+      .then((token) => {
+        refreshWaiters.forEach((resolve) => resolve(token));
+        refreshWaiters = [];
+      })
+      .catch(() => {
+        login();
+        refreshWaiters.forEach((resolve) => resolve(null));
+        refreshWaiters = [];
+      })
+      .finally(() => {
+        isRefreshing = false;
+      });
   }
-
-  private addToken(req: HttpRequest<any>, token: string): HttpRequest<any> {
-    return req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  }
-
-  private handle401Error(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    if (!this.isRefreshing) {
-      this.isRefreshing = true;
-      this.refreshTokenSubject.next(null);
-
-      this.keycloak.getKeycloakInstance().updateToken(30)
-        .then(refreshed => {
-          this.isRefreshing = false;
-          if (refreshed) {
-            const newToken = this.keycloak.getKeycloakInstance().token!;
-            this.refreshTokenSubject.next(newToken);
-          } else {
-            this.keycloak.login();
-          }
-        });
-    }
-
-    return this.refreshTokenSubject.pipe(
-      filter(token => token !== null),
-      take(1),
-      switchMap(token => next.handle(this.addToken(req, token!))),
-    );
-  }
+  return new Promise((resolve) => refreshWaiters.push(resolve));
 }
 ```
 
@@ -444,44 +397,33 @@ export async function initKeycloak(): Promise<boolean> {
 }
 ```
 
-### Role-based access — Servicio centralizado
+### Role-based access — Store centralizado
 
 ```typescript
-import { Injectable } from '@angular/core';
+import { create } from 'zustand';
 import Keycloak from 'keycloak-js';
 
-@Injectable({ providedIn: 'root' })
-export class AuthService {
-  constructor(private keycloak: Keycloak) {}
+const keycloak = new Keycloak({ /* config */ });
 
-  hasRole(role: string): boolean {
-    return this.keycloak.getUserRoles().includes(role);
-  }
-
-  hasAnyRole(roles: string[]): boolean {
-    return roles.some(role => this.hasRole(role));
-  }
-
-  getRoles(): string[] {
-    return this.keycloak.getUserRoles();
-  }
-
-  getToken(): string | undefined {
-    return this.keycloak.token;
-  }
-
-  getSubject(): string | undefined {
-    return this.keycloak.tokenParsed?.sub;
-  }
-
-  getTenantId(): string | undefined {
-    return this.keycloak.tokenParsed?.['tenant-id'];
-  }
-
-  logout(): void {
-    this.keycloak.logout({ redirectUri: window.location.origin });
-  }
+interface AuthState {
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
+  getRoles: () => string[];
+  getToken: () => string | undefined;
+  getSubject: () => string | undefined;
+  getTenantId: () => string | undefined;
+  logout: () => void;
 }
+
+export const useAuthStore = create<AuthState>(() => ({
+  hasRole: (role) => keycloak.getUserRoles().includes(role),
+  hasAnyRole: (roles) => roles.some((role) => keycloak.getUserRoles().includes(role)),
+  getRoles: () => keycloak.getUserRoles(),
+  getToken: () => keycloak.token,
+  getSubject: () => keycloak.tokenParsed?.sub,
+  getTenantId: () => keycloak.tokenParsed?.['tenant-id'],
+  logout: () => keycloak.logout({ redirectUri: window.location.origin }),
+}));
 ```
 
 ### Token introspection (Bun backend)
@@ -748,7 +690,7 @@ async def get_recurso(request: Request):
 
 ### A1: Broken Access Control
 
-**Angular — Route Guards con roles**
+**React — Route Guards con roles**
 ```typescript
 // Ver sección 4: Route Guards
 // canActivate + data.roles + KeycloakService
@@ -911,7 +853,7 @@ function maskCard(number: string): string {
 
 ### A7: Cross-Site Scripting (XSS)
 
-**Angular — Escapado automático + DomSanitizer (ver sección 3)**
+**React — Escapado automático + DOMPurify (ver sección 3)**
 
 **Content Security Policy (ver secciones 3 y 6)**
 
