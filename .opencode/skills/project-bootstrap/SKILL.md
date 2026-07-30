@@ -1,13 +1,13 @@
 ---
 name: project-bootstrap
-description: 'Entry point for onboarding to a new Python/FastAPI + React + Bun project. Trigger: When starting work on a new project, first-time setup, or project orientation.'
+description: 'Entry point for onboarding to a new Python/FastAPI + React/Angular + Bun project. Trigger: When starting work on a new project, first-time setup, or project orientation.'
 when_to_use:
   - Starting a new project from scratch
   - Onboarding to an existing project for the first time
   - Setting up development environment for a new team member
   - Defining the tech stack, team, and project context
   - Transitioning from framework scaffold to a concrete project
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - inception
@@ -99,7 +99,7 @@ Entradas opcionales pero recomendadas:
 La fase de project-bootstrap **sí incluye**:
 
 - Ficha del proyecto con tech stack, versiones y restricciones.
-- Entorno de desarrollo configurado (Python FastAPI, React, Bun).
+- Entorno de desarrollo configurado (Python FastAPI, React o Angular, Bun).
 - Inicialización del repositorio Git con estrategia de branching y protección.
 - Checklist de onboarding para nuevos desarrolladores.
 - Configuración de herramientas de calidad (linting, formatting, git hooks).
@@ -156,7 +156,7 @@ La ficha del proyecto es el documento central que contextualiza todo el trabajo 
 | Vertical | Dominio de negocio | "Financial Ops" |
 | Cliente | Organización que recibe el producto | "Empresa ABC S.A.C." |
 | Stack primario | Lenguaje/runtime principal | "Python 3.12 / FastAPI" |
-| Stack secundario | Lenguaje/runtime adicional | "React 18+ / TypeScript 5" |
+| Stack secundario | Lenguaje/runtime adicional | "React 18+ / TypeScript 5" (o "Angular 17+ / TypeScript 5") |
 | Motor de BD | Base de datos principal | "PostgreSQL 16" |
 | Motor de BD secundario | Base de datos adicional | "Redis 7 (caché)" |
 | Framework de agentes | Si aplica | "Framework Agéntico v1.0" |
@@ -191,6 +191,20 @@ Plantilla multi-stack:
 | Linter | ESLint (eslint-plugin-react, eslint-plugin-react-hooks) + Prettier |
 | Build | `vite build` |
 | CI | GitHub Actions con `npm run build` + `vitest run` |
+
+#### Angular 17+ Frontend
+
+| Campo | Valor |
+|-------|-------|
+| Runtime | Node 20+ (LTS) |
+| Framework | Angular 17+ (standalone components, signals) |
+| UI Library | Angular Material o PrimeNG |
+| Estado | Signals + @ngneat/query (TanStack Query) |
+| HTTP | HttpClient + interceptores |
+| Testing | Vitest/Jest (unit) + Playwright (E2E) |
+| Linter | ESLint (@angular-eslint) + Prettier |
+| Build | `ng build` (esbuild/vite) |
+| CI | GitHub Actions con `ng build` + `ng test` |
 
 #### Bun (TypeScript) Backend
 
@@ -266,6 +280,40 @@ Extensiones VS Code recomendadas:
 - esbenp.prettier-vscode
 - burkeholland.simple-react-snippets
 - dsznajder.es7-react-js-snippets
+```
+
+#### Angular Frontend
+
+```
+Prerrequisitos:
+□ Node.js 20+ (LTS)
+□ Bun 1.1+ (gestor de paquetes y runtime)
+□ Angular CLI 17+ (npx @angular/cli)
+□ VS Code con extensiones Angular + ESLint
+□ Navegador con Angular DevTools
+
+Pasos:
+1. cd frontend
+2. npx @angular/cli new <app-name> --style=scss --routing --ssr=false
+3. cd <app-name>
+4. bun install  (o npm install)
+5. ng add @angular/material   (o: ng add primeng)
+6. copiar src/environments/environment.example.ts → environment.local.ts
+7. ng serve --configuration=local
+8. Verificar: http://localhost:4200 → carga sin errores
+
+Archivos clave:
+- angular.json (config de build, serve, test, lint)
+- tsconfig.json + tsconfig.app.json + tsconfig.spec.json
+- .eslintrc.json (@angular-eslint)
+- .prettierrc
+
+Extensiones VS Code recomendadas:
+- angular.ng-template
+- esbenp.prettier-vscode
+- dbaeumer.vscode-eslint
+- ryanivey.vscode-angular2-switcher
+- natewallace.angular2-vscode-html-syntax
 ```
 
 #### Bun (TypeScript) Backend

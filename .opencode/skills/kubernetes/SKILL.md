@@ -1,7 +1,7 @@
 ---
 name: kubernetes
 description: 'Kubernetes deployment patterns: manifests, Helm charts, namespaces, ConfigMaps, Secrets, HPA, probes, and multi-tenant isolation. Trigger: When deploying services to Kubernetes, creating manifests, or designing namespaces per tenant.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
     - operations
@@ -27,7 +27,7 @@ Define how services are packaged and deployed to Kubernetes in the framework, in
 ## When to use this skill
 
 Activate when:
-- Deploying FastAPI, Bun, or React services to Kubernetes
+- Deploying FastAPI, Bun, or React/Angular services to Kubernetes
 - Designing namespace strategy per tenant/environment
 - Adding HPA, PDBs, or network policies
 

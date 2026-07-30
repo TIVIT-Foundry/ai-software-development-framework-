@@ -4,14 +4,16 @@ description: 'Code review checklist before creating PRs. Applies to React fronte
   Bun (TypeScript) backend, and PostgreSQL database layer. Includes Keycloak/OAuth2
   security checks and OpenTelemetry observability. Trigger: Before committing code,
   creating PRs, or when asked to review.'
-version: 2.0
+version: 2.2
 metadata:
   phase:
   - construction
   layer:
   - process
   enforcement: mandatory
-  depends_on: []
+  depends_on:
+  - react-doctor
+  - angular-doctor
   consumed_by:
   - pull-request
   agent_roles:
@@ -70,6 +72,15 @@ mcp_usage: none
 | State | `useState`/`useReducer` for local state, avoid unnecessary `useMemo`/`useCallback` |
 | Server state | `@tanstack/react-query` (`useQuery`/`useMutation`), no manual `fetch` + `useEffect` for data |
 | Rendering | Explicit `key` on list items, no `index` as key when list can reorder |
+| Accessibility | Labels, ARIA attributes, keyboard navigation |
+
+### Frontend (Angular)
+| Check | Look For |
+|-------|----------|
+| Components | Standalone components, proper lifecycle hooks (`OnInit`, `OnDestroy`, `OnChanges`) |
+| Signals | Use signals for reactive state, avoid manual `ChangeDetectionStrategy.OnPush` boilerplate |
+| RxJS | Proper subscription management (`takeUntil`, `DestroyRef`), no memory leaks |
+| Templates | Async pipe for observables, `@if`/`@for` control flow, no ngDoCheck overuse |
 | Accessibility | Labels, ARIA attributes, keyboard navigation |
 
 ## Common Issues to Catch
@@ -187,6 +198,48 @@ mcp_usage: none
 | **Testing** | ¿Hooks testing? | Hooks de datos probados con `renderHook` + `QueryClientProvider` de test |
 | **Testing** | ¿Test de acceso? | Pantallas protegidas redirigen a login sin token |
 
+### Frontend — Análisis detallado (Angular)
+
+| Categoría | Check | Detalle |
+|-----------|-------|---------|
+| **Componentes** | ¿Standalone components? | Components con `standalone: true`. Evitar NgModules innecesarios |
+| **Componentes** | ¿Lifecycle hooks correctos? | `OnInit` para setup, `OnDestroy` para cleanup, `OnChanges` para inputs reactivos |
+| **Componentes** | ¿DestroyRef para cleanup? | `inject(DestroyRef).onDestroy(...)` o `takeUntilDestroyed()` para auto-unsubscribe |
+| **Componentes** | ¿Signals para estado reactivo? | `signal()`, `computed()`, `effect()` en vez de BehaviorSubjects manuales |
+| **Componentes** | ¿Change detection eficiente? | `OnPush` o signals. Evitar `ngDoCheck` costoso |
+| **Templates** | ¿Control flow moderno? | `@if`, `@for`, `@switch` en vez de `*ngIf`, `*ngFor`, `ngSwitch` |
+| **Templates** | ¿Async pipe? | Siempre `async` pipe en vez de `.subscribe()` manual en templates |
+| **Templates** | ¿Track functions en @for? | `@for (item of items; track item.id)` para performance |
+| **Templates** | ¿Input signals? | `input()`, `input.required()` para inputs tipados y reactivos |
+| **Templates** | ¿Output functions? | `output()` en vez de `@Output()` decorator |
+| **Tipos** | ¿Sin `any`? | TypeScript strict mode. `any` requiere justificación documentada |
+| **Tipos** | ¿Interfaces para modelos? | Modelos de datos como interfaces exportadas. No clases para DTOs |
+| **RxJS** | ¿Suscripciones manejadas? | `takeUntilDestroyed()`, `takeUntil(destroy$)`, o `toSignal()` |
+| **RxJS** | ¿Operadores correctos? | `switchMap` para búsquedas, `mergeMap` para paralelo, `concatMap` para secuencial |
+| **RxJS** | ¿Sin subscribe anidado? | Combinar con `switchMap`, `combineLatest`, `forkJoin` en vez de nesting |
+| **RxJS** | ¿Signals vs RxJS? | Estado simple = signals. Streams complejos = RxJS. No mezclar sin razón |
+| **Estado** | ¿Estado levantado correctamente? | Estado compartido en el ancestro común más bajo. Services para estado global |
+| **Estado** | ¿Loading states? | `toSignal()` con estado de loading. Spinner/skeleton mientras carga |
+| **Estado** | ¿Error states? | Error interceptor global. Toast/manejo de error por operación |
+| **Estado** | ¿Empty states? | "No hay datos" + ilustración + CTA relevante cuando lista vacía |
+| **Routing** | ¿Lazy loading? | `loadComponent` o `loadChildren` en rutas. No importar todo en módulo raíz |
+| **Routing** | ¿Guards funcionales? | `canActivate` con funciones, no clases |
+| **Routing** | ¿Resolvers cuando aplica? | Datos precargados antes de activar ruta. No loading en componente |
+| **Forms** | ¿Reactive forms? | `FormGroup`, `FormControl`, `FormBuilder`. Validación con validators |
+| **Forms** | ¿Validación inline? | Errores mostrados bajo cada campo. No solo al submit |
+| **Forms** | ¿Typed forms? | `FormGroup<{ name: FormControl<string> }>`. No forms genéricos |
+| **Rendimiento** | ¿OnPush strategy? | Componentes con `changeDetection: OnPush` o signals |
+| **Rendimiento** │ ¿Track functions? | `@for` con `track` para evitar re-renders innecesarios |
+| **Rendimiento** | ¿Imágenes optimizadas? | WebP, lazy loading (`loading="lazy"`), dimensiones explícitas |
+| **Accesibilidad** | ¿Labels? | Todo input tiene `<label>` o `aria-label`. No placeholder como label |
+| **Accesibilidad** | ¿Roles ARIA correctos? | `role="button"` en botones, `role="navigation"` en nav. No sobrecargar |
+| **Accesibilidad** | ¿Contraste? | 4.5:1 texto normal, 3:1 texto grande. Verificar con herramienta |
+| **Accesibilidad** | ¿Teclado? | Todas las acciones disponibles con Tab, Enter, Escape. Focus visible |
+| **Testing** | ¿Test por componente? | Componente principal tiene test de render, interacción, estados |
+| **Testing** | ¿Testing module? | `TestBed.configureTestingModule` con imports necesarios |
+| **Testing** | ¿Signal testing? | Probar computed values y effects con `fixture.detectChanges()` |
+| **Testing** | │ ¿Test de acceso? | Pantallas protegidas redirigen a login sin token |
+
 ### Seguridad — Análisis detallado (Keycloak / OAuth2)
 
 | Categoría | Check | Detalle |
@@ -273,6 +326,20 @@ mcp_usage: none
 | **Acceso inseguro sin optional chaining** | `user.address.city` sin verificar null | Crash en runtime | `user?.address?.city` + fallback explícito en JSX |
 | **`useEffect` sin cleanup** | Suscripción/listener/timer sin función de retorno | Memory leak, listeners duplicados | `return () => cleanup()` dentro del efecto |
 
+### Frontend (Angular)
+
+| Anti-patrón | Ejemplo | Problema | Solución |
+|-------------|---------|----------|----------|
+| **NgModules innecesarios** | Módulo para cada componente | Boilerplate excesivo, tree-shaking imposible | Standalone components |
+| **Subscribe sin unsubscribe** | `this.api.get().subscribe(data => ...)` | Memory leak | `toSignal()`, `takeUntilDestroyed()`, o `async` pipe |
+| **ngDoCheck costoso** | Cálculo pesado en `ngDoCheck` | Performance degradation | Signals con `computed()` o `OnPush` manual |
+| **Manejo de errores en catch genérico** | `catch (err) { this.error = "Error" }` | Usuario no sabe qué pasó | Mapear errores por código HTTP + mensaje contextual |
+| **Estado derivado en state** | `this.filteredItems = this.items.filter(...)` en setter | Dos fuentes de verdad | `computed(() => this.items().filter(...))` |
+| **No lazy load** | Import de componente pesado en módulo raíz | Bundle grande, First Paint lento | `loadComponent` en rutas |
+| **Form sin validación inline** | Validar al submit, no al escribir | UX pobre | Validación reactiva + errores inline |
+| **Cualquier en templates** | `{{ user?.address?.city }}` sin null check real | Template errors silenciosos | `@if` con null checks explícitos |
+| ** RxJS sin operador de error** | `this.api.get().subscribe({ next: ..., error: ... })` sin complete | Posibles leaks | Manejar complete o usar `finalize` |
+
 ### Testing
 
 | Anti-patrón | Ejemplo | Problema | Solución |
@@ -296,6 +363,9 @@ mcp_usage: none
 3. Identificar el issue/ticket asociado
 4. Determinar alcance: ¿cuántos archivos? ¿qué capas afecta?
 5. Si el PR > 400 líneas, pedir al autor que lo divida en PRs más pequeños
+6. Si toca frontend, verificar que corrió el gate automatizado correspondiente
+   (`react-doctor` o `angular-doctor`, ver skills dedicadas) antes de empezar el
+   review manual — no repetir a mano lo que ya cubre la herramienta determinista
 ```
 
 ### 2. Primera pasada — Arquitectura y diseño (10 min)

@@ -3,7 +3,7 @@ name: api-integration
 description: 'DB-to-API integration patterns: error mapping, pagination, validation,
   response structure. Uses Python FastAPI + SQLAlchemy. Trigger: When connecting stored procedures/queries to APIs,
   handling DB errors, or implementing pagination.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -296,6 +296,71 @@ export function ProductosListado() {
       <span>Total: {query.data?.pagination?.total} registros</span>
     </>
   );
+}
+```
+
+### Frontend: uso con @ngneat/query y signals (Angular)
+
+```typescript
+// Servicio: src/app/products/services/productos.service.ts
+import { injectQuery } from '@ngneat/query';
+import { signal } from '@angular/core';
+import { inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+
+export function toQueryString(params: PagedRequest): string {
+  return new HttpParams({ fromObject: params as Record<string, unknown> }).toString();
+}
+
+export class ProductosService {
+  private readonly http = inject(HttpClient);
+  private readonly query = injectQuery();
+
+  getProductos(params: PagedRequest) {
+    return this.query({
+      queryKey: ['productos', params],
+      queryFn: () =>
+        this.http
+          .get<ApiResponse<PagedResult>>(`/api/v1/productos?${toQueryString(params)}`)
+          .toPromise(),
+    });
+  }
+}
+
+// Componente: src/app/products/pages/productos-listado/productos-listado.component.ts
+import { Component, inject, signal } from '@angular/core';
+import { ProductosService } from '../../services/productos.service';
+
+@Component({
+  selector: 'app-productos-listado',
+  template: `
+    @if (query.isLoading()) {
+      <app-skeleton />
+    } @else {
+      <app-tabla [items]="query.data()?.data?.items ?? []" />
+      <app-paginador
+        [currentPage]="query.data()?.pagination?.page ?? 1"
+        [totalPages]="query.data()?.pagination?.totalPages ?? 1"
+        (pageChange)="page.set($event); refetch()"
+      />
+      <span>Total: {{ query.data()?.pagination?.total }} registros</span>
+    }
+  `,
+})
+export class ProductosListadoComponent {
+  private readonly productosService = inject(ProductosService);
+
+  readonly page = signal(1);
+  readonly pageSize = 20;
+
+  readonly query = this.productosService.getProductos({
+    page: this.page(),
+    pageSize: this.pageSize,
+  });
+
+  refetch() {
+    this.query.updateQueryKey(['productos', { page: this.page(), pageSize: this.pageSize }]);
+  }
 }
 ```
 

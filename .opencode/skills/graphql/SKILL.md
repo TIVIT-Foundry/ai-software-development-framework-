@@ -3,8 +3,9 @@ name: graphql
 description: 'GraphQL API design: schema design, resolvers, N+1 problem, DataLoader,
   mutations, subscriptions, authentication, error handling, cursor-based pagination.
   Trigger: When designing or implementing GraphQL APIs in Bun (TypeScript), Python
-  (AI/ML core), or React (Apollo Client) frontend consumption.'
-version: 1.0
+  (AI/ML core), or React (Apollo Client) / Angular (Apollo Angular) frontend
+  consumption, per the project's frontend choice.'
+version: 1.1
 metadata:
   phase:
   - construction
@@ -58,7 +59,7 @@ Diseñar e implementar APIs GraphQL correctas, eficientes y seguras: schema prim
 
 ## Alcance
 
-Incluye: schema design, resolvers, DataLoader, paginación, auth (Keycloak/OAuth2), errores, subscriptions, testing, consumo frontend con Apollo Client (React).
+Incluye: schema design, resolvers, DataLoader, paginación, auth (Keycloak/OAuth2), errores, subscriptions, testing, consumo frontend con Apollo Client (React) o Apollo Angular (Angular), según el framework elegido por el proyecto.
 No incluye: federación Apollo, GraphQL Mesh, schema stitching, BFF vs gateway decisions.
 
 ## Principios
@@ -382,6 +383,146 @@ export function UsersList() {
       <button onClick={loadMore} disabled={!hasNext}>Cargar más</button>
     </>
   );
+}
+```
+
+### Frontend: Apollo Angular (consumo de GraphQL)
+
+Apollo Angular es el cliente GraphQL estándar para Angular. Integración con Keycloak vía interceptor HTTP que inyecta el Bearer token.
+
+```typescript
+// app.config.ts — registro de Apollo en standalone Angular
+import { ApplicationConfig } from "@angular/core";
+import { provideApollo } from "apollo-angular";
+import { HttpLink } from "apollo-angular/http";
+import { InMemoryCache } from "@apollo/client/core";
+import { provideHttpClient, withInterceptors } from "@angular/common/http";
+import { keycloakAuthInterceptor } from "./core/auth/keycloak.interceptor";
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(withInterceptors([keycloakAuthInterceptor])),
+    provideApollo(() => {
+      const httpLink = inject(HttpLink);
+      return {
+        link: httpLink.create({ uri: "/graphql" }),
+        cache: new InMemoryCache({
+          typePolicies: {
+            User: {
+              fields: {
+                posts: relayStylePagination(), // paginación cursor-based en cache
+              },
+            },
+          },
+        }),
+      };
+    }),
+  ],
+};
+```
+
+```typescript
+// keycloak.interceptor.ts — inyecta Bearer token de Keycloak
+import { HttpInterceptorFn } from "@angular/common/http";
+import { inject } from "@angular/core";
+import { KeycloakService } from "keycloak-js";
+
+export const keycloakAuthInterceptor: HttpInterceptorFn = (req, next) => {
+  const kc = inject(KeycloakService);
+  if (!kc.authenticated) return next(req);
+  const cloned = req.clone({
+    setHeaders: { Authorization: `Bearer ${kc.token}` },
+  });
+  return next(cloned);
+};
+```
+
+```typescript
+// users.query.ts — queries tipadas con codegen
+import { gql } from "apollo-angular";
+
+export const GET_USERS = gql`
+  query Users($first: Int!, $after: String) {
+    users(first: $first, after: $after) {
+      edges {
+        node { id name }
+        cursor
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+`;
+
+export const CREATE_USER = gql`
+  mutation CreateUser($input: CreateUserInput!) {
+    createUser(input: $input) {
+      id name
+    }
+  }
+`;
+```
+
+```typescript
+// users.service.ts — uso con signals (Angular 17+)
+import { Injectable, inject, signal } from "@angular/core";
+import { Apollo } from "apollo-angular";
+import { toSignal } from "@angular/core/rxjs-interop";
+import { GET_USERS, CREATE_USER } from "./users.query";
+
+@Injectable({ providedIn: "root" })
+export class UsersService {
+  private apollo = inject(Apollo);
+
+  // Observable → signal reactivo
+  users = toSignal(
+    this.apollo.watchQuery({
+      query: GET_USERS,
+      variables: { first: 20 },
+      fetchPolicy: "cache-and-network",
+    }).valueChanges,
+    { initialValue: null }
+  );
+
+  create(input: CreateUserInput) {
+    return this.apollo.mutate({
+      mutation: CREATE_USER,
+      variables: { input },
+      // Actualización optimista del cache
+      update: (cache, { data }) => {
+        cache.modify({
+          fields: {
+            users: (existing) => ({ ...existing }),
+          },
+        });
+      },
+    });
+  }
+}
+```
+
+```typescript
+// users.component.ts — componente standalone
+import { Component, inject } from "@angular/core";
+import { UsersService } from "./users.service";
+
+@Component({
+  selector: "app-users",
+  standalone: true,
+  template: `
+    @for (edge of svc.users()?.data?.users?.edges ?? []; track edge.node.id) {
+      <div>{{ edge.node.name }}</div>
+    }
+    <button (click)="loadMore()" [disabled]="!hasNext">Cargar más</button>
+  `,
+})
+export class UsersComponent {
+  svc = inject(UsersService);
+  get hasNext() {
+    return this.svc.users()?.data?.users?.pageInfo?.hasNextPage;
+  }
+  loadMore() {
+    // Apollo fetchMore con cursor-based pagination
+  }
 }
 ```
 

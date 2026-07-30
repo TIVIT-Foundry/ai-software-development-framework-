@@ -3,7 +3,7 @@ name: docker-local
 description: 'Docker local development setup for Python/FastAPI + Bun backend: compose configuration,
   multi-stage builds, service networking, Kafka, Redis, PostgreSQL, OTel. Trigger: When setting
   up Docker for local development or containerizing services.'
-version: 1.2
+version: 1.3
 metadata:
   phase:
   - construction
@@ -116,7 +116,7 @@ docker compose build --no-cache api  # Rebuild service
 2. `docker compose up -d`
 3. `docker compose ps` — verify all healthy
 4. `curl http://localhost:8000/health` — verify API running
-5. Run frontend dev server separately: `vite` (React) o `bun --watch src/main.ts` (Bun backend)
+5. Run frontend dev server separately: `vite` (React), `ng serve` (Angular), o `bun --watch src/main.ts` (Bun backend)
 
 ## .dockerignore
 ```

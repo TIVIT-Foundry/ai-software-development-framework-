@@ -3,7 +3,7 @@ name: export-excel
 description: 'Full Excel export pattern: database query, backend handler, endpoint,
   and frontend download hook. Trigger: When implementing Excel export, data download,
   or export button.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -16,6 +16,7 @@ metadata:
   - database-sp
   - data-access
   - react-services
+  - angular-services
   consumed_by:
   - agent-fullstack
   agent_roles:
@@ -252,6 +253,146 @@ export function ExportButton({ params, disabled = false, label = 'Exportar Excel
       {progress === 100 && <Progress percent={100} type="circle" size={24} status="success" />}
     </>
   );
+}
+```
+
+## Frontend Service (Angular + @ngneat/query)
+```typescript
+@Injectable({ providedIn: 'root' })
+export class ExportService {
+  private readonly http = inject(HttpClient);
+
+  exportEntities(params: ExportParams): Observable<Blob> {
+    return this.http.get('/api/v1/entities/export', {
+      params: toHttpParams(params),
+      responseType: 'blob',
+    });
+  }
+
+  getExportEstimate(params: ExportParams): Observable<ExportEstimate> {
+    return this.http.get<ExportEstimate>('/api/v1/entities/export/estimate', {
+      params: toHttpParams(params),
+    });
+  }
+}
+
+// Hook wrapper con @ngneat/query
+@Injectable({ providedIn: 'root' })
+export class ExportQuery {
+  private readonly queryClient = inject(QueryClient);
+  private readonly exportService = inject(ExportService);
+
+  useExportEntities(params: Signal<ExportParams>, enabled: Signal<boolean>) {
+    return injectQuery(() => ({
+      queryKey: computed(() => ['export', 'entities', params()]),
+      queryFn: () => firstValueFrom(this.exportService.exportEntities(params())),
+      enabled,
+      staleTime: Infinity,
+      retry: false,
+    }));
+  }
+}
+```
+
+## Frontend Component (Angular + Ant Design)
+```typescript
+@Component({
+  selector: 'app-export-button',
+  template: `
+    <button
+      nz-button
+      [nzLoading]="isLoading()"
+      [disabled]="disabled() || isLoading()"
+      (click)="handleExport()"
+    >
+      <span nz-icon nzType="download"></span>
+      {{ label() }} {{ estimatedSize() && !isLoading() ? estimatedSize() : '' }}
+    </button>
+
+    @if (progress() > 0 && progress() < 100) {
+      <nz-progress
+        [nzPercent]="progress()"
+        [nzShowInfo]="false"
+        [nzStyle]="{ width: '100px' }"
+      ></nz-progress>
+    }
+
+    @if (progress() === 100) {
+      <nz-progress
+        [nzPercent]="100"
+        nzType="circle"
+        [nzWidth]="24"
+        nzStatus="success"
+      ></nz-progress>
+    }
+  `,
+})
+export class ExportButtonComponent {
+  params = input.required<ExportParams>();
+  disabled = input(false);
+  label = input('Exportar Excel');
+
+  private readonly exportQuery = inject(ExportQuery);
+  private readonly message = inject(NzMessageService);
+
+  protected readonly enabled = signal(false);
+  protected readonly progress = signal(0);
+  protected readonly estimatedSize = signal<string>('');
+
+  protected readonly exportResult = this.exportQuery.useExportEntities(
+    this.params,
+    this.enabled
+  );
+
+  protected readonly isLoading = computed(() => this.exportResult.isLoading());
+
+  constructor() {
+    effect(() => {
+      const data = this.exportResult.data();
+      if (data) {
+        this.downloadBlob(data);
+        this.enabled.set(false);
+        this.progress.set(100);
+        this.message.success('Exportación completada');
+        setTimeout(() => this.progress.set(0), 3000);
+      }
+    });
+
+    effect(() => {
+      const error = this.exportResult.error();
+      if (error) {
+        this.enabled.set(false);
+        this.progress.set(0);
+        this.message.error(error.message || 'Error al exportar');
+      }
+    });
+  }
+
+  protected async handleExport(): Promise<void> {
+    try {
+      const estimate = await firstValueFrom(
+        this.exportService.getExportEstimate(toSignalValue(this.params))
+      );
+      const sizeMb = (estimate.estimatedBytes / 1024 / 1024).toFixed(1);
+      this.estimatedSize.set(`(~${sizeMb} MB)`);
+    } catch {
+      // Ignorar si no hay estimación
+    }
+
+    this.progress.set(50);
+    this.enabled.set(true);
+  }
+
+  private downloadBlob(data: Blob): void {
+    const url = window.URL.createObjectURL(data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `export_${Date.now()}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
 }
 ```
 
@@ -1306,6 +1447,57 @@ export function useExportProgress() {
 }
 ```
 
+#### Frontend — suscripción WebSocket (Angular)
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class ExportProgressService {
+  private readonly hubConnection = signal<HubConnection | null>(null);
+
+  readonly progress = signal(0);
+  readonly status = signal<'idle' | 'processing' | 'completed' | 'failed'>('idle');
+
+  subscribeToJob(jobId: string): void {
+    const connection = new HubConnectionBuilder()
+      .withUrl('/hubs/export')
+      .withAutomaticReconnect()
+      .configureLogging(LogLevel.Warning)
+      .build();
+
+    connection.on('ExportProgress', (data: ExportProgress) => {
+      this.progress.set(data.progress);
+      this.status.set('processing');
+    });
+
+    connection.on('ExportCompleted', (data: ExportComplete) => {
+      this.progress.set(100);
+      this.status.set('completed');
+      // Iniciar descarga automática
+      const link = document.createElement('a');
+      link.href = data.downloadUrl;
+      link.click();
+    });
+
+    connection.on('ExportFailed', () => {
+      this.status.set('failed');
+    });
+
+    connection.start().then(() => {
+      connection.invoke('SubscribeToJob', jobId);
+    });
+
+    this.hubConnection.set(connection);
+  }
+
+  unsubscribe(): void {
+    this.hubConnection()?.stop();
+    this.hubConnection.set(null);
+    this.progress.set(0);
+    this.status.set('idle');
+  }
+}
+```
+
 ## Formato condicional
 
 ### Selección dinámica de columnas
@@ -1346,6 +1538,58 @@ export function ExportColumnSelector({ columns, visible, onSubmit, onCancel }: E
       />
     </Modal>
   );
+}
+```
+
+#### Modal de selección de columnas (Angular)
+
+```typescript
+@Component({
+  selector: 'app-export-column-selector',
+  template: `
+    <nz-modal
+      [nzVisible]="visible()"
+      nzTitle="Seleccionar columnas para exportar"
+      (nzOnCancel)="cancel.emit()"
+      (nzOnOk)="handleSubmit()"
+    >
+      <nz-checkbox-group
+        [ngModel]="selectedKeys()"
+        (ngModelChange)="selectedKeys.set($event)"
+        [nzOptions]="checkboxOptions()"
+      ></nz-checkbox-group>
+    </nz-modal>
+  `,
+})
+export class ExportColumnSelectorComponent {
+  columns = input.required<ColumnOption[]>();
+  visible = input(false);
+
+  submit = output<string[]>();
+  cancel = output<void>();
+
+  protected readonly selectedKeys = signal<string[]>([]);
+
+  protected readonly checkboxOptions = computed(() =>
+    this.columns().map(c => ({
+      label: c.label,
+      value: c.key,
+      checked: c.selected,
+    }))
+  );
+
+  constructor() {
+    effect(() => {
+      const initial = this.columns()
+        .filter(c => c.selected)
+        .map(c => c.key);
+      this.selectedKeys.set(initial);
+    });
+  }
+
+  protected handleSubmit(): void {
+    this.submit.emit(this.selectedKeys());
+  }
 }
 ```
 
@@ -1475,6 +1719,34 @@ async function exportEntities(params: ExportParams): Promise<{ blob: Blob; filen
   const filename = filenameMatch?.[1] || `export_${Date.now()}.xlsx`;
 
   return { blob: await res.blob(), filename };
+}
+```
+
+#### Frontend — pasar idioma en la request (Angular)
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class ExportService {
+  private readonly http = inject(HttpClient);
+  private readonly i18n = inject(I18nService);
+
+  exportEntities(params: ExportParams): Observable<{ blob: Blob; filename: string }> {
+    return this.http.get('/api/v1/entities/export', {
+      params: toHttpParams({
+        ...params,
+        language: this.i18n.currentLang(),
+      }),
+      responseType: 'blob',
+      observe: 'response',
+    }).pipe(
+      map(response => {
+        const disposition = response.headers.get('content-disposition');
+        const filenameMatch = disposition?.match(/filename="?(.+?)"?$/);
+        const filename = filenameMatch?.[1] || `export_${Date.now()}.xlsx`;
+        return { blob: response.body!, filename };
+      })
+    );
+  }
 }
 ```
 

@@ -1,0 +1,118 @@
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Subject, takeUntil } from 'rxjs';
+
+import { ${ENTITY}ListComponent } from './${entity}-list.component';
+import { ${ENTITY}FormComponent } from './${entity}-form.component';
+import { ${ENTITY}Service } from './${entity}.service';
+import type {
+  ${ENTITY}ListItem,
+  ${ENTITY}QueryParams,
+  ${ENTITY}CreateRequest,
+  ${ENTITY}UpdateRequest,
+} from './${entity}.model';
+
+@Component({
+  selector: 'app-${entity}-page',
+  standalone: true,
+  imports: [${ENTITY}ListComponent, ${ENTITY}FormComponent],
+  templateUrl: './${entity}-page.component.html',
+})
+export class ${ENTITY}PageComponent implements OnInit, OnDestroy {
+  private readonly service = inject(${ENTITY}Service);
+  private readonly destroy$ = new Subject<void>();
+
+  readonly items = signal<${ENTITY}ListItem[]>([]);
+  readonly total = signal<number>(0);
+  readonly page = signal<number>(1);
+  readonly pageSize = signal<number>(20);
+  readonly searchFilter = signal<string>('');
+  readonly loading = signal<boolean>(false);
+  readonly error = signal<string | null>(null);
+  readonly showForm = signal<boolean>(false);
+  readonly editingItem = signal<${ENTITY}ListItem | null>(null);
+
+  ngOnInit(): void {
+    this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    const params: ${ENTITY}QueryParams = {
+      page: this.page(),
+      pageSize: this.pageSize(),
+      searchFilter: this.searchFilter() || undefined,
+    };
+    this.service.list(params).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response) => {
+        this.items.set(response.items);
+        this.total.set(response.total);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err.message ?? 'Failed to load ${entities}');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  onPageChange(page: number): void {
+    this.page.set(page);
+    this.load();
+  }
+
+  onSearch(searchFilter: string): void {
+    this.searchFilter.set(searchFilter);
+    this.page.set(1);
+    this.load();
+  }
+
+  onSort(sort: { sortBy: string; sortOrder: 'ASC' | 'DESC' }): void {
+    this.load();
+  }
+
+  onCreate(): void {
+    this.editingItem.set(null);
+    this.showForm.set(true);
+  }
+
+  onEdit(id: number): void {
+    const item = this.items().find((i) => i.id === id);
+    this.editingItem.set(item ?? null);
+    this.showForm.set(true);
+  }
+
+  onDelete(id: number): void {
+    if (!confirm('Delete ${ENTITY}?')) return;
+    this.service.delete(id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => this.load(),
+      error: (err) => this.error.set(err.message ?? 'Failed to delete ${entity}'),
+    });
+  }
+
+  onSubmit(values: ${ENTITY}CreateRequest | ${ENTITY}UpdateRequest): void {
+    const item = this.editingItem();
+    const request$ = item
+      ? this.service.update(item.id, values as ${ENTITY}UpdateRequest)
+      : this.service.create(values as ${ENTITY}CreateRequest);
+
+    request$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.showForm.set(false);
+        this.editingItem.set(null);
+        this.load();
+      },
+      error: (err) => this.error.set(err.message ?? 'Failed to save ${entity}'),
+    });
+  }
+
+  onCancel(): void {
+    this.showForm.set(false);
+    this.editingItem.set(null);
+  }
+}

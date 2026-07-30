@@ -4,7 +4,7 @@ description: 'Application architecture patterns: Vertical Slice, Modular Monolit
   Microservices. Covers Python/FastAPI, Bun (TypeScript) backend and React frontend
   conventions, naming, and response shapes. Trigger: When designing project architecture
   or onboarding a new project structure.'
-version: 1.1
+version: 1.2
 metadata:
   phase:
   - inception
@@ -17,6 +17,7 @@ metadata:
   consumed_by:
   - backend-api
   - react
+  - angular
   - agent-backend
   - agent-frontend
   - agent-fullstack
@@ -175,6 +176,19 @@ Each feature (slice) is self-contained. Example for a Bun (TypeScript) backend:
 | Utility hook | `use-{name}.ts` | `use-highlight.ts` |
 | Model / Interface | `{name}.types.ts` | `order.types.ts` |
 
+### Frontend (Angular)
+
+| Element | Convention | Example |
+|---------|------------|---------|
+| Feature module folder | kebab-case | `orders/`, `order-detail/` |
+| Standalone component | `{name}.component.ts` | `order-list.component.ts` |
+| Service | `{name}.service.ts` | `order.service.ts` |
+| Route file | `{feature}.routes.ts` | `orders.routes.ts` |
+| Guard | `{name}.guard.ts` | `auth.guard.ts` |
+| Directive | `{name}.directive.ts` | `highlight.directive.ts` |
+| Pipe | `{name}.pipe.ts` | `order-status.pipe.ts` |
+| Model / Interface | `{name}.model.ts` | `order.model.ts` |
+
 ## React Frontend Architecture
 
 React 18+ (Vite) con **function components + hooks** y **code-splitting** por ruta. Cada feature es una carpeta autocontenida con sus propias rutas, componentes, hooks y modelos.
@@ -255,6 +269,86 @@ export const router = createBrowserRouter([
   },
   { path: 'login', element: <LoginPage /> },
 ]);
+```
+
+## Angular Frontend Architecture
+
+Angular 17+ con **standalone components**, **signals** y **lazy loading** por ruta. Cada feature es un módulo autocontenido con sus propias rutas, componentes, servicios y modelos.
+
+```
+src/
+├── app/
+│   ├── core/                              # Singleton: layout, guards, interceptors, error handlers
+│   │   ├── layout/
+│   │   │   ├── shell.component.ts         # Main layout (header + router-outlet + footer)
+│   │   │   └── shell.routes.ts
+│   │   ├── guards/
+│   │   │   └── auth.guard.ts
+│   │   ├── interceptors/
+│   │   │   ├── auth.interceptor.ts        # Attach JWT
+│   │   │   ├── error.interceptor.ts       # Global error mapping
+│   │   │   └── loading.interceptor.ts
+│   │   └── services/
+│   │       └── notification.service.ts
+│   │
+│   ├── features/                          # Vertical slices by domain
+│   │   └── orders/
+│   │       ├── orders.routes.ts           # loadChildren → standalone routes
+│   │       ├── orders-list/
+│   │       │   ├── orders-list.component.ts
+│   │       │   ├── orders-list.component.html
+│   │       │   └── orders-list.component.css
+│   │       ├── order-detail/
+│   │       │   └── order-detail.component.ts
+│   │       ├── order-form/
+│   │       │   └── order-form.component.ts
+│   │       ├── services/
+│   │       │   └── orders.service.ts      # @Injectable({ providedIn: 'root' })
+│   │       └── models/
+│   │           └── order.model.ts
+│   │
+│   ├── shared/                            # Reusable: dumb components, pipes, directives
+│   │   ├── components/
+│   │   │   ├── data-table/
+│   │   │   ├── confirm-dialog/
+│   │   │   └── loading-spinner/
+│   │   ├── directives/
+│   │   └── pipes/
+│   │
+│   ├── app.component.ts                   # Root standalone component
+│   ├── app.config.ts                      # provideRouter, provideHttpClient, provideAnimations
+│   └── app.routes.ts                      # Top-level routes with lazy loading
+│
+├── assets/
+├── environments/
+│   ├── environment.ts
+│   └── environment.prod.ts
+├── main.ts                                # bootstrapApplication(AppComponent, appConfig)
+└── styles.css                             # Global styles + design tokens
+```
+
+**Convenciones Angular:**
+
+| Convención | Regla |
+|------------|-------|
+| Standalone components | Todos los componentes son `standalone: true` (sin NgModules) |
+| Signals | Estado reactivo con `signal()`, `computed()`, `effect()` |
+| Lazy loading | `loadChildren: () => import('./features/orders/orders.routes')` |
+| DI | `@Injectable({ providedIn: 'root' })` para servicios singleton |
+| HTTP | `provideHttpClient(withInterceptors([...]))` en `app.config.ts` |
+| Routing | Un archivo `{feature}.routes.ts` por feature con `Routes[]` |
+| Change detection | `OnPush` por defecto en componentes standalone |
+| Data fetching | `@ngneat/query` (TanStack Query) o signals + `toSignal()` |
+
+**Ejemplo de lazy route (app.routes.ts):**
+```typescript
+export const routes: Routes = [
+  { path: '', component: ShellComponent, children: [
+    { path: 'orders', loadChildren: () => import('./features/orders/orders.routes').then(m => m.ORDERS_ROUTES) },
+    { path: 'billing', loadChildren: () => import('./features/billing/billing.routes').then(m => m.BILLING_ROUTES) },
+  ]},
+  { path: 'login', loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent) },
+];
 ```
 
 ## Bun (TypeScript) Backend Architecture

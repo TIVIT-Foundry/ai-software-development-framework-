@@ -55,6 +55,8 @@ Carga el SKILL.md correspondiente antes de producir artefactos de cada área:
 | security | secundario | [SKILL.md](../skills/security/SKILL.md) |
 | keycloak | primario | [SKILL.md](../skills/keycloak/SKILL.md) |
 | converge | primario | [SKILL.md](../skills/converge/SKILL.md) |
+| react-doctor | secundario | [SKILL.md](../skills/react-doctor/SKILL.md) |
+| angular-doctor | secundario | [SKILL.md](../skills/angular-doctor/SKILL.md) |
 
 ## Protocolo de ejecución
 
@@ -153,6 +155,7 @@ Para revisiones de seguridad formales:
 | Unit tests pasan | Bloqueante | ✅ | pytest output |
 | Integration tests pasan | Bloqueante | ✅ | pytest output |
 | Converge report: CONVERGED | Bloqueante (si hay spec) | ✅ | reporte de `converge` |
+| react-doctor / angular-doctor sin Critical | Recomendado | ✅ | output de `npx {stack}-doctor@latest` |
 | Security scan sin critical | Bloqueante | ✅ | semgrep/snyk output |
 | Accesibilidad WCAG AA | Recomendado | ⏳ Pendiente | — |
 | Cobertura mínima 70% | Recomendado | ✅ | 82% |

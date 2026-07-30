@@ -1,7 +1,7 @@
 ---
 name: documentation
 description: 'Documentation as first-class SDLC phase: architecture decision records (ADRs), API docs, codebase guides, cognitive documentation design, documentation review gates, docs-as-code workflow. Trigger: When creating, reviewing, or maintaining project documentation.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
     - construction
@@ -137,13 +137,13 @@ Think of this project as a **3-layer system**:
    - Kafka event producers/consumers
    - Redis caching layer
 
-3. **Frontend** (`src/web/`) — React (Vite)
+3. **Frontend** (`src/web/`) — React (Vite) o Angular, según elección del proyecto
    - Function components with hooks
    - @tanstack/react-query for server state
    - react-hook-form with Zod validation
 
 ## Data Flow
-User → React → Bun API → (Kafka events) → Python AI → pgvector
+User → React/Angular → Bun API → (Kafka events) → Python AI → pgvector
                     ↓
                   Redis cache
                     ↓
@@ -159,7 +159,7 @@ User → React → Bun API → (Kafka events) → Python AI → pgvector
 |-----------|---------|----------|-------|
 | `src/ai/` | AI orchestrator | Python | AI team |
 | `src/api/` | General backend | TypeScript/Bun | Backend team |
-| `src/web/` | Frontend SPA | React | Frontend team |
+| `src/web/` | Frontend SPA | React o Angular (según proyecto) | Frontend team |
 | `database/` | Migrations, seeds | SQL | Data team |
 | `infra/` | Terraform, K8s | HCL | DevOps |
 | `docs/` | Documentation | Markdown | Everyone |

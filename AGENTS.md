@@ -5,7 +5,7 @@
 **Autor**: Manuel Aliaga — Ingeniero de IA, TIVIT Foundry
 **Última actualización**: 17 de julio de 2026
 
-Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 102 skills, 4 agentes, 10 MCPs activos para diseñar, implementar y operar aplicaciones con agentes AI.
+Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 108 skills, 4 agentes, 10 MCPs activos para diseñar, implementar y operar aplicaciones con agentes AI.
 
 **Stack de referencia:**
 
@@ -14,7 +14,7 @@ Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 102 skills,
 | AI/ML core | Python + FastAPI |
 | Backend general | Bun (TypeScript) |
 | Orchestration LLM | LangChain/LangGraph |
-| Frontend | React (Vite) |
+| Frontend | React (Vite) o Angular (elección por proyecto) |
 | Database | PostgreSQL + pgvector |
 | Cache/Colas | Redis + Kafka |
 | Auth | OAuth2/JWT o Keycloak |

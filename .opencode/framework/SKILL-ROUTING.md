@@ -19,7 +19,7 @@ Este documento define qué skill(s) se activan según el tipo de cambio solicita
 | **Proyecto nuevo completo** | framework-governance → framework-discovery → framework-conception → framework-architecture → framework-core-design → framework-pack-design → framework-scaffold-implementation | Todas las skills de construction | orchestrator |
 | **Nuevo módulo vertical** | framework-conception → framework-pack-design → api-first-spec → api-first-backend → api-first-frontend | database-modeling, database-sp, unit-testing | orchestrator |
 | **Nuevo módulo backend** | api-first-spec → api-first-backend → data-access | database-sp, error-handling, shared-libs | delivery |
-| **Nuevo módulo frontend** | api-first-spec → api-first-frontend → react | typescript, design-system, i18n | delivery |
+| **Nuevo módulo frontend** | api-first-spec → api-first-frontend → react (o angular, según elección del proyecto) | typescript, design-system, i18n | delivery |
 | **Feature spec-first sin API** | feature-spec → tasks → (skills de implementación) → converge | hu-template, framework-conception | design → delivery → control |
 | **Cambio transversal de seguridad** | framework-security → security → authentication → authorization | security-testing, database-security | control |
 | **Cambio de base de datos** | database-modeling → database-migrations → database-seeding | database-audit, database-sp | delivery |
@@ -30,7 +30,7 @@ Este documento define qué skill(s) se activan según el tipo de cambio solicita
 | **Integración Keycloak** | keycloak → authentication → authorization | security | control |
 | **Event-driven messaging** | kafka → real-time | observabilidad, docker-local | delivery |
 | **Bugfix backend** | error-handling → api-integration | unit-testing | delivery |
-| **Bugfix frontend** | react → typescript | unit-testing | delivery |
+| **Bugfix frontend** | react o angular (según el framework del proyecto) → typescript | unit-testing | delivery |
 | **Incidente en producción** | incident-response → observabilidad → disaster-recovery | ci-cd | delivery |
 | **UAT / Aceptación** | uat-acceptance → framework-qa-validation | hu-template | control |
 | **Documentación de producto** | documentation → readme | governance-constitution, api-catalog, openapi-docs | design / delivery |
@@ -105,8 +105,8 @@ N31: api-versioning          → delivery
 
 ```
 N32: api-first-frontend  → delivery
-N33: react                → delivery
-N34: react-services       → delivery
+N33: react/angular        → delivery
+N34: react-services/angular-services → delivery
 N35: typescript           → delivery
 N36: design-system        → design
 N37: i18n                 → delivery

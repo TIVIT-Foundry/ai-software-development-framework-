@@ -1,7 +1,7 @@
 ---
 name: governance-constitution
 description: 'Constitutional governance: immutable project principles, non-negotiable rules, architecture gates, anti-patterns. Trigger: When establishing project governance, creating a project constitution, or defining non-negotiable principles for code quality and architecture.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
     - governance
@@ -72,7 +72,7 @@ respects ALL core principles. If any principle is violated, stop and redesign.
 ## Article 2: Stack & Dependencies
 
 - **Language(s)**: [Python 3.12 / TypeScript / etc.]
-- **Framework(s)**: [FastAPI / React / Bun / etc.]
+- **Framework(s)**: [FastAPI / React or Angular / Bun / etc.]
 - **Database**: [PostgreSQL 16 + pgvector]
 - **Library-First Rule**: New functionality MUST be implemented as a reusable
   library before being integrated into an application.

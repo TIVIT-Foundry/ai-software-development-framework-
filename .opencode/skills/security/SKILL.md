@@ -4,7 +4,7 @@ description: 'Security patterns for applications: input validation, authorizatio
   CORS, SQL injection prevention, XSS, CSP. Covers OWASP Top 10 controls for
   React, Bun, Keycloak, and Python FastAPI. Trigger: When implementing
   validation, authorization, CORS, security headers, or securing APIs and UI.'
-version: 2.0
+version: 2.1
 metadata:
   phase:
   - construction
@@ -19,6 +19,7 @@ metadata:
   - database-security
   - backend-api
   - react
+  - angular
   agent_roles:
   - control-agent
   - design-agent
@@ -229,6 +230,71 @@ El CSP de una SPA se aplica a nivel de servidor/reverse-proxy (nginx, CDN), no e
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
 ```
 
+### Angular — Sanitización automática + DomSanitizer
+
+Angular escapa por defecto todo contenido interpolado en templates. Para contenido HTML dinámico, usar `DomSanitizer`:
+
+```typescript
+import { Component } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+
+@Component({ ... })
+export class ArticleComponent {
+  constructor(private sanitizer: DomSanitizer) {}
+
+  // SEGURO: sanitización explícita del contenido HTML
+  getSafeHtml(rawHtml: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(rawHtml);
+  }
+
+  // PELIGRO: nunca confiar en input del usuario sin sanitizar
+  // this.sanitizer.bypassSecurityTrustUrl(userInput) ← NUNCA
+}
+
+// En el template (HTML):
+// <div [innerHTML]="getSafeHtml(article.content)"></div>
+```
+
+**Template injection prevention:**
+```typescript
+// PELIGRO: binding directo a contenido del usuario en atributos de seguridad
+// <a [href]="userProvidedUrl">Link</a>
+
+// SEGURO: usar bypassSecurityTrustUrl solo con whitelist
+getSafeUrl(url: string): SafeUrl {
+  const allowedDomains = ['https://app.example.com', 'https://docs.example.com'];
+  const parsed = new URL(url);
+  if (!allowedDomains.includes(parsed.origin)) {
+    return this.sanitizer.bypassSecurityTrustUrl('about:blank');
+  }
+  return this.sanitizer.bypassSecurityTrustUrl(url);
+}
+```
+
+**Content Security Policy (CSP) — Mitigación global XSS:**
+```
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://keycloak.example.com;
+```
+
+### Angular CSP Configuration
+
+```typescript
+// angular.json — configurar CSP para producción
+{
+  "projects": {
+    "app": {
+      "architect": {
+        "build": {
+          "options": {
+            "contentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
 ### Bun — CSP middleware
 
 ```typescript
@@ -355,7 +421,135 @@ async function waitForRefresh(
 
 ---
 
-## 5. Keycloak / OAuth2 Patterns
+## 5. Angular Security Patterns
+
+### Route Guards — Protección de rutas
+
+```typescript
+import { Injectable } from '@angular/core';
+import { CanActivate, Router, ActivatedRouteSnapshot } from '@angular/router';
+import { KeycloakService } from 'keycloak-angular';
+
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(
+    private keycloak: KeycloakService,
+    private router: Router,
+  ) {}
+
+  async canActivate(route: ActivatedRouteSnapshot): Promise<boolean> {
+    const requiredRoles = route.data['roles'] as string[] | undefined;
+
+    if (!this.keycloak.isLoggedIn()) {
+      await this.keycloak.login();
+      return false;
+    }
+
+    if (requiredRoles && requiredRoles.length > 0) {
+      const userRoles = this.keycloak.getUserRoles();
+      const hasRole = requiredRoles.some(role => userRoles.includes(role));
+      if (!hasRole) {
+        this.router.navigate(['/unauthorized']);
+        return false;
+      }
+    }
+
+    return true;
+  }
+}
+
+// Registro en app.routes.ts
+const routes: Routes = [
+  {
+    path: 'admin',
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] },
+    loadChildren: () => import('./admin/admin.routes').then(m => m.ADMIN_ROUTES),
+  },
+  {
+    path: 'dashboard',
+    canActivate: [AuthGuard],
+    loadChildren: () => import('./dashboard/dashboard.routes').then(m => m.DASHBOARD_ROUTES),
+  },
+];
+```
+
+### HTTP Interceptor — JWT injection y refresh
+
+```typescript
+import { Injectable } from '@angular/core';
+import {
+  HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse,
+} from '@angular/common/http';
+import { Observable, throwError, BehaviorSubject } from 'rxjs';
+import { catchError, filter, take, switchMap } from 'rxjs/operators';
+import { KeycloakService } from 'keycloak-angular';
+
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+  private isRefreshing = false;
+  private refreshTokenSubject = new BehaviorSubject<string | null>(null);
+
+  constructor(private keycloak: KeycloakService) {}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    // No inyectar token en peticiones externas
+    if (!req.url.startsWith('/api/')) {
+      return next.handle(req);
+    }
+
+    const token = this.keycloak.getKeycloakInstance().token;
+    if (token) {
+      req = this.addToken(req, token);
+    }
+
+    return next.handle(req).pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === 401 && !req.url.includes('/auth/refresh')) {
+          return this.handle401Error(req, next);
+        }
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  private addToken(req: HttpRequest<any>, token: string): HttpRequest<any> {
+    return req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  private handle401Error(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    if (!this.isRefreshing) {
+      this.isRefreshing = true;
+      this.refreshTokenSubject.next(null);
+
+      this.keycloak.getKeycloakInstance().updateToken(30)
+        .then(refreshed => {
+          this.isRefreshing = false;
+          if (refreshed) {
+            const newToken = this.keycloak.getKeycloakInstance().token!;
+            this.refreshTokenSubject.next(newToken);
+          } else {
+            this.keycloak.login();
+          }
+        });
+    }
+
+    return this.refreshTokenSubject.pipe(
+      filter(token => token !== null),
+      take(1),
+      switchMap(token => next.handle(this.addToken(req, token!))),
+    );
+  }
+}
+```
+
+---
+
+## 6. Keycloak / OAuth2 Patterns
 
 ### Token management y refresh
 
@@ -462,7 +656,7 @@ export async function introspectToken(token: string): Promise<{
 
 ---
 
-## 6. Bun Security Patterns
+## 7. Bun Security Patterns
 
 ### Middleware de seguridad (helmet-equivalent)
 
@@ -570,7 +764,7 @@ if (!VALID_HOSTS.includes(userInput)) {
 
 ---
 
-## 7. CORS Configuration
+## 8. CORS Configuration
 
 ### Bun — CORS middleware
 
@@ -622,7 +816,7 @@ app.add_middleware(
 
 ---
 
-## 8. Rate Limiting
+## 9. Rate Limiting
 
 ### Bun — Rate limiter con store en memoria
 
@@ -686,7 +880,7 @@ async def get_recurso(request: Request):
 
 ---
 
-## 9. OWASP Top 10 — Mitigaciones por stack
+## 10. OWASP Top 10 — Mitigaciones por stack
 
 ### A1: Broken Access Control
 
@@ -861,7 +1055,7 @@ function maskCard(number: string): string {
 
 ---
 
-## 10. Security Headers Checklist
+## 11. Security Headers Checklist
 
 | Header | Valor recomendado | Notas |
 |--------|-------------------|-------|
@@ -879,7 +1073,7 @@ function maskCard(number: string): string {
 
 ---
 
-## 11. Secrets Management
+## 12. Secrets Management
 
 | Environment | Tool |
 |-------------|------|
@@ -902,7 +1096,7 @@ const secret = 'super-secret-key'; // ❌
 
 ---
 
-## 12. Source Code Repository Security
+## 13. Source Code Repository Security
 
 | Control | GitHub | Azure DevOps | Bitbucket |
 |---------|--------|--------------|-----------|
@@ -914,7 +1108,7 @@ const secret = 'super-secret-key'; // ❌
 
 ---
 
-## 13. Audit Logging
+## 14. Audit Logging
 
 Cada operación de seguridad debe dejar traza:
 

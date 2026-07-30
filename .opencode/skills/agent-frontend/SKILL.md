@@ -3,7 +3,7 @@ name: agent-frontend
 description: 'Meta-skill: activates all frontend skills in sequence for frontend-only
   work. Trigger: When implementing a frontend feature end-to-end (types → services →
   components).'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -12,7 +12,9 @@ metadata:
   enforcement: recommended
   depends_on:
   - react
+  - angular
   - react-services
+  - angular-services
   - typescript
   consumed_by:
   - agent-fullstack
@@ -26,6 +28,8 @@ metadata:
 ## Purpose
 This meta-skill activates all frontend skills in the correct sequence for frontend feature development.
 Load each skill in order before generating artifacts.
+
+**Framework choice**: the workflow below is written for the React path (`react` / `react-services`). When the project selected Angular instead, substitute `angular` for `react` and `angular-services` for `react-services` at every step — same sequence, same validation gates, Angular-native artifacts (standalone components/services instead of hooks/components, `*.component.ts`/`*.service.ts` instead of `.tsx`/hook files). See `angular` and `angular-services` for the Angular-specific patterns.
 
 ## Frontend Workflow
 

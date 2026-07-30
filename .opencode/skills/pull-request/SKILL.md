@@ -1,7 +1,7 @@
 ---
 name: pull-request
 description: 'Creates Pull Requests following conventional commits conventions and manages changelog entries. Trigger: When creating PRs, adding changelog entries, or working with CHANGELOG.md.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -57,6 +57,7 @@ Format: `type(scope): description`
 | `api` | Backend (Bun/FastAPI) |
 | `ui` | Frontend genérico |
 | `react` | Frontend React (components, hooks, routes) |
+| `angular` | Frontend Angular (components, services, routes) |
 | `db` | Database |
 | `auth` | Authentication |
 | `authz` | Authorization |
@@ -177,7 +178,7 @@ Cada proyecto debe tener un `CHANGELOG.md` en su directorio raíz, siguiendo el 
 
 ### Pasos manuales
 1. Iniciar backend: `bun run dev:api`
-2. Iniciar frontend: `bun run dev:web` (o `npm run dev` / `vite` para React)
+2. Iniciar frontend: `bun run dev:web` (o `npm run dev` / `vite` para React, `ng serve` para Angular)
 3. Autenticarse con usuario `test@example.com` / `Test123!`
 4. Navegar a `/perfil`
 5. Verificar que los datos del perfil se cargan correctamente

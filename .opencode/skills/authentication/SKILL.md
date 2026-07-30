@@ -2,9 +2,10 @@
 name: authentication
 description: 'Authentication patterns: token-based auth, session management, identity
   propagation. Covers Keycloak as IdP, OAuth2/OIDC with python-jose + passlib + FastAPI,
-  React fetch wrappers and route guards. Trigger: When implementing login, logout,
+  React fetch wrappers and route guards, or Angular HTTP interceptors and route guards
+  (per project's frontend choice). Trigger: When implementing login, logout,
   tokens, session management, or auth flow.'
-version: 2.0
+version: 2.1
 metadata:
   phase:
   - construction
@@ -688,4 +689,116 @@ const router = createBrowserRouter([
   },
   { path: 'login', element: <LoginPage /> },
 ]);
+```
+
+#### Silent Refresh (Frontend Angular)
+
+```typescript
+// auth.interceptor.ts — HTTP Interceptor para adjuntar tokens
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+  private authService = inject(AuthService);
+
+  intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    const token = this.authService.getAccessToken();
+    if (token) {
+      const cloned = req.clone({
+        setHeaders: { Authorization: `Bearer ${token}` },
+      });
+      return next.handle(cloned);
+    }
+    return next.handle(req);
+  }
+}
+
+// auth.guard.ts — Route Guard para proteger rutas
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  canActivate(): boolean {
+    if (this.authService.isAuthenticated()) {
+      return true;
+    }
+    this.router.navigate(['/login']);
+    return false;
+  }
+}
+
+// auth.service.ts — Servicio de autenticación con refresh automático
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private http = inject(HttpClient);
+  private refreshTimeout: ReturnType<typeof setTimeout>;
+
+  private accessToken: string | null = null;
+  private refreshToken: string | null = null;
+
+  login(username: string, password: string): Observable<void> {
+    return this.http.post<AuthResponse>('/auth/login', { username, password }).pipe(
+      tap((res) => {
+        this.setTokens(res.access_token, res.refresh_token);
+        this.scheduleRefresh(res.expires_in);
+      }),
+    );
+  }
+
+  refresh(): Observable<void> {
+    return this.http.post<AuthResponse>('/auth/refresh', {}, { withCredentials: true }).pipe(
+      tap((res) => {
+        this.setTokens(res.access_token, res.refresh_token);
+        this.scheduleRefresh(res.expires_in);
+      }),
+      catchError(() => {
+        this.logout();
+        return throwError(() => new Error('Session expired'));
+      }),
+    );
+  }
+
+  private scheduleRefresh(expiresIn: number): void {
+    // Refrescar 30 segundos antes de expirar
+    clearTimeout(this.refreshTimeout);
+    this.refreshTimeout = setTimeout(() => this.refresh().subscribe(), (expiresIn - 30) * 1000);
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.accessToken;
+  }
+
+  logout(): void {
+    this.accessToken = null;
+    this.refreshToken = null;
+    clearTimeout(this.refreshTimeout);
+    this.http.post('/auth/logout', {}, { withCredentials: true }).subscribe();
+  }
+
+  private setTokens(access: string, refresh: string): void {
+    this.accessToken = access;
+    this.refreshToken = refresh;
+  }
+}
+```
+
+**Registro del interceptor y guards (app.config.ts):**
+```typescript
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRouter, withRouteInitialization } from '@angular/router';
+import { authInterceptor } from './interceptors/auth.interceptor';
+import { authGuard } from './guards/auth.guard';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(withInterceptors([authInterceptor])),
+    provideRouter([
+      { path: 'dashboard', canActivate: [authGuard], loadComponent: ... },
+      { path: 'login', loadComponent: ... },
+    ]),
+  ],
+};
 ```

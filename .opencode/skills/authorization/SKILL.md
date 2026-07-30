@@ -3,7 +3,7 @@ name: authorization
 description: 'Authorization patterns: permission models, role-based access control
   (RBAC), resource-level access, and frontend permission rendering. Uses FastAPI Depends for RBAC.
   Trigger: When implementing permissions, roles, or access control.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -17,6 +17,7 @@ metadata:
   consumed_by:
   - backend-api
   - react
+  - angular
   agent_roles:
   - design-agent
   - control-agent
@@ -524,6 +525,181 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+```
+
+### Servicio de permisos (Angular)
+
+```typescript
+// services/permission.service.ts
+import { Injectable, inject } from '@angular/core';
+import { AuthService } from './auth.service';
+
+export type Action = 'create' | 'read' | 'update' | 'delete' | 'manage';
+export type Resource = 'Entity' | 'User' | 'Report' | 'all';
+
+@Injectable({ providedIn: 'root' })
+export class PermissionService {
+  private authService = inject(AuthService);
+
+  can(action: Action, resource: Resource): boolean {
+    const user = this.authService.currentUser();
+    if (!user) return false;
+
+    // Admin tiene todos los permisos
+    if (user.role === 'admin') return true;
+
+    const permission = `${resource.toLowerCase()}:${action === 'manage' ? 'manage' : action}`;
+    return user.permissions?.includes(permission) ?? false;
+  }
+
+  hasPermission(permission: string): boolean {
+    const user = this.authService.currentUser();
+    return user?.permissions?.includes(permission) ?? false;
+  }
+}
+```
+
+### Componente `Can` (directiva Angular)
+
+```typescript
+// directives/can.directive.ts
+import { Directive, Input, TemplateRef, ViewContainerRef, inject, OnInit } from '@angular/core';
+import { PermissionService, Action, Resource } from '../services/permission.service';
+
+@Directive({ selector: '[appCan]', standalone: true })
+export class CanDirective implements OnInit {
+  private templateRef = inject(TemplateRef<any>);
+  private viewContainer = inject(ViewContainerRef);
+  private permissionService = inject(PermissionService);
+
+  @Input('appCanAction') action!: Action;
+  @Input('appCanResource') resource!: Resource;
+
+  ngOnInit() {
+    if (this.permissionService.can(this.action, this.resource)) {
+      this.viewContainer.createEmbeddedView(this.templateRef);
+    } else {
+      this.viewContainer.clear();
+    }
+  }
+}
+```
+
+**Uso en plantilla:**
+
+```html
+<ng-container *appCan="'update'; for: 'Entity'">
+  <button (click)="edit(entity)">Editar</button>
+</ng-container>
+
+<ng-container *appCan="'delete'; for: 'Entity'">
+  <button (click)="delete(entity)">Eliminar</button>
+</ng-container>
+```
+
+### Renderizado condicional con pipe (Angular)
+
+```typescript
+// pipes/has-permission.pipe.ts
+import { Pipe, PipeTransform, inject } from '@angular/core';
+import { PermissionService } from '../services/permission.service';
+
+@Pipe({ name: 'hasPermission', standalone: true })
+export class HasPermissionPipe implements PipeTransform {
+  private permissionService = inject(PermissionService);
+
+  transform(permission: string): boolean {
+    return this.permissionService.hasPermission(permission);
+  }
+}
+```
+
+**Uso en plantilla:**
+
+```html
+<button *ngIf="'entities:write' | hasPermission" (click)="edit()">Editar</button>
+<button *ngIf="'entities:delete' | hasPermission || isOwner" (click)="delete()">Eliminar</button>
+```
+
+### Route Guards (Angular)
+
+```typescript
+// guards/permission.guard.ts
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { PermissionService, Action, Resource } from '../services/permission.service';
+
+export function permissionGuard(action: Action, resource: Resource): CanActivateFn {
+  return () => {
+    const permissionService = inject(PermissionService);
+    const router = inject(Router);
+
+    if (permissionService.can(action, resource)) {
+      return true;
+    }
+
+    return router.createUrlTree(['/unauthorized']);
+  };
+}
+
+// Uso en rutas (app.routes.ts)
+export const routes: Routes = [
+  {
+    path: '',
+    component: AppLayout,
+    children: [
+      { path: 'login', component: LoginPage },
+      {
+        path: 'entities',
+        canActivate: [permissionGuard('read', 'Entity')],
+        component: EntityList,
+      },
+      {
+        path: 'entities/:id/edit',
+        canActivate: [permissionGuard('update', 'Entity')],
+        component: EntityEdit,
+      },
+      {
+        path: 'admin',
+        canActivate: [permissionGuard('manage', 'all')],
+        component: AdminPanel,
+      },
+    ],
+  },
+];
+```
+
+### Servicio de autenticación con signals (Angular)
+
+```typescript
+// services/auth.service.ts
+import { Injectable, signal, computed } from '@angular/core';
+
+export interface AuthUser {
+  user_id: string;
+  tenant_id: string;
+  role: string;
+  permissions: string[];
+}
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private userSignal = signal<AuthUser | null>(null);
+
+  currentUser = this.userSignal.asReadonly();
+
+  get isLoggedIn(): boolean {
+    return this.userSignal() !== null;
+  }
+
+  login(user: AuthUser) {
+    this.userSignal.set(user);
+  }
+
+  logout() {
+    this.userSignal.set(null);
+  }
+}
 ```
 
 ### Tabla resumen: responsabilidades frontend vs backend

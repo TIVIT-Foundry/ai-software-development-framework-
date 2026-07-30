@@ -1,0 +1,42 @@
+import { Component, input, output, OnInit, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+
+import { ${ENTITY}TableComponent } from './${entity}-table.component';
+import type { ${ENTITY}ListItem, ${ENTITY}QueryParams } from './${entity}.model';
+
+@Component({
+  selector: 'app-${entity}-list',
+  standalone: true,
+  imports: [${ENTITY}TableComponent],
+  templateUrl: './${entity}-list.component.html',
+})
+export class ${ENTITY}ListComponent implements OnInit, OnDestroy {
+  private readonly destroy$ = new Subject<void>();
+
+  readonly items = input.required<${ENTITY}ListItem[]>();
+  readonly total = input.required<number>();
+  readonly page = input.required<number>();
+  readonly pageSize = input.required<number>();
+  readonly loading = input<boolean>(false);
+  readonly error = input<string | null>(null);
+
+  readonly search = output<string>();
+  readonly pageChange = output<number>();
+  readonly sortChange = output<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>();
+  readonly create = output<void>();
+  readonly edit = output<number>();
+  readonly delete = output<number>();
+
+  ngOnInit(): void {
+    // Initial state can be emitted here if needed
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onSearch(value: string): void {
+    this.search.emit(value);
+  }
+}

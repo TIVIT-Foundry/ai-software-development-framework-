@@ -1,7 +1,7 @@
 ---
 name: oauth2-jwt
-description: 'OAuth2/JWT authentication and authorization: token issuance, validation, scopes, refresh tokens, and Keycloak integration patterns. Trigger: When implementing token-based auth, OAuth2 flows, or JWT validation in FastAPI/Bun/React.'
-version: 1.0
+description: 'OAuth2/JWT authentication and authorization: token issuance, validation, scopes, refresh tokens, and Keycloak integration patterns. Trigger: When implementing token-based auth, OAuth2 flows, or JWT validation in FastAPI/Bun/React/Angular.'
+version: 1.1
 metadata:
   phase:
     - construction
@@ -24,7 +24,7 @@ metadata:
 
 ## Purpose
 
-Define how OAuth2/JWT is implemented across FastAPI, Bun, and React services, including token validation, scopes, refresh flows, and secure storage.
+Define how OAuth2/JWT is implemented across FastAPI, Bun, and React/Angular services, including token validation, scopes, refresh flows, and secure storage.
 
 ## When to use this skill
 

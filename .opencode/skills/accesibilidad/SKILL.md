@@ -3,7 +3,7 @@ name: accesibilidad
 description: 'Web accessibility (a11y): WCAG 2.2 AA, ARIA, keyboard navigation, screen
   readers, color contrast, focus management, axe-core automated testing. Trigger: When
   implementing, auditing, or fixing accessible UI components and patterns.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -12,6 +12,7 @@ metadata:
   enforcement: mandatory
   depends_on:
   - react
+  - angular
   - design-system
   consumed_by:
   - agent-frontend
@@ -137,6 +138,59 @@ export function useFocusTrap(active: boolean) {
 // Skip link:
 // <a href="#main-content" className="skip-link">Skip to main content</a>
 // <main id="main-content" tabIndex={-1}>...</main>
+```
+
+### ARIA patterns for Angular
+
+```html
+<!-- Button with loading state — ARIA live region -->
+<button
+  [attr.aria-busy]="isLoading"
+  [attr.aria-disabled]="isLoading"
+  (click)="handleSubmit()"
+>
+  {{ isLoading ? 'Saving...' : 'Save' }}
+  <span aria-live="polite" class="sr-only">
+    {{ isLoading ? 'Submitting form' : '' }}
+  </span>
+</button>
+
+<!-- Modal with focus trap (CDK A11yModule) -->
+<div
+  cdkTrapFocus
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title"
+  aria-describedby="modal-desc"
+>
+  <h2 id="modal-title">Confirm</h2>
+  <p id="modal-desc">Are you sure?</p>
+  <button (click)="onClose()">Cancel</button>
+  <button (click)="onConfirm()">Confirm</button>
+</div>
+```
+
+### Focus management — CDK A11yModule
+
+```typescript
+// Angular CDK: cdkTrapFocus directive — trap focus within a container
+// Import CdkTrapFocus from @angular/cdk/a11y in your module
+
+// app.module.ts
+import { CdkTrapFocus } from '@angular/cdk/a11y';
+
+@NgModule({
+  imports: [CdkTrapFocus],
+  // ...
+})
+export class AppModule {}
+
+// Usage in template:
+// <div cdkTrapFocus> ... focusable elements ... </div>
+
+// For skip links, create a directive or use AnchorLink with fragment navigation:
+// <a href="#main-content" class="skip-link">Skip to main content</a>
+// <main id="main-content" tabindex="-1">...</main>
 ```
 
 ### Automated testing with axe-core

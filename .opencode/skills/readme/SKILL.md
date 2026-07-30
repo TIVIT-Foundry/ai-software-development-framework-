@@ -1,13 +1,13 @@
 ---
 name: readme
-description: 'README template for project modules (Python/FastAPI, Bun/TypeScript, React). Trigger: When creating module documentation, README files, or project docs.'
+description: 'README template for project modules (Python/FastAPI, Bun/TypeScript, React or Angular). Trigger: When creating module documentation, README files, or project docs.'
 when_to_use:
   - Creating a new README for a module or project
   - Updating an existing README after significant changes
   - Onboarding new developers to a project
   - Standardizing README format across modules in a vertical
   - Documenting a library or shared package
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - inception
@@ -394,7 +394,7 @@ La aplicación estará disponible en `http://localhost:5173`.
 | El usuario dice "escribe un README rápido" | Escribir 3 líneas sin estructura | Aplicar la plantilla completa según tipo de módulo, explicando que la estructura estándar beneficia a todo el equipo |
 | El README existente tiene 600+ líneas | Dejarlo como está | Identificar secciones que deben extraerse a docs separados, reescribir con enlaces y reducir a ≤300 líneas |
 | No existe `.env.example` | Documentar variables solo en el README | Crear `.env.example` con las variables documentadas Y referenciarlo desde el README |
-| El proyecto tiene stack Python + React | Escribir README solo para backend | Documentar ambos stacks con secciones dedicadas, indicando prerrequisitos por stack y el flujo de desarrollo integrado |
+| El proyecto tiene stack Python + React/Angular | Escribir README solo para backend | Documentar ambos stacks con secciones dedicadas, indicando prerrequisitos por stack y el flujo de desarrollo integrado |
 | Los ejemplos de curl usan datos inventados | Dejar `{"id": 1}` genérico | Usar datos de ejemplo que coincidan con los seed data del proyecto (`/api/v1/orders/ord-0001`) |
 | Hay secciones vacías con "TODO" | Dejar los TODOs como placeholders | Eliminar secciones vacías; solo incluir secciones con contenido real. Agregar las pendientes al backlog, no al README |
 
@@ -423,7 +423,7 @@ La plantilla completa del README sigue esta estructura de 8 secciones estándar 
 | Runtime | Python 3.12 / Bun 1.1+ / Node 20+ | LTS |
 | Framework (AI/ML) | FastAPI | 0.110+ |
 | Framework (Backend general) | Bun + TypeScript (Hono/Elysia) | 1.1+ |
-| Frontend | React (Vite) | 18+ |
+| Frontend | React (Vite) o Angular, según el proyecto | 18+ / 17+ |
 | UI libs | Radix UI / shadcn/ui | — |
 | Base de datos | PostgreSQL 16 | 16.x |
 | Cache / Colas | Redis 7 / Kafka | 7.x |
@@ -483,8 +483,8 @@ Crear `.env` a partir de `.env.example`:
 | `TOKEN_TTL_MINUTES` | No | `int` | `15` | TTL del access token para rotación |
 | `REFRESH_TOKEN_TTL_DAYS` | No | `int` | `7` | TTL del refresh token |
 
-> \* `KEYCLOAK_CLIENT_SECRET` es requerida solo para **confidential clients** (backend-to-backend o service accounts). Para SPAs React (public clients) se usa PKCE y no se expone el secret.
-> Frontend React consume estas vars vía `import.meta.env` (prefijo `VITE_`) inyectadas en build time (nunca secretos en el bundle).
+> \* `KEYCLOAK_CLIENT_SECRET` es requerida solo para **confidential clients** (backend-to-backend o service accounts). Para SPAs React o Angular (public clients) se usa PKCE y no se expone el secret.
+> Frontend React consume estas vars vía `import.meta.env` (prefijo `VITE_`); Angular vía `environment.ts` — ambos inyectados en build time (nunca secretos en el bundle).
 ```
 
 ### Sección 5 — Referencia rápida (endpoints/rutas/comandos)

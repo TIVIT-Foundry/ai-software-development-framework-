@@ -1,8 +1,8 @@
 ---
 name: agent-fullstack
 description: 'Meta-skill: activates all skills for full-stack feature implementation
-  (DB → API → UI). Stack: Python/FastAPI + PostgreSQL + React. Trigger: When implementing a complete feature across all layers.'
-version: 1.1
+  (DB → API → UI). Stack: Python/FastAPI + PostgreSQL + React or Angular (per project choice). Trigger: When implementing a complete feature across all layers.'
+version: 1.2
 metadata:
   phase:
   - construction
@@ -13,7 +13,9 @@ metadata:
   depends_on:
   - agent-backend
   - react
+  - angular
   - react-services
+  - angular-services
   - typescript
   consumed_by: []
   agent_roles:
@@ -27,6 +29,8 @@ metadata:
 ## Purpose
 Master meta-skill for full-stack feature development. Orchestrates backend and frontend meta-skills.
 Backend is always implemented first.
+
+**Framework choice**: frontend steps below default to React (`react` / `react-services`). When the project selected Angular instead, substitute `angular` for `react` and `angular-services` for `react-services` — same steps, same gates. See `agent-frontend` for details.
 
 ## Full-Stack Workflow
 
@@ -130,6 +134,8 @@ El pipeline completo de full-stack conecta 28 niveles desde la base de datos has
 | 31 | `openapi-docs` | Documentación OpenAPI 3.0, spec JSON/YAML, Swagger UI | **N32 (typescript) — handoff crítico**, frontend N33–N37, N44 (playwright) |
 
 ### Fase F — Frontend (Niveles 32–37)
+
+Niveles N33 (`react-services`) y N34 (`react`) asumen el path React por defecto. Si el proyecto eligió Angular, sustituir por `angular-services` (N33) y `angular` (N34) respectivamente — la numeración, las fases y las dependencias (N35–N37) permanecen idénticas.
 
 | Nivel | Skill | Produce | Consumido Por |
 |-------|-------|---------|---------------|

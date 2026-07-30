@@ -1,7 +1,7 @@
 ---
 name: api-resilience
 description: "API resilience patterns including rate limiting, circuit breakers, bulkheads, retry policies, timeouts, and API quotas. Covers patterns for multi-tenant APIs, backpressure handling, and fallback strategies. Uses Python/FastAPI with tenacity + slowapi. Trigger: When implementing rate limiting, circuit breakers, retry logic, or API resilience patterns."
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -14,6 +14,7 @@ metadata:
   consumed_by:
   - backend-api
   - react-services
+  - angular-services
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency
@@ -374,7 +375,7 @@ class BackpressureMiddleware:
 
 ### F. Consumidores de esta skill
 - `backend-api` consume los middlewares de rate limiting, circuit breaker y bulkhead;
-- `react-services` implementa retry del lado del cliente cuando recibe 429;
+- `react-services` / `angular-services` implementa retry del lado del cliente cuando recibe 429;
 - `error-handling` define la estructura de errores 429 y 503;
 - `load-testing` valida que los rate limits funcionan bajo carga.
 

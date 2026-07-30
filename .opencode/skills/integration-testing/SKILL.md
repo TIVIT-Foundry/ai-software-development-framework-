@@ -1,7 +1,7 @@
 ---
 name: integration-testing
 description: "Integration testing patterns with real dependencies. Covers TestContainers for Python/PostgreSQL + pgvector, React Testing Library + MSW for API mocking, Bun backend con Vitest + testcontainers, contract tests between services, test isolation by tenant, setup/teardown patterns, y parallel execution strategies. Trigger: When writing integration tests, setting up test databases, or testing service boundaries."
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -12,6 +12,7 @@ metadata:
   - unit-testing
   - data-access
   - react-services
+  - angular-services
   consumed_by:
   - framework-qa-validation
   agent_roles:
@@ -302,7 +303,119 @@ describe('UsersList integration', () => {
 });
 ```
 
-### 5. Integration test de backend Bun (Vitest + testcontainers)
+### 5. Integration test de servicio Angular (TestBed + HttpClientTestingModule)
+
+```typescript
+// src/app/features/users/services/users.service.integration.spec.ts
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { firstValueFrom } from 'rxjs';
+import { UsersService } from './users.service';
+
+describe('UsersService integration', () => {
+  let service: UsersService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        UsersService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        // Providers reales (no mocks de lógica de negocio):
+        // { provide: API_BASE_URL, useValue: '/api/v1' },
+      ],
+    });
+    service = TestBed.inject(UsersService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    // Verifica que no queden requests pendientes
+    httpMock.verify();
+  });
+
+  it('list_WhenEndpointReturnsUsers_EmitsUsersFromAPI', async () => {
+    // Arrange
+    const expected = [
+      { id: 1, name: 'John Doe', email: 'john@test.com' },
+      { id: 2, name: 'Jane Doe', email: 'jane@test.com' },
+    ];
+
+    // Act
+    const promise = firstValueFrom(service.list());
+    const req = httpMock.expectOne('/api/v1/users');
+    req.flush(expected);
+    const result = await promise;
+
+    // Assert
+    expect(result).toHaveLength(2);
+    expect(result[0].name).toBe('John Doe');
+  });
+
+  it('list_WhenEndpointReturnsError_PropagatesError', async () => {
+    // Act
+    const promise = firstValueFrom(service.list()).catch((e) => e);
+    const req = httpMock.expectOne('/api/v1/users');
+    req.flush({ message: 'Internal error' }, { status: 500, statusText: 'Server Error' });
+    const error = await promise;
+
+    // Assert
+    expect(error.status).toBe(500);
+  });
+});
+```
+
+> **Patrón Angular con signals**: si el servicio usa `toSignal()` para exponer estado reactivo, testear el signal dentro de `TestBed.runInInjectionContext(() => { ... })` y leer su valor con `service.users()` después de resolver el mock HTTP.
+
+### 6. Integration test de componente Angular con providers reales
+
+```typescript
+// src/app/features/users/components/user-list/user-list.component.integration.spec.ts
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { UserListComponent } from './user-list.component';
+import { UsersService } from '../../services/users.service';
+
+describe('UserListComponent integration', () => {
+  let fixture: ComponentFixture<UserListComponent>;
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [UserListComponent],
+      providers: [
+        UsersService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(UserListComponent);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  it('ngOnInit_FetchesUsers_DisplaysThemInTemplate', () => {
+    // Arrange
+    const users = [{ id: 1, name: 'John Doe', email: 'john@test.com' }];
+
+    // Act
+    fixture.detectChanges(); // dispara ngOnInit
+    const req = httpMock.expectOne('/api/v1/users');
+    req.flush(users);
+    fixture.detectChanges(); // propaga el cambio
+
+    // Assert
+    const listItems = fixture.nativeElement.querySelectorAll('li');
+    expect(listItems.length).toBe(1);
+    expect(listItems[0].textContent).toContain('John Doe');
+  });
+});
+```
+
+### 7. Integration test de backend Bun (Vitest + testcontainers)
 
 ```typescript
 // tests/integration/users.repository.integration.test.ts
@@ -373,7 +486,7 @@ describe('UsersRepository integration', () => {
 
 > **Configuración Vitest**: usar `vitest.config.ts` con `pool: 'forks'` para aislar contenedores entre workers. Timeout extendido: `testTimeout: 30000`.
 
-### 6. Tests de operaciones pgvector (similarity search, embeddings)
+### 8. Tests de operaciones pgvector (similarity search, embeddings)
 
 Los tests de operaciones vectoriales DEBEN ejecutarse contra una BD real con la extensión `vector` habilitada, ya que las operaciones de distancia (`<=>`, `<->`, `<#>`) y KNN no pueden mockearse de forma significativa.
 
@@ -489,7 +602,7 @@ describe('pgvector similarity search integration', () => {
 > - Validar que embeddings de **dimensión incorrecta** son rechazados por la constraint de BD.
 > - El cleanup debe incluir `DELETE` de documentos de test para no contaminar el índice.
 
-### 7. Contract tests entre servicios
+### 9. Contract tests entre servicios
 
 ```typescript
 // tests/contracts/userApi.contract.test.ts (Bun + Vitest + msw + zod)
@@ -554,7 +667,7 @@ describe('User API contract', () => {
 
 > **Contract tests React**: en el frontend React, los contract tests validan que los tipos generados desde el OpenAPI spec (`api-first-frontend`) coinciden con las respuestas reales del backend. Usar MSW para interceptar la respuesta real y validar el schema con `zod` dentro del test.
 
-### 8. Test isolation por tenant
+### 10. Test isolation por tenant
 
 ```python
 # tests/integration/test_tenant_isolation.py
@@ -574,7 +687,7 @@ async def test_create_user_in_tenant_a_not_visible_in_tenant_b(client):
     assert not any(u["email"] == "a@test.com" for u in users)
 ```
 
-### 9. Parallel execution strategy
+### 11. Parallel execution strategy
 
 ```ini
 # pytest.ini (Python)

@@ -3,7 +3,7 @@
 **TIVIT Foundry — Framework Agéntico**
 **Versión:** 2.0.0
 **Última actualización:** 17 de julio de 2026
-**Total de skills:** 105
+**Total de skills:** 110
 
 ---
 
@@ -12,7 +12,7 @@
 - **Fase:** inception | conception | governance | architecture | scaffold | construction | quality | operations | closure
 - **Layer:** business | design | implementation | infrastructure | testing | operations
 - **Enforcement:** mandatory | recommended | optional
-- **Stack:** Python/FastAPI | React | Bun/TypeScript | PostgreSQL | Multi
+- **Stack:** Python/FastAPI | React o Angular | Bun/TypeScript | PostgreSQL | Multi
 
 ---
 
@@ -50,7 +50,7 @@
 |-------|------|-------|-------------|-------|-------------|
 | api-first-spec | inception | backend | mandatory | Multi | Especificación API completa por módulo |
 | api-first-backend | construction | backend | mandatory | Python | Backend desde OpenAPI: SP → Handler → DTOs → Endpoint |
-| api-first-frontend | construction | frontend | mandatory | React | Frontend desde OpenAPI: types → hooks → components |
+| api-first-frontend | construction | frontend | mandatory | React/Angular | Frontend desde OpenAPI: types → hooks/services → components |
 | api-first-testing | quality | testing | mandatory | Multi | Tests desde OpenAPI: contract, E2E, schema validation |
 | api-catalog | operations | backend | recommended | Multi | Inventario DB → Endpoint → Service ID → Screen → Route |
 | api-gateway | construction | backend | recommended | Multi | API Gateway: routing, auth, rate limiting, NGINX |
@@ -86,7 +86,14 @@
 | react | construction | frontend | mandatory | React | Function components, hooks, routing, code-splitting |
 | react-services | construction | frontend | mandatory | React | Data hooks, @tanstack/react-query, Zustand, fetch client |
 
-### Testing (6 skills) — Aseguramiento de Calidad
+### Angular (2 skills) — Frontend (alternativa a React, ver ADR-005)
+
+| Skill | Fase | Layer | Enforcement | Stack | Descripción |
+|-------|------|-------|-------------|-------|-------------|
+| angular | construction | frontend | recommended | Angular | Component architecture, signals, DI, routing, CDK |
+| angular-services | construction | frontend | recommended | Angular | Services, RxJS, @ngneat/query, signals, toSignal() |
+
+### Testing (8 skills) — Aseguramiento de Calidad
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
@@ -96,6 +103,8 @@
 | security-testing | quality | testing | recommended | Security: SAST, DAST, dependency scanning |
 | playwright | quality | testing | mandatory | E2E: Page Objects, selectors, API testing |
 | a11y-testing | quality | testing/frontend | recommended | A11y automatizado: axe-core, Playwright, keyboard nav |
+| react-doctor | quality | testing/frontend | recommended | Gate automatizado (npx react-doctor): anti-patrones React, deterministico |
+| angular-doctor | quality | testing/frontend | recommended | Gate automatizado (npx angular-doctor): lint Angular-aware, health score, dead code |
 
 ### Seguridad (4 skills)
 
@@ -143,7 +152,7 @@
 | file-upload | construction | backend | recommended | Upload: multipart, storage, MIME, CDN |
 | notifications | construction | backend | recommended | Notificaciones: in-app, email, push, webhook |
 
-### Frontend General (8 skills)
+### Frontend General (9 skills)
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
@@ -155,6 +164,7 @@
 | i18n | construction | frontend | recommended | react-i18next, locale files, RTL, Intl formatting |
 | mobile-pwa | construction | frontend | optional | PWA: service workers, offline, push notifications |
 | react-upgrade | operations | frontend | optional | Migración de versiones React/Vite/Next.js y legacy → moderno |
+| angular-upgrade | operations | frontend | optional | Migración de versiones Angular, NgModules → standalone/signals |
 
 ### Proceso (4 skills)
 
@@ -204,7 +214,7 @@ Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-fi
 | C — Scaffold | N10-N15 | framework-scaffold-implementation, project-architecture, project-bootstrap, repo-structure, app-bootstrap, backend-api, bun-backend | 1 |
 | D — Especificación | N16 | api-first-spec, api-contracts | 1 |
 | E — Backend | N17-N31 | api-first-backend, data-access, database-*, pgvector, authentication, authorization, oauth2-jwt, error-handling, shared-libs, api-integration, api-resilience, api-versioning, api-gateway, redis, real-time, file-upload, notifications, costos-llm, langfuse | 1 |
-| F — Frontend | N32-N37 | api-first-frontend, api-contracts, react, react-services, typescript, design-system, i18n, mobile-pwa, react-upgrade | 1 |
+| F — Frontend | N32-N37 | api-first-frontend, api-contracts, react, angular, react-services, angular-services, typescript, design-system, i18n, mobile-pwa, react-upgrade, angular-upgrade | 1 |
 | G — Calidad | N38-N44 | unit-testing, integration-testing, playwright, security-testing, load-testing, code-review, accesibilidad, a11y-testing | 1 |
 | H — Operación | N45-N49 | ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, infrastructure-as-code, terraform, kubernetes, disaster-recovery, postgresql-backup, pull-request, langfuse | 1 |
 

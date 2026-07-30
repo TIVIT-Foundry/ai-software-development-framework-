@@ -3,7 +3,7 @@ name: notifications
 description: 'Notification patterns: in-app, email, push, webhook notifications with
   templates and delivery tracking. Trigger: When implementing notifications, alerts,
   or messaging systems.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -154,6 +154,102 @@ export function NotificationList() {
       ))}
     </div>
   );
+}
+```
+
+## In-App Notification (Frontend — Angular)
+
+```typescript
+// notification.service.ts
+import { Injectable, inject, NgZone, OnDestroy } from '@angular/core';
+import { Subject, Observable } from 'rxjs';
+
+export interface Notification {
+  id: string;
+  templateId: string;
+  subject: string;
+  body: string;
+  read: boolean;
+  receivedAt: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class NotificationService implements OnDestroy {
+  private readonly zone = inject(NgZone);
+  private readonly destroy$ = new Subject<void>();
+  private readonly notifications$ = new Subject<Notification>();
+  private eventSource: EventSource | null = null;
+
+  /** Observable de notificaciones entrantes (SSE) */
+  get notifications(): Observable<Notification> {
+    return this.notifications$.asObservable();
+  }
+
+  connect(): void {
+    this.eventSource = new EventSource('/api/notifications/stream');
+
+    this.zone.runOutsideAngular(() => {
+      this.eventSource!.onmessage = (event) => {
+        const notification: Notification = JSON.parse(event.data);
+        this.zone.run(() => this.notifications$.next(notification));
+      };
+    });
+  }
+
+  disconnect(): void {
+    this.eventSource?.close();
+    this.eventSource = null;
+  }
+
+  ngOnDestroy(): void {
+    this.disconnect();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+**Uso en componente:**
+
+```typescript
+// notification-list.component.ts
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Subject, takeUntil } from 'rxjs';
+import { NotificationService, Notification } from './notification.service';
+
+@Component({
+  selector: 'app-notification-list',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="notification-list">
+      @for (n of notifications; track n.id) {
+        <div class="notification-item" [class.unread]="!n.read">
+          <strong>{{ n.subject }}</strong>
+          <p>{{ n.body }}</p>
+        </div>
+      }
+    </div>
+  `,
+})
+export class NotificationListComponent implements OnInit, OnDestroy {
+  private readonly notificationService = inject(NotificationService);
+  private readonly destroy$ = new Subject<void>();
+
+  notifications: Notification[] = [];
+
+  ngOnInit(): void {
+    this.notificationService.connect();
+    this.notificationService.notifications
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((n) => this.notifications.unshift(n));
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 }
 ```
 

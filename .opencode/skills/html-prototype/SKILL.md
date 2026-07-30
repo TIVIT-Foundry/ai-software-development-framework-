@@ -7,7 +7,7 @@ when_to_use:
   - When creating clickable prototypes for user testing
   - When the team needs visual alignment on layout, navigation, and interaction patterns
   - When exploring design alternatives before investing in full frontend code
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - inception
@@ -19,6 +19,7 @@ metadata:
   consumed_by:
   - api-first-spec
   - react
+  - angular
   - design-system
   agent_roles:
   - design-agent
@@ -47,7 +48,7 @@ Usa esta skill para responder estas preguntas:
 - `hu-template` aporta las historias de usuario que definen qué pantallas prototipar.
 - `design-system` aporta los tokens de color, tipografía y spacing que el prototipo debe usar.
 - `api-first-spec` consume el prototipo validado para diseñar los endpoints que sirven los datos mostrados.
-- `react` consume el prototipo como referencia visual para implementar los componentes reales.
+- `react` / `angular` consume el prototipo como referencia visual para implementar los componentes reales (según el framework elegido por el proyecto).
 - Esta skill no reemplaza a `design-system`; solo traduce tokens a CSS para el prototipo.
 
 ## Qué debe hacer el agente cuando esta skill está activa
@@ -83,7 +84,7 @@ La fase sí incluye:
 - Documento de decisiones de UI.
 
 La fase no incluye todavía:
-- Código React de producción;
+- Código React o Angular de producción;
 - Conexión a APIs reales;
 - Tests unitarios o E2E (eso es `playwright`);
 - Tokens compilados para producción (eso es `design-system`).
@@ -110,7 +111,7 @@ Esta skill sí decide:
 Esta skill delega:
 - Los colores exactos y tipografía → `design-system`;
 - Los datos y endpoints → `api-first-spec`;
-- Los componentes React reales → `react`;
+- Los componentes React o Angular reales → `react` / `angular`;
 - Los flujos E2E → `playwright`.
 
 ## Qué debe definir el diseño
@@ -254,7 +255,7 @@ Todo prototipo debe incluir estos estados por pantalla:
 
 ### D. Consumidores de esta skill
 - `api-first-spec` — usa las pantallas para definir los endpoints necesarios;
-- `react` — usa el prototipo como referencia visual para componentes;
+- `react` / `angular` — usa el prototipo como referencia visual para componentes;
 - `playwright` — usa los `data-testid` como selectores E2E.
 
 ## Criterios de calidad
@@ -330,4 +331,4 @@ Respuesta esperada:
 
 ## Notas de edición
 
-Esta skill fue expandida desde 72 líneas a contenido completo con sistema de tokens, componentes interactivos, estados de UI, y ejemplos concretos. Los principios de zero dependencias y offline-first se mantienen del contenido original. Se agregó conexión explícita con `design-system`, `api-first-spec`, `react` y `playwright`.
+Esta skill fue expandida desde 72 líneas a contenido completo con sistema de tokens, componentes interactivos, estados de UI, y ejemplos concretos. Los principios de zero dependencias y offline-first se mantienen del contenido original. Se agregó conexión explícita con `design-system`, `api-first-spec`, `react`/`angular` y `playwright`.

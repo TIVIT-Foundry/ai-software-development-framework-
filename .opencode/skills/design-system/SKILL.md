@@ -3,7 +3,7 @@ name: design-system
 description: 'Visual design system: colors, typography, spacing, component wrappers,
   and theming. Trigger: When styling components, choosing colors, or applying visual
   patterns.'
-version: 2.0
+version: 2.1
 metadata:
   phase:
   - inception
@@ -14,6 +14,7 @@ metadata:
   depends_on: []
   consumed_by:
   - react
+  - angular
   - agent-frontend
   - agent-fullstack
   agent_roles:
@@ -154,6 +155,42 @@ export function useToken(name: string): string {
 }
 ```
 
+## Component Wrapper Pattern (Angular)
+```ts
+// project-button.component.ts — Standalone wrapper for consistent project styling
+import { Component, Input } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+
+@Component({
+  selector: 'app-project-button',
+  standalone: true,
+  imports: [MatButtonModule],
+  template: `
+    <button mat-flat-button [color]="color" [class]="'size-' + size">
+      <ng-content />
+    </button>
+  `,
+  styles: [`
+    .size-large { padding: var(--spacing-md) var(--spacing-lg); font-size: 16px; }
+    .size-small { padding: var(--spacing-xs) var(--spacing-sm); font-size: 12px; }
+  `],
+})
+export class ProjectButtonComponent {
+  @Input() color: 'primary' | 'accent' | 'warn' = 'primary';
+  @Input() size: 'small' | 'large' = 'large';
+}
+```
+
+**Directiva de estilos del proyecto** (opcional, para inyectar tokens):
+```ts
+import { Directive, HostBinding } from '@angular/core';
+
+@Directive({ selector: '[appTokenSpacing]', standalone: true })
+export class TokenSpacingDirective {
+  @HostBinding('style.padding') padding = 'var(--spacing-md)';
+}
+```
+
 ## Theme Configuration (Tailwind + shadcn/ui)
 
 ```ts
@@ -194,6 +231,70 @@ export const useTheme = () => {
 };
 ```
 
+## Theme Configuration (Angular Material)
+```ts
+// app.config.ts — Application-wide Material theme
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import {
+  MAT_DATE_LOCALE,
+  MatNativeDateModule,
+} from '@angular/material/core';
+import {
+  ThemePalette,
+  provideTheme,
+} from '@angular/material/core';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideAnimationsAsync(),
+    importProvidersFrom(MatNativeDateModule),
+    { provide: MAT_DATE_LOCALE, useValue: 'es-MX' },
+  ],
+};
+```
+
+**SCSS theme overrides** (`styles/_theme.scss`):
+```scss
+@use '@angular/material' as mat;
+
+$project-primary: mat.define-palette(mat.$indigo-palette, #007788);
+$project-accent:  mat.define-palette(mat.$pink-palette);
+$project-warn:    mat.define-palette(mat.$red-palette);
+
+$project-theme: mat.define-light-theme((
+  color: (
+    primary: $project-primary,
+    accent:  $project-accent,
+    warn:    $project-warn,
+  ),
+  typography: mat.define-typography-config(),
+));
+
+@include mat.core-theme($project-theme);
+@include mat.all-component-themes($project-theme);
+```
+
+**PrimeNG alternative** (`app.config.ts`):
+```ts
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeng/themes/aura';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    providePrimeNG({
+      theme: {
+        preset: Aura,
+        options: {
+          darkModeSelector: '.dark-mode',
+          cssLayer: { name: 'primeng', order: 'tailwind-base, primeng, tailwind-utilities' },
+        },
+      },
+    }),
+  ],
+};
+```
+
 ## Core Component Catalog
 Wrappers to create for consistent styling (Radix UI primitives / shadcn/ui equivalents):
 - `Input` / `radix-ui Form.Control`, `Textarea`, `Combobox` / `cmdk`
@@ -225,6 +326,20 @@ import styles from './Component.module.css';
 
 export function Component() {
   return <div className={styles.root}><h3 className={styles.title}>Title</h3></div>;
+}
+```
+
+## Angular Component Style Patterns
+```scss
+/* SCSS with design tokens — components use ViewEncapsulation.Emulated by default */
+:host {
+  display: block;
+  padding: var(--spacing-lg);
+}
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-title);
 }
 ```
 
@@ -266,7 +381,44 @@ src/
 
 **Regla del framework:** Los componentes de `ui/` son las primitivas de shadcn/ui tal cual se generan (no se editan a mano salvo bugfix puntual). Los wrappers en `shared/components/` aplican tokens, comportamiento y estilos del proyecto sobre esas primitivas.
 
-### 2. Tailwind CSS como vehículo de tokens — clases utilitarias que mapean a design tokens
+### 2. Angular UI Libraries — Primitivas de componentes, integración con Material Design
+
+Las librerías de UI en Angular ofrecen componentes listos para producción con accesibilidad integrada, theming configurable y soporte multi-tema.
+
+**Angular Material (Material Design):**
+- Se instala vía `ng add @angular/material` y genera schematics para generar componentes
+- Cada componente es un **Módulo standalone** (Angular 15+) o un `NgModule` clásico
+- Ejemplo de anatomía: `MatDialog` usa `MatDialogModule` + `MatDialogRef<T>` + `MatDialogConfig`, estilados con SCSS y Material theming
+
+**PrimeNG:**
+- Se instala vía `npm install primeng` con themes configurables (Aura, Lara, Nora, etc.)
+- Componentes standalone y directivas (`p-` prefix)
+- Estilos via CSS Layer con integración Tailwind
+
+**NG-ZORRO (Ant Design para Angular):**
+- Se instala vía `ng add ng-zorro-antd`
+- Componentes con `nz-` prefix, theming con less o SCSS
+- Estructura similar a Ant Design React pero adaptada a Angular
+
+**Patrón de wrapper en Angular:**
+- Crear componentes standalone en `src/app/shared/components/` que envuelvan el componente de la UI library
+- Aplicar tokens del proyecto via SCSS y configuración de theming
+- Los wrappers exponen una API simplificada y consistente para el equipo
+
+**Estructura de archivos:**
+```
+src/
+  app/
+    shared/
+      components/          ← wrappers del proyecto (project-button, search-dialog)
+      ui/                  ← primitivas o wrappers reutilizables (ui-button, ui-table)
+    features/
+    core/
+```
+
+**Regla del framework:** Los componentes de `ui/` encapsulan la UI library y NO contienen lógica de negocio. Los wrappers en `shared/components/` aplican tokens, comportamiento y estilos del proyecto.
+
+### 3. Tailwind CSS como vehículo de tokens — clases utilitarias que mapean a design tokens
 
 Tailwind CSS actúa como **capa de entrega** entre los design tokens y el código de los componentes. En vez de escribir `style={{ padding: 'var(--spacing-lg)' }}`, se usa `className="p-lg"` (clase utilitaria que internamente resuelve el token).
 
@@ -320,7 +472,7 @@ Design Token (JSON/YAML) → tokens.css (CSS custom properties) → tailwind.con
 - NUNCA usar valores hardcodeados en clases (`p-4`, `text-[#007788]`). SIEMPRE usar los aliases definidos en `theme.extend`
 - Los tokens semánticos (`primary`, `success`, `error`) tienen prioridad sobre tokens primitivos (`blue-500`, `red-600`)
 
-### 3. CSS Custom Properties como puente de tokens — cómo tokens.css mapea a Tailwind config
+### 4. CSS Custom Properties como puente de tokens — cómo tokens.css mapea a Tailwind config
 
 El archivo `tokens.css` es el **único origen de verdad en runtime** para los valores visuales. Tailwind lo referencia, pero los valores se resuelven en el navegador vía CSS custom properties.
 
@@ -378,7 +530,7 @@ El archivo `tokens.css` es el **único origen de verdad en runtime** para los va
 
 **Regla:** Cambiar un color → cambiar `tokens.css`. Tailwind y componentes React se actualizan automáticamente sin tocar ningún componente.
 
-### 4. Formatos de design tokens — Style Dictionary, estándar DTCG, tokens JSON
+### 5. Formatos de design tokens — Style Dictionary, estándar DTCG, tokens JSON
 
 **Formatos de origen (source of truth):**
 
@@ -453,7 +605,7 @@ tokens/*.tokens.json  →  Style Dictionary  →  tokens.css
 
 **Regla:** Los archivos `tokens.css` y `tailwind-tokens.js` son **generados**, nunca se editan a mano. El único archivo editable es `tokens/*.tokens.json`.
 
-### 5. Figma → tokens → código — automatización del handoff de diseño
+### 6. Figma → tokens → código — automatización del handoff de diseño
 
 **Flujo de handoff:**
 
@@ -489,7 +641,7 @@ tokens/
 
 **Regla:** Un cambio de color en Figma → PR con cambio en `tokens.json` → CI rebuild → merge automático de CSS generado. Cero intervención manual en CSS.
 
-### 6. Integración con Storybook — documentando componentes con design tokens
+### 7. Integración con Storybook — documentando componentes con design tokens
 
 Storybook es la **fuente de verdad visual** para el equipo de diseño y desarrollo. Cada componente documentado incluye sus variantes, estados y los tokens que consume.
 

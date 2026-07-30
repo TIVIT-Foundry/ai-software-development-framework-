@@ -1,7 +1,7 @@
 ---
 name: langchain
 description: 'LangChain/LangGraph orchestration patterns: chains, agents, tools, memory, RAG, callbacks, streaming, error handling, multi-tenant isolation. Trigger: When implementing LLM orchestration, building agentic workflows, or integrating LangChain/LangGraph with FastAPI.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
     - construction
@@ -40,7 +40,7 @@ Activate this skill when:
 **Do not** activate when:
 
 - Only using direct LLM API calls without orchestration
-- Working with frontend code (use `react` or `react-services`)
+- Working with frontend code (use `react`/`react-services` or `angular`/`angular-services`)
 - Implementing basic CRUD operations (use `backend-api`)
 
 ## Relation to other skills

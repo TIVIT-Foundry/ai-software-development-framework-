@@ -1,7 +1,7 @@
 ---
 name: i18n
 description: "Internationalization patterns for frontend applications. Covers react-i18next, locale file structure, lazy loading by route, fallback chains, pluralization, RTL support, date/number/currency formatting, and key extraction. Trigger: When implementing multi-language support or localization in a frontend application."
-version: 2.0
+version: 2.1
 metadata:
   phase:
   - construction
@@ -10,9 +10,11 @@ metadata:
   enforcement: mandatory
   depends_on:
   - react
+  - angular
   - typescript
   consumed_by:
   - react
+  - angular
   - api-first-frontend
   agent_roles:
   - delivery-agent
@@ -27,7 +29,7 @@ metadata:
 Esta skill define cómo implementar internacionalización (i18n) y localización (l10n) en aplicaciones frontend de forma escalable, mantenible y compatible con multi-tenancy.
 Su función es asegurar que la aplicación pueda soportar múltiples idiomas, formatos regionales y direcciones de texto sin duplicar lógica ni componentes.
 
-Esta skill complementa `react` (componentes) y `typescript` (tipos). Mientras esos definen la estructura de la UI, esta skill define cómo hacer esa UI multilingüe.
+Esta skill complementa `react` o `angular` (componentes, según el framework elegido por el proyecto) y `typescript` (tipos). Mientras esos definen la estructura de la UI, esta skill define cómo hacer esa UI multilingüe.
 
 ## Objetivo
 
@@ -42,7 +44,7 @@ Usa esta skill para responder estas preguntas:
 
 ## Relación con otras skills
 
-- `react` define los componentes que esta skill internacionaliza.
+- `react` o `angular` define los componentes que esta skill internacionaliza (según el framework elegido por el proyecto).
 - `typescript` define los tipos de las claves de traducción.
 - `api-first-frontend` genera tipos que pueden incluir campos localizados.
 - `design-system` define tokens que pueden variar por locale (fuentes RTL, spacing).
@@ -61,7 +63,7 @@ Usa esta skill para responder estas preguntas:
 ## Entradas esperadas
 
 Esta skill asume que ya existe:
-- estructura de componentes (`react`);
+- estructura de componentes (`react` o `angular`);
 - tipos TypeScript definidos (`typescript`);
 - diseño de sistema (`design-system`).
 
@@ -106,7 +108,7 @@ Esta skill sí decide:
 - la estrategia de fallback y lazy loading.
 
 Esta skill delega:
-- la estructura general de componentes a `react`;
+- la estructura general de componentes a `react` o `angular`;
 - los tipos TypeScript a `typescript`;
 - el contenido traducido a traductores profesionales;
 - el contenido dinámico desde backend a `backend-api`.
@@ -158,6 +160,55 @@ export function UsersPage() {
   const { t } = useTranslation('users'); // carga el namespace 'users' bajo demanda
   return <h1>{t('list.title')}</h1>;
 }
+```
+
+### 1b. Librería y configuración (Angular — @ngx-translate/core)
+
+**Decisión por defecto**: @ngx-translate/core con TranslateModule.
+
+```typescript
+// src/app/app.module.ts
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { HttpClient } from '@angular/common/http';
+import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { AppComponent } from './app.component';
+
+export function HttpLoaderFactory(http: HttpClient) {
+  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
+}
+
+@NgModule({
+  imports: [
+    BrowserModule,
+    TranslateModule.forRoot({
+      defaultLanguage: 'en',
+      loader: {
+        provide: TranslateLoader,
+        useFactory: HttpLoaderFactory,
+        deps: [HttpClient],
+      },
+    }),
+  ],
+  declarations: [AppComponent],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+```typescript
+// src/app/app.module.ts — lazy loading por módulo
+import { TranslateModule } from '@ngx-translate/core';
+
+@NgModule({
+  imports: [
+    TranslateModule.forChild({
+      extend: true, // hereda la configuración del root
+    }),
+  ],
+})
+export class FeatureModule {}
 ```
 
 ### 2. Estructura de locales
@@ -273,6 +324,40 @@ export function LoginPage() {
     </div>
   );
 }
+```
+
+### 5b. Uso en componentes (Angular)
+
+```typescript
+// src/app/features/auth/login.component.ts
+import { Component, OnInit } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+})
+export class LoginComponent implements OnInit {
+  constructor(private translate: TranslateService) {
+    // Establecer idiomas soportados y fallback
+    this.translate.addLangs(['en', 'es', 'pt-BR']);
+    this.translate.setDefaultLang('en');
+    this.translate.use('en');
+  }
+
+  ngOnInit() {}
+}
+```
+
+```html
+<!-- src/app/features/auth/login.component.html -->
+<div>
+  <h1>{{ 'auth.login.title' | translate }}</h1>
+  <input [placeholder]="'auth.login.emailPlaceholder' | translate" />
+  <input [placeholder]="'auth.login.passwordPlaceholder' | translate" type="password" />
+  <button>{{ 'auth.login.submit' | translate }}</button>
+  <a href="/forgot-password">{{ 'auth.login.forgotPassword' | translate }}</a>
+</div>
 ```
 
 ### 6. Pluralización e interpolación
@@ -399,6 +484,43 @@ export function LanguageSwitcher() {
 }
 ```
 
+### 9b. Componente de cambio de idioma (Angular)
+
+```typescript
+// src/app/shared/components/language-switcher/language-switcher.component.ts
+import { Component } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-language-switcher',
+  template: `
+    <select
+      data-testid="language-switcher"
+      [value]="translate.currentLang"
+      (change)="onLanguageChange($event)"
+    >
+      <option *ngFor="let lang of languages" [value]="lang.code">
+        {{ lang.name }}
+      </option>
+    </select>
+  `,
+})
+export class LanguageSwitcherComponent {
+  languages = [
+    { code: 'en', name: 'English' },
+    { code: 'es', name: 'Español' },
+    { code: 'pt-BR', name: 'Português (BR)' },
+  ];
+
+  constructor(public translate: TranslateService) {}
+
+  onLanguageChange(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    this.translate.use(select.value);
+  }
+}
+```
+
 ### 10. Lazy loading por ruta
 
 ```tsx
@@ -424,6 +546,51 @@ export async function loadNamespace(ns: string): Promise<void> {
   if (!i18n.hasResourceBundle(i18n.language, ns)) {
     await i18n.loadNamespaces(ns);
   }
+}
+```
+
+### 10b. Lazy loading por ruta (Angular)
+
+```typescript
+// src/app/app-routing.module.ts
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
+
+const routes: Routes = [
+  {
+    path: 'auth',
+    loadChildren: () =>
+      import('./features/auth/auth.module').then((m) => m.AuthModule),
+  },
+  {
+    path: 'dashboard',
+    loadChildren: () =>
+      import('./features/dashboard/dashboard.module').then((m) => m.DashboardModule),
+  },
+  {
+    path: 'settings',
+    loadChildren: () =>
+      import('./features/settings/settings.module').then((m) => m.SettingsModule),
+  },
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule],
+})
+export class AppRoutingModule {}
+```
+
+```typescript
+// Carga manual de traducciones por módulo (si se necesitan archivos JSON separados)
+import { TranslateService } from '@ngx-translate/core';
+import { HttpClient } from '@angular/common/http';
+
+export function loadTranslations(http: HttpClient, translate: TranslateService, lang: string) {
+  return http.get(`./assets/i18n/${lang}.json`).subscribe((translations) => {
+    translate.setTranslation(lang, translations, true);
+  });
 }
 ```
 
@@ -476,7 +643,7 @@ export async function loadNamespace(ns: string): Promise<void> {
 - Uso de `useTranslation()` en al menos una página de ejemplo.
 
 ### E. Consumidores de esta skill
-- `react` consume el hook `useTranslation` y el componente `<LanguageSwitcher>`;
+- `react` consume el hook `useTranslation` y el componente `<LanguageSwitcher>`; `angular` consume el `TranslateService` y los pipes/componentes equivalentes;
 - `api-first-frontend` puede generar tipos con campos localizados;
 - `playwright` verifica que el selector de idioma funciona y que no hay claves sin traducir.
 

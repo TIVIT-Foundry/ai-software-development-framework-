@@ -2,7 +2,7 @@
 name: typescript
 description: 'TypeScript strict patterns and best practices for frontend projects.
   Trigger: When implementing or refactoring TypeScript in .ts files.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -13,7 +13,9 @@ metadata:
   - openapi-docs
   consumed_by:
   - react
+  - angular
   - react-services
+  - angular-services
   - api-first-frontend
   agent_roles:
   - design-agent
@@ -153,7 +155,7 @@ enum EntityStatus {
 }
 ```
 
-## Component Props Types
+## Component Props Types (React)
 ```typescript
 // Explicit props interface for React function components
 interface EntityDetailProps {
@@ -164,6 +166,17 @@ interface EntityDetailProps {
 
 export function EntityDetail({ entityId, onClose, data = null }: EntityDetailProps) {
   // ...
+}
+```
+
+## Component Input Types (Angular)
+```typescript
+// Use @Input() with explicit type for Angular component inputs
+@Component({ ... })
+export class EntityDetailComponent {
+  @Input({ required: true }) entityId!: number;
+  @Input({ required: true }) onClose!: () => void;
+  @Input() data: EntityDetail | null = null;
 }
 ```
 

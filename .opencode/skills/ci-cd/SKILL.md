@@ -4,7 +4,7 @@ description: 'CI/CD pipeline design: GitHub Actions + GitLab CI, stages (lint �
   → build → deploy), Bun/Python/React stacks, environment strategy, secrets management,
   artifact versioning, deployment gates, rollback. Trigger: When designing or configuring
   CI/CD pipelines.'
-version: 1.1
+version: 1.2
 metadata:
   phase:
   - operations
@@ -415,7 +415,78 @@ jobs:
           path: frontend/dist/
 ```
 
-### 3. Docker — Multi-stage build + push
+### 3. Frontend — Angular Build (pnpm)
+
+```yaml
+name: Angular Frontend CI
+
+on:
+  push:
+    paths: ['frontend/**']
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm ng lint
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm ng test --code-coverage --watch=false
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm ng build --configuration=production
+      - uses: actions/upload-artifact@v4
+        with:
+          name: angular-dist-${{ github.sha }}
+          path: frontend/dist/
+```
+
+### 4. Docker — Multi-stage build + push
 
 ```dockerfile
 # Dockerfile
@@ -466,7 +537,7 @@ jobs:
           cache-to: type=gha,mode=max
 ```
 
-### 4. Security scanning — Trivy, npm audit/Snyk, SonarQube
+### 5. Security scanning — Trivy, npm audit/Snyk, SonarQube
 
 ```yaml
 name: Security Scan
@@ -508,7 +579,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 ```
 
-### 5. SBOM generation — syft + grype
+### 6. SBOM generation — syft + grype
 
 ```yaml
 name: SBOM & Vulnerability Report
@@ -540,7 +611,7 @@ jobs:
           path: sbom.spdx.json
 ```
 
-### 6. Python FastAPI pipeline
+### 7. Python FastAPI pipeline
 
 ```yaml
 name: FastAPI CI
@@ -609,7 +680,7 @@ jobs:
             ghcr.io/myorg/api:${{ github.sha }}
 ```
 
-### 7. Bun (TypeScript backend) pipeline
+### 8. Bun (TypeScript backend) pipeline
 
 ```yaml
 name: Bun Backend CI
@@ -719,7 +790,7 @@ USER bun
 CMD ["bun", "run", "dist/index.js"]
 ```
 
-### 8. GitLab CI — Pipeline completo
+### 9. GitLab CI — Pipeline completo
 
 ```yaml
 # .gitlab-ci.yml

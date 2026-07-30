@@ -1,7 +1,7 @@
 ---
 name: real-time
 description: "Real-time communication patterns with WebSockets and SSE using FastAPI. Covers pub/sub architecture, Redis backplane for scaling, reconnect logic with exponential backoff, presence tracking, channel/group authorization, message ordering, and fallback to polling. Trigger: When implementing real-time features, live updates, notifications push, or collaborative features."
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - operations
@@ -14,6 +14,7 @@ metadata:
   - playwright
   consumed_by:
   - react
+  - angular
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency
@@ -378,7 +379,117 @@ export function useChannelSubscription<T>(
 // }, [taskUpdate]);
 ```
 
-### 8. Presence tracking
+### 8. Reconexión con exponential backoff (frontend Angular)
+
+```typescript
+// src/app/features/realtime/realtime.service.ts
+import { Injectable, inject, OnDestroy } from '@angular/core';
+import { Subject, Observable, timer, of } from 'rxjs';
+import { takeUntil, switchMap, filter, catchError, retryWhen, delayWhen } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+const MAX_RECONNECT_ATTEMPTS = 10;
+const BASE_DELAY_MS = 1000;
+const MAX_DELAY_MS = 30000;
+
+function calculateDelay(attempt: number): number {
+  const exponentialDelay = BASE_DELAY_MS * Math.pow(2, attempt);
+  const jitter = Math.random() * 1000;
+  return Math.min(exponentialDelay + jitter, MAX_DELAY_MS);
+}
+
+@Injectable({ providedIn: 'root' })
+export class RealtimeService implements OnDestroy {
+  private ws: WebSocket | null = null;
+  private attempt = 0;
+  private reconnectTimer = 0;
+
+  private readonly messages$ = new Subject<RealtimeMessage>();
+  private readonly destroy$ = new Subject<void>();
+
+  /** Stream de mensajes entrantes. Los componentes se suscriben con takeUntilDestroyed. */
+  readonly onMessage$: Observable<RealtimeMessage> = this.messages$.asObservable();
+
+  connect(url: string): void {
+    this.ws = new WebSocket(url);
+
+    this.ws.onopen = () => {
+      console.log('WebSocket connected');
+      this.attempt = 0;
+    };
+
+    this.ws.onmessage = (event) => {
+      this.messages$.next(JSON.parse(event.data));
+    };
+
+    this.ws.onclose = (event) => {
+      if (event.code !== 1000) {
+        this.attempt += 1;
+        if (this.attempt < MAX_RECONNECT_ATTEMPTS) {
+          const delay = calculateDelay(this.attempt);
+          console.log(`Reconnecting in ${delay}ms (attempt ${this.attempt})`);
+          this.reconnectTimer = window.setTimeout(() => this.connect(url), delay);
+        }
+      }
+    };
+
+    this.ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  }
+
+  send(data: unknown): void {
+    this.ws?.send(JSON.stringify(data));
+  }
+
+  close(): void {
+    this.ws?.close(1000, 'Service destroyed');
+    this.ws = null;
+  }
+
+  ngOnDestroy(): void {
+    window.clearTimeout(this.reconnectTimer);
+    this.close();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+```
+
+### 9. Suscripción a canal (Angular Service + takeUntilDestroyed)
+
+```typescript
+// src/app/features/realtime/channel-subscription.service.ts
+import { Injectable, inject } from '@angular/core';
+import { Observable, filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RealtimeService } from './realtime.service';
+import { RealtimeMessage } from '@/types/realtime';
+
+@Injectable({ providedIn: 'root' })
+export class ChannelSubscriptionService {
+  private readonly realtime = inject(RealtimeService);
+
+  /** Devuelve un Observable filtrado por canal y tipo de mensaje. */
+  subscribe<T>(channel: string, messageType: string): Observable<RealtimeMessage<T>> {
+    return this.realtime.onMessage$.pipe(
+      filter(
+        (msg) => msg.type === messageType && msg.channel === channel
+      ),
+      takeUntilDestroyed()
+    ) as Observable<RealtimeMessage<T>>;
+  }
+}
+
+// Uso en un componente standalone:
+// private readonly subscriptions = inject(ChannelSubscriptionService);
+// ngOnInit(): void {
+//   this.subscriptions.subscribe<Task>('tasks', 'entity.updated')
+//     .subscribe((msg) => this.onTaskUpdated(msg));
+// }
+```
+
+### 10. Presence tracking
 
 ```python
 import redis.asyncio as redis
@@ -438,6 +549,10 @@ class PresenceService:
 - Configuración de Redis pub/sub en el backend.
 
 ### C. Hooks de conexión (frontend React)
+
+### C-bis. Servicios de conexión (frontend Angular)
+
+Servicio Angular inyectable con reconexión y `takeUntilDestroyed`, equivalente al hook React de la sección C.
 - `useRealtimeSocket` con reconexión y exponential backoff (via `useRef`/`useEffect`).
 - `useChannelSubscription` para suscribirse a canales, con cleanup automático al desmontar.
 

@@ -1,10 +1,10 @@
 # ADR-001 — Selección de Angular como framework frontend
 
-**Estado:** Superseded por [ADR-004](ADR-004-react.md) (2026-07-21)  
+**Estado:** Vigente en paralelo con [ADR-004](ADR-004-react.md) (ver [ADR-005](ADR-005-angular-coexistence.md), 2026-07-30)  
 **Fecha:** 2026-07-17  
 **Autor:** Manuel Aliaga — TIVIT Foundry
 
-> Esta decisión ya no está vigente. El framework migró de Angular a React — ver ADR-004 para el contexto y las razones del cambio. Este documento se conserva como registro histórico y no debe usarse como referencia para nuevos proyectos.
+> Esta decisión fue superseded por ADR-004 (2026-07-21) cuando el framework migró de Angular a React, y luego reinstaurada como opción vigente por ADR-005 (2026-07-30), que restauró Angular para coexistir con React — el equipo del proyecto elige uno de los dos por proyecto. Las razones originales de esta decisión (documentadas abajo) siguen siendo válidas como justificación de Angular como opción; ver ADR-004 para las razones del cambio a React como default, y ADR-005 para el contexto de la coexistencia. Este documento se conserva sin modificar su contenido histórico.
 
 ## Contexto
 

@@ -1,7 +1,7 @@
 ---
 name: keycloak
 description: 'Keycloak integration patterns: OIDC authentication, token validation, role-based access control, multi-tenant realms, user management, token refresh, session management. Trigger: When implementing Keycloak as IdP, configuring OAuth2/OIDC, or managing authentication with Keycloak.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
     - construction
@@ -33,14 +33,14 @@ Activate this skill when:
 - Configuring JWT token validation
 - Implementing role-based access control with Keycloak roles
 - Managing multi-tenant realms in Keycloak
-- Implementing token refresh in frontend (React) and backend (FastAPI)
+- Implementing token refresh in frontend (React or Angular) and backend (FastAPI)
 - Syncing users between Keycloak and application database
 
 **Do not** activate when:
 
 - Using simple JWT without Keycloak (use `authentication`)
 - Only implementing basic RBAC (use `authorization`)
-- Working with frontend-only auth patterns (use `react`)
+- Working with frontend-only auth patterns (use `react` or `angular`)
 
 ## Relation to other skills
 
@@ -49,7 +49,7 @@ Activate this skill when:
 | `authentication` | Predecesora | Base JWT/OAuth2 patterns |
 | `authorization` | Complementaria | RBAC implementation details |
 | `security` | Complementaria | General security patterns |
-| `react` | Consumidora | Frontend Keycloak integration |
+| `react` / `angular` | Consumidora | Frontend Keycloak integration (según el framework elegido por el proyecto) |
 | `backend-api` | Consumidora | Backend token validation |
 
 ## Critical Rules
@@ -68,7 +68,7 @@ Activate this skill when:
 3. **Set up RBAC** — Map Keycloak roles to application permissions
 4. **Configure token refresh** — Refresh tokens before expiry
 5. **Implement user sync** — Sync Keycloak users to application database
-6. **Add React fetch wrapper** — Typed `apiFetch` for token injection
+6. **Add React fetch wrapper (or Angular HTTP interceptor)** — Typed `apiFetch` / interceptor for token injection
 
 ## Code patterns
 
@@ -331,6 +331,116 @@ export async function keycloakFetch(input: RequestInfo, init: RequestInit = {}):
   return res;
 }
 ```
+```
+
+### Angular HTTP Interceptor
+
+```typescript
+import { Injectable, inject } from '@angular/core';
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptorFn,
+  HttpErrorResponse
+} from '@angular/common/http';
+import { Observable, throwError, BehaviorSubject, from } from 'rxjs';
+import { switchMap, catchError, filter, take } from 'rxjs/operators';
+
+@Injectable({ providedIn: 'root' })
+export class KeycloakAuthService {
+  private accessToken = signal<string | null>(null);
+  private refreshToken = signal<string | null>(null);
+  
+  private isRefreshing = false;
+  private refreshTokenSubject = new BehaviorSubject<string | null>(null);
+  
+  private http = inject(HttpClient);
+  
+  async initialize(): Promise<void> {
+    // Check for existing tokens in storage
+    const storedAccess = localStorage.getItem('access_token');
+    const storedRefresh = localStorage.getItem('refresh_token');
+    
+    if (storedAccess && storedRefresh) {
+      this.accessToken.set(storedAccess);
+      this.refreshToken.set(storedRefresh);
+    }
+  }
+  
+  getToken(): string | null {
+    return this.accessToken();
+  }
+  
+  async login(username: string, password: string): Promise<void> {
+    const response = await firstValueFrom(
+      this.http.post<TokenResponse>('/api/auth/login', { username, password })
+    );
+    
+    this.setTokens(response);
+  }
+  
+  async refresh(): Promise<string> {
+    const refresh = this.refreshToken();
+    if (!refresh) {
+      throw new Error('No refresh token available');
+    }
+    
+    const response = await firstValueFrom(
+      this.http.post<TokenResponse>('/api/auth/refresh', { refresh_token: refresh })
+    );
+    
+    this.setTokens(response);
+    return response.access_token;
+  }
+  
+  private setTokens(response: TokenResponse): void {
+    this.accessToken.set(response.access_token);
+    this.refreshToken.set(response.refresh_token);
+    localStorage.setItem('access_token', response.access_token);
+    localStorage.setItem('refresh_token', response.refresh_token);
+  }
+  
+  logout(): void {
+    this.accessToken.set(null);
+    this.refreshToken.set(null);
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  }
+}
+
+export const keycloakInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(KeycloakAuthService);
+  const token = authService.getToken();
+  
+  if (!token) {
+    return next(req);
+  }
+  
+  const authReq = req.clone({
+    setHeaders: { Authorization: `Bearer ${token}` }
+  });
+  
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status === 401 && !req.url.includes('/auth/refresh')) {
+        return from(authService.refresh()).pipe(
+          switchMap(newToken => {
+            const retryReq = req.clone({
+              setHeaders: { Authorization: `Bearer ${newToken}` }
+            });
+            return next(retryReq);
+          }),
+          catchError(() => {
+            authService.logout();
+            return throwError(() => error);
+          })
+        );
+      }
+      return throwError(() => error);
+    })
+  );
+};
 ```
 
 ### User Sync Service

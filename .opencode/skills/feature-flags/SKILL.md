@@ -1,7 +1,7 @@
 ---
 name: feature-flags
 description: "Feature flag patterns for progressive rollout, A/B testing, and kill switches. Covers providers (LaunchDarkly, Unleash, custom), toggle patterns, targeting rules, lifecycle management, cleanup, and CI/CD integration. Trigger: When implementing feature flags, progressive rollouts, or A/B testing in a frontend application."
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -10,8 +10,10 @@ metadata:
   enforcement: recommended
   depends_on:
   - react
+  - angular
   consumed_by:
   - react
+  - angular
   - ci-cd
   agent_roles:
   - delivery-agent
@@ -26,7 +28,7 @@ metadata:
 Esta skill define cómo implementar feature flags (toggles) para control de release progresivo, A/B testing y kill switches de forma segura, trazable y con lifecycle de gestión.  
 Su función es asegurar que las features puedan activarse/desactivarse sin deploy, que el rollout sea gradual y controlado, y que las flags muertas se limpien periódicamente.
 
-Esta skill complementa `react` (componentes, hooks, contexto) y `ci-cd` (pipelines). Mientras aquellos definen la UI y el deploy, esta skill define qué features son visibles para quiénes y cuándo.
+Esta skill complementa `react` o `angular` (componentes, hooks/directivas, contexto/servicios, según el framework elegido por el proyecto) y `ci-cd` (pipelines). Mientras aquellos definen la UI y el deploy, esta skill define qué features son visibles para quiénes y cuándo.
 
 ## Objetivo
 
@@ -40,7 +42,7 @@ Usa esta skill para responder estas preguntas:
 
 ## Relación con otras skills
 
-- `react` define los componentes y hooks que esta skill condiciona con flags.
+- `react` o `angular` define los componentes/hooks/directivas que esta skill condiciona con flags (según el framework elegido por el proyecto).
 - `ci-cd` puede usar flags para gates de deploy y canary releases.
 - `authentication` proporciona la identidad del usuario para targeting rules.
 - `authorization` puede determina qué flags ve cada rol.
@@ -50,7 +52,7 @@ Usa esta skill para responder estas preguntas:
 
 1. Evaluar y seleccionar el proveedor de feature flags (LaunchDarkly, Unleash, custom).
 2. Definir los tipos de flags y cuándo usar cada uno (boolean, multivariate, kill switch).
-3. Crear el componente `<FeatureFlag>` y el hook `useFeatureFlag` para React.
+3. Crear el componente `<FeatureFlag>` y el hook `useFeatureFlag` para React, o la directiva `*featureFlag` y el servicio `FeatureFlagsService` para Angular, según el framework elegido por el proyecto.
 4. Definir las targeting rules (por usuario, tenant, porcentaje, entorno).
 5. Establecer el lifecycle de flags (draft → active → deprecated → removed).
 6. Definir la convención de naming de flags.
@@ -292,7 +294,200 @@ const flags = evaluateFlags({
 </FeatureFlagsProvider>;
 ```
 
-### 6. Convención de naming de flags
+### 6. Directiva wrapper `*featureFlag` (Angular)
+
+```typescript
+// src/features/flags/feature-flag.directive.ts
+import { Directive, Input, OnInit, TemplateRef, ViewContainerRef } from '@angular/core';
+import { FeatureFlagsService } from './feature-flags.service';
+
+@Directive({
+  selector: '[featureFlag]',
+  standalone: true,
+})
+export class FeatureFlagDirective implements OnInit {
+  @Input('featureFlag') flag!: string;
+  @Input('featureFlagVariant') variant?: string;
+  @Input('featureFlagFallback') fallbackRef?: TemplateRef<unknown>;
+
+  private hasView = false;
+
+  constructor(
+    private templateRef: TemplateRef<unknown>,
+    private viewContainer: ViewContainerRef,
+    private flagsService: FeatureFlagsService,
+  ) {}
+
+  ngOnInit(): void {
+    this.evaluate();
+  }
+
+  private evaluate(): void {
+    const value = this.flagsService.getFlag(this.flag);
+
+    if (typeof value === 'boolean' && value) {
+      this.renderTemplate();
+      return;
+    }
+
+    if (typeof value === 'string' && this.variant && value === this.variant) {
+      this.renderTemplate();
+      return;
+    }
+
+    this.clearView();
+
+    if (this.fallbackRef) {
+      this.viewContainer.createEmbeddedView(this.fallbackRef);
+      this.hasView = true;
+    }
+  }
+
+  private renderTemplate(): void {
+    if (!this.hasView) {
+      this.viewContainer.createEmbeddedView(this.templateRef);
+      this.hasView = true;
+    }
+  }
+
+  private clearView(): void {
+    if (this.hasView) {
+      this.viewContainer.clear();
+      this.hasView = false;
+    }
+  }
+}
+```
+
+Uso en template:
+
+```html
+<!-- Renderiza contenido solo si la flag está activa -->
+<div *featureFlag="'enable-new-dashboard'">
+  <app-new-dashboard />
+</div>
+
+<!-- Con variante para A/B testing -->
+<div *featureFlag="'checkout-layout-variant'; variant: 'variant-a'">
+  <app-checkout-variant-a />
+</div>
+
+<!-- Con fallback explícito -->
+<ng-template #fallback>
+  <app-old-dashboard />
+</ng-template>
+<div *featureFlag="'enable-new-dashboard'; fallbackRef: fallback">
+  <app-new-dashboard />
+</div>
+```
+
+### 7. Servicio `FeatureFlagsService` (Angular)
+
+```typescript
+// src/features/flags/feature-flags.service.ts
+import { Injectable, InjectionToken, inject } from '@angular/core';
+import { DEFAULT_FLAGS, FeatureFlags } from './config';
+
+export const FEATURE_FLAGS_CONFIG = new InjectionToken<Partial<FeatureFlags>>('FEATURE_FLAGS_CONFIG');
+
+@Injectable({ providedIn: 'root' })
+export class FeatureFlagsService {
+  private config = inject(FEATURE_FLAGS_CONFIG, { optional: true }) ?? {};
+  private flags: FeatureFlags = { ...DEFAULT_FLAGS, ...this.config };
+
+  getFlag<K extends keyof FeatureFlags>(flag: K): FeatureFlags[K] {
+    return this.flags[flag];
+  }
+
+  isFeatureEnabled(flag: keyof FeatureFlags): boolean {
+    const value = this.flags[flag];
+    return typeof value === 'boolean' ? value : value !== 'control';
+  }
+
+  setFlags(flags: Partial<FeatureFlags>): void {
+    this.flags = { ...this.flags, ...flags };
+  }
+}
+```
+
+### 8. InjectionToken + Provider con soporte para targeting (Angular)
+
+```typescript
+// src/features/flags/feature-flags.provider.ts
+import { Provider } from '@angular/core';
+import { DEFAULT_FLAGS, FeatureFlags } from './config';
+import { FEATURE_FLAGS_CONFIG } from './feature-flags.service';
+
+interface TargetingRule {
+  flag: keyof FeatureFlags;
+  userIds?: string[];
+  tenantIds?: string[];
+  roles?: string[];
+  percentage?: number;
+}
+
+interface FeatureFlagsProviderConfig {
+  userId?: string;
+  tenantId?: string;
+  roles?: string[];
+  rules?: TargetingRule[];
+  remoteFlags?: Partial<FeatureFlags>;
+}
+
+function hashPercentage(userId: string, flag: string): number {
+  const hash = [...userId + flag].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return hash % 100;
+}
+
+export function provideFeatureFlags(config: FeatureFlagsProviderConfig = {}): Provider {
+  const { userId, tenantId, roles, rules = [], remoteFlags = {} } = config;
+  const evaluated = { ...DEFAULT_FLAGS, ...remoteFlags };
+
+  for (const rule of rules) {
+    const matchesUser = !rule.userIds || (userId ? rule.userIds.includes(userId) : false);
+    const matchesTenant = !rule.tenantIds || (tenantId ? rule.tenantIds.includes(tenantId) : false);
+    const matchesRole = !rule.roles || (roles ? roles.some(r => rule.roles!.includes(r)) : false);
+    const matchesPercentage = !rule.percentage ||
+      (userId ? hashPercentage(userId, rule.flag as string) < rule.percentage : false);
+
+    if (matchesUser && matchesTenant && matchesRole && matchesPercentage) {
+      (evaluated as any)[rule.flag] = true;
+    }
+  }
+
+  return {
+    provide: FEATURE_FLAGS_CONFIG,
+    useValue: evaluated,
+  };
+}
+```
+
+Uso en `app.config.ts`:
+
+```typescript
+// src/app/app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideFeatureFlags } from '../features/flags/feature-flags.provider';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideFeatureFlags({
+      userId: 'user-123',
+      tenantId: 'tenant-abc',
+      roles: ['admin'],
+      rules: [
+        { flag: 'enable-new-dashboard', percentage: 10 },
+        { flag: 'beta-ai-assistant', userIds: ['user-123'] },
+      ],
+      remoteFlags: {
+        'disable-payments': false,
+      },
+    }),
+  ],
+};
+```
+
+### 9. Convención de naming de flags
 
 | Prefijo | Tipo | Ejemplo |
 |---------|------|---------|
@@ -308,7 +503,7 @@ Reglas:
 - El nombre debe ser autoexplicativo.
 - Flags de kill switch empiezan con `disable-`.
 
-### 7. Lifecycle de una feature flag
+### 10. Lifecycle de una feature flag
 
 ```
 ┌────────┐    ┌────────┐    ┌────────────┐    ┌──────────┐    ┌─────────┐
@@ -331,7 +526,7 @@ Reglas por estado:
 - DEPRECATED → REMOVED: 1 sprint (2 semanas).
 - REMOVED → CLEANUP: 1 sprint.
 
-### 8. Integración con CI/CD
+### 11. Integración con CI/CD
 
 ```yaml
 # .github/workflows/feature-flags-report.yml
@@ -399,7 +594,7 @@ jobs:
 - Gate de flags deprecated antes de merge.
 
 ### D. Consumidores de esta skill
-- `react` consume el componente `<FeatureFlag>` y los hooks `useFeatureFlag`/`useIsFeatureEnabled`;
+- `react` consume el componente `<FeatureFlag>` y los hooks `useFeatureFlag`/`useIsFeatureEnabled`; `angular` consume la directiva `*featureFlag` y el servicio `FeatureFlagsService`;
 - `ci-cd` usa el reporte de flags activas;
 - `playwright` testea ambas variantes (flag on/off) en E2E tests.
 

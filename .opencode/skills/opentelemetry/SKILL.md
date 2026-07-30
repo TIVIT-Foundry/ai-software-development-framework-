@@ -1,7 +1,7 @@
 ---
 name: opentelemetry
 description: 'Distributed tracing and instrumentation with OpenTelemetry: SDK setup, span attributes, context propagation, and collector configuration. Trigger: When adding tracing, context propagation, or telemetry instrumentation to services.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
     - construction
@@ -22,7 +22,7 @@ metadata:
 
 ## Purpose
 
-Define how OpenTelemetry is used to instrument FastAPI, Bun, and React services for distributed tracing, metrics, and logs.
+Define how OpenTelemetry is used to instrument FastAPI, Bun, and React/Angular services for distributed tracing, metrics, and logs.
 
 ## When to use this skill
 

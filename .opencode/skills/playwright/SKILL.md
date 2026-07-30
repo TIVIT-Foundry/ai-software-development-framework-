@@ -3,7 +3,7 @@ name: playwright
 description: 'E2E testing with Playwright: Page Object Model, selector strategy, file
   structure, tag categories. Trigger: When creating or updating end-to-end tests,
   or configuring Playwright.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -226,6 +226,100 @@ export const test = base.extend({
     });
 
     // Inject JWT token into localStorage (the Zustand auth store reads it)
+    const page = await context.newPage();
+    await page.goto('/');
+    await page.evaluate((token) => {
+      localStorage.setItem('access_token', token);
+      localStorage.setItem('refresh_token', token);
+    }, tokens.accessToken);
+
+    await use(page);
+    await context.close();
+  },
+});
+```
+
+## Auth Fixture (JWT/OAuth2 — Angular HttpClient)
+
+Genera tokens de prueba directamente via API usando Angular `HttpClient` patterns (sin UI login) para máxima velocidad y fiabilidad en CI.
+
+```typescript
+// auth.fixture.ts — store auth state once, reuse across tests
+import { test as base, APIRequestContext } from '@playwright/test';
+
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+async function authenticateViaAPI(request: APIRequestContext): Promise<AuthTokens> {
+  // Authenticate via Bun backend OAuth2/JWT endpoint
+  const response = await request.post(
+    `${process.env.API_URL || 'http://localhost:8000'}/api/auth/login`,
+    {
+      data: {
+        email: process.env.TEST_USER_EMAIL!,
+        password: process.env.TEST_USER_PASSWORD!,
+      },
+    }
+  );
+
+  if (!response.ok()) {
+    throw new Error(`Auth failed: ${response.status()} ${await response.text()}`);
+  }
+
+  return response.json() as Promise<AuthTokens>;
+}
+
+export const test = base.extend<{
+  authedApi: APIRequestContext;
+  authTokens: AuthTokens;
+}>({
+  authTokens: async ({ playwright }, use) => {
+    const apiContext = await playwright.request.newContext({
+      baseURL: process.env.API_URL || 'http://localhost:8000',
+    });
+    const tokens = await authenticateViaAPI(apiContext);
+    await apiContext.dispose();
+    await use(tokens);
+  },
+  authedApi: async ({ playwright, authTokens }, use) => {
+    const apiContext = await playwright.request.newContext({
+      baseURL: process.env.API_URL || 'http://localhost:8000',
+      extraHTTPHeaders: {
+        Authorization: `Bearer ${authTokens.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    await use(apiContext);
+    await apiContext.dispose();
+  },
+});
+
+export { expect } from '@playwright/test';
+```
+
+**Uso en tests E2E** — inyecta cookies/token en el contexto del navegador para que Angular HttpClient lo consuma automáticamente:
+
+```typescript
+// tests/e2e/fixtures/angular-auth.fixture.ts
+import { test as base } from '@playwright/test';
+import { authenticateViaAPI } from './auth.fixture';
+
+export const test = base.extend({
+  page: async ({ playwright, browser }, use) => {
+    const apiContext = await playwright.request.newContext({
+      baseURL: process.env.API_URL || 'http://localhost:8000',
+    });
+    const tokens = await authenticateViaAPI(apiContext);
+    await apiContext.dispose();
+
+    // Create browser context with auth cookies/storage
+    const context = await browser.newContext({
+      storageState: undefined,
+    });
+
+    // Inject JWT token into localStorage (Angular AuthService reads it)
     const page = await context.newPage();
     await page.goto('/');
     await page.evaluate((token) => {

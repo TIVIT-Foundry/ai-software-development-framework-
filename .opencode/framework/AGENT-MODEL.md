@@ -122,7 +122,7 @@ Define los agentes del framework, sus roles, permisos, límites de autonomía y 
 - NO modifica governance ni reglas del framework
 - NO aprueba excepciones de seguridad
 - NO despliega a producción sin confirmación
-- SIEMPRE sigue el stack declarado (Python/FastAPI, React, Bun, PostgreSQL)
+- SIEMPRE sigue el stack declarado (Python/FastAPI, React o Angular, Bun, PostgreSQL)
 
 ---
 
@@ -148,7 +148,7 @@ Define los agentes del framework, sus roles, permisos, límites de autonomía y 
 
 | Condición | Skills delegadas |
 |-----------|-----------------|
-| Implementación de código | api-first-backend, api-first-frontend, react, react-services |
+| Implementación de código | api-first-backend, api-first-frontend, react/angular, react-services/angular-services |
 | Infraestructura | framework-platform, infrastructure-as-code, docker-local |
 | CI/CD y operación | ci-cd, observabilidad, disaster-recovery |
 | Database | database-modeling, database-migrations, database-seeding, data-access |

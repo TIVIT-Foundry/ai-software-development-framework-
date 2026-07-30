@@ -1,7 +1,7 @@
 ---
 name: github-actions
 description: 'CI/CD pipelines with GitHub Actions: workflows, reusable actions, environments, secrets, gates, and matrix builds. Trigger: When implementing or maintaining CI/CD on GitHub Actions.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
     - operations
@@ -26,7 +26,7 @@ Provide concrete GitHub Actions patterns for the framework's CI/CD: lint, test, 
 
 Activate when:
 - The project hosts code on GitHub
-- A new pipeline is needed for Python/FastAPI, Bun/TypeScript, or React
+- A new pipeline is needed for Python/FastAPI, Bun/TypeScript, or React/Angular
 - Reusable workflows must be standardized
 
 ## Relation to other skills

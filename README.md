@@ -27,7 +27,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 | **AI/ML Core** | Python 3.12 / FastAPI |
 | **Backend General** | Bun (TypeScript) |
 | **Orchestration LLM** | LangChain / LangGraph |
-| **Frontend** | React 18+ (Vite), TypeScript |
+| **Frontend** | React 18+ (Vite) o Angular 17+, TypeScript (elección por proyecto) |
 | **Database** | PostgreSQL 16 + pgvector |
 | **Cache/Colas** | Redis + Kafka |
 | **Auth** | OAuth2/JWT / Keycloak |
@@ -43,12 +43,12 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 ## Cómo funciona (Flujo de usuario)
 
 1. **Clonas** el framework en tu proyecto (solo la carpeta `.opencode/` + `opencode.json` + `AGENTS.md`)
-2. **Abres OpenCode** en tu proyecto → detecta 102 skills + 4 agentes automáticamente
+2. **Abres OpenCode** en tu proyecto → detecta 108 skills + 4 agentes automáticamente
 3. **Pides lo que necesitas**: "Crea un módulo de usuarios con login, CRUD y roles"
 4. **El orchestrator planifica**: descompone tu solicitud en fases (gobernanza → diseño → backend → frontend → testing)
 5. **Los agentes ejecutan**: design diseña, delivery implementa, control valida
 6. **Tú confirmas** en puntos clave (15 confirmaciones en modo Hybrid)
-7. **Obtienes código listo para producción**: FastAPI + React + PostgreSQL, con tests, CI/CD, y seguridad
+7. **Obtienes código listo para producción**: FastAPI + React/Angular + PostgreSQL, con tests, CI/CD, y seguridad
 
 📖 **[Guía completa de flujo de usuario →](QUICKSTART.md)**
 
@@ -58,7 +58,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 
 | Carpeta | Descripción |
 |---------|-------------|
-| `.opencode/skills/` | 102 skills organizadas por dominio |
+| `.opencode/skills/` | 108 skills organizadas por dominio |
 | `.opencode/agents/` | 4 agentes especializados |
 | `.opencode/validators/` | Scripts PowerShell de validación |
 | `.opencode/scaffold/` | Generador de código desde specs |
@@ -93,7 +93,7 @@ Vertical: Productividad / Gestión interna de tareas.
 
 Tecnologías:
 - Backend: Python 3.12 con FastAPI
-- Frontend: React con TypeScript
+- Frontend: React o Angular con TypeScript
 - Base de datos: PostgreSQL
 
 El primer módulo es Gestión de Tareas:
@@ -149,12 +149,12 @@ El primer módulo es Gestión de Tareas:
 
 ## Skills Disponibles
 
-102 skills organizadas por dominio (las categorías no son mutuamente excluyentes):
+108 skills organizadas por dominio (las categorías no son mutuamente excluyentes):
 
 - **Framework** (12): governance, discovery, conception, architecture, core-design, pack-design, data-memory-compliance, security, platform, scaffold-implementation, qa-validation, operations-evolution
 - **Gobernanza** (3): governance-constitution, sdd-onboard, documentation
 - **Backend** (12): backend-api, bun-backend, data-access, api-integration, api-gateway, app-bootstrap, shared-libs, error-handling, file-upload, real-time, api-resilience, notifications
-- **Frontend** (11): react, react-services, microfrontend, design-system, typescript, export-excel, accesibilidad, i18n, feature-flags, mobile-pwa, react-upgrade
+- **Frontend** (14): react, react-services, react-upgrade, angular, angular-services, angular-upgrade, microfrontend, design-system, typescript, export-excel, accesibilidad, i18n, feature-flags, mobile-pwa
 - **Database** (9): database-modeling, database-audit, database-security, database-sp, database-migrations, database-seeding, data-migration, pgvector, postgresql-backup
 - **Testing/Calidad** (9): unit-testing, integration-testing, load-testing, security-testing, playwright, code-review, review-adversarial, uat-acceptance, a11y-testing
 - **API/Spec** (9): openapi-docs, api-first-spec, api-first-backend, api-first-frontend, api-first-testing, api-catalog, api-versioning, api-resilience, api-contracts

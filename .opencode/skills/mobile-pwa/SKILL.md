@@ -1,7 +1,7 @@
 ---
 name: mobile-pwa
 description: 'Progressive Web App and mobile patterns with React: service workers via vite-plugin-pwa, offline support, push notifications, responsive design, and app-shell. Trigger: When building a PWA, mobile-optimizing a React app, or adding offline capabilities.'
-version: 2.0
+version: 2.1
 metadata:
   phase:
     - construction
@@ -10,6 +10,7 @@ metadata:
   enforcement: optional
   depends_on:
     - react
+    - angular
     - notifications
   consumed_by:
     - agent-frontend
@@ -35,6 +36,7 @@ Activate when:
 | Skill | Relation | Description |
 |-------|----------|-------------|
 | `react` | depends_on | Base React patterns |
+| `angular` | depends_on | Base Angular patterns (alternate frontend) |
 | `notifications` | depends_on | Push notifications |
 | `design-system` | cross-cutting | Responsive components |
 
@@ -116,11 +118,49 @@ export function usePushNotifications() {
 }
 ```
 
+## Angular variant (`@angular/pwa`)
+
+When the project selected Angular as its frontend framework (see `angular`), use the Angular Service Worker instead of `vite-plugin-pwa`.
+
+### Outputs produced (Angular)
+
+| Artifact | Path | Description |
+|----------|------|-------------|
+| Manifest | `src/manifest.webmanifest` | App metadata |
+| Service worker config | `ngsw-config.json` | Cache strategies |
+| App shell | `src/app/app-shell/` | Skeleton UI |
+| Push handler | `src/app/core/push.service.ts` | Notification handling |
+
+### Example: ngsw-config.json
+
+```json
+{
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": ["/favicon.ico", "/index.html", "/manifest.webmanifest"]
+      }
+    }
+  ]
+}
+```
+
+### Critical rules (Angular)
+
+1. Use `@angular/pwa` schematic to bootstrap PWA features.
+2. Configure service worker caching strategies per asset type in `ngsw-config.json`.
+3. Implement app shell for instant first paint.
+4. Use responsive design and touch-friendly controls.
+5. Request notification permissions only after user interaction.
+6. Test on real devices and slow networks.
+
 ## Checklist
 
-- [ ] `vite-plugin-pwa` added and configured
+- [ ] `vite-plugin-pwa` (React) or `@angular/pwa` (Angular) added and configured
 - [ ] Web manifest configured (`manifest.webmanifest`)
-- [ ] Service worker caching strategy defined per asset type (`workbox.runtimeCaching`)
+- [ ] Service worker caching strategy defined per asset type (`workbox.runtimeCaching` or `ngsw-config.json`)
 - [ ] App shell implemented
 - [ ] Push notifications gated by user interaction/permission
 - [ ] Tested on mobile/slow network

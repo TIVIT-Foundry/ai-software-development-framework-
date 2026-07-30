@@ -1,7 +1,7 @@
 ---
 name: file-upload
 description: "File upload and storage patterns for applications. Covers blob storage (S3, Azure Blob, GCS), upload patterns (multipart, chunked, streaming, presigned URLs), MIME validation, size limits, virus scanning, thumbnails, CDN integration, and lifecycle policies. Trigger: When implementing file upload, storage, or download functionality."
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -13,6 +13,7 @@ metadata:
   - security
   consumed_by:
   - react
+  - angular
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency
@@ -398,7 +399,7 @@ CREATE TABLE {schema}.file_metadata (
 - Servicio `IThumbnailService` con generación automática al subir imágenes.
 
 ### F. Consumidores de esta skill
-- `react` consume los endpoints con un componente `<FileUpload />`;
+- `react` consume los endpoints con un componente `<FileUpload />`; `angular` los consume con un componente `<app-file-upload>`;
 - `security` valida que los archivos cumplen las reglas de seguridad;
 - `database-sp` almacena la metadata de archivos;
 - `playwright` testea el flujo completo de upload/download.

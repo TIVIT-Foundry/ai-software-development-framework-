@@ -4,7 +4,7 @@ description: 'Microfrontend setup with React Module Federation (@originjs/vite-p
   for Vite, or @module-federation/nextjs-mf for Next.js): Host/Shell configuration,
   remote exposes, shared dependencies. Trigger: When setting up microfrontends,
   creating remote apps, or configuring shell exports.'
-version: 3.0
+version: 3.1
 metadata:
   phase:
   - construction
@@ -13,6 +13,7 @@ metadata:
   enforcement: recommended
   depends_on:
   - react
+  - angular
   - typescript
   consumed_by:
   - agent-frontend
@@ -82,6 +83,48 @@ shared: {
   'react-dom': { eager: false, singleton: true, requiredVersion: '^18.3.0' },
   'react-router-dom': { eager: false, singleton: true },
 }
+```
+
+## Shared Dependencies (Remote eager:false) — Angular
+```json
+{
+  "@angular/core": { "eager": false, "singleton": true },
+  "@angular/router": { "eager": false, "singleton": true },
+  "@angular/common": { "eager": false, "singleton": true }
+}
+```
+
+## Bootstrap Remote (main.ts, Angular)
+```typescript
+// Remote main.ts should be minimal — no providers
+// Auth, interceptors, theme come from Host
+import { loadManifest } from '@angular-architects/module-federation';
+
+loadManifest('/assets/mf.manifest.json')
+  .catch(err => console.error(err))
+  .then(_ => import('./bootstrap'))
+  .catch(err => console.error(err));
+```
+
+## Bootstrap (bootstrap.ts, Angular)
+```typescript
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { AppModule } from './app/app.module';
+
+platformBrowserDynamic()
+  .bootstrapModule(AppModule)
+  .catch(err => console.error(err));
+```
+
+## Module Declaration File (remote-types.d.ts, Angular)
+```typescript
+declare module 'host/services' {
+  export const DataService: any;
+  export const NotificationService: any;
+  export const AuthService: any;
+}
+declare module 'host/guards' { ... }
+declare module 'host/interceptors' { ... }
 ```
 
 ## Checklist
@@ -199,6 +242,180 @@ declare module 'host/hooks' {
 Para proyectos que ya usan Next.js (SSR/SSG), Module Federation se configura vía `next.config.js` con `@module-federation/nextjs-mf`. La API de `remotes`/`exposes`/`shared` es equivalente conceptualmente a la de Vite, pero la integración con SSR añade complejidad (hidratación cruzada entre Host y Remote). Usar solo si el proyecto ya requiere Next.js por SEO/SSR — no adoptar Next.js únicamente para tener MFE.
 
 ---
+
+## Angular Module Federation (@angular-architects/module-federation)
+
+### 1. Angular Module Federation — setup con @angular-architects/module-federation
+
+El ecosistema Angular usa Webpack internamente (via Angular CLI), por lo que Module Federation se integra mediante `@angular-architects/module-federation`, que abstrae la configuración de Webpack y proporciona schematics para generar la configuración automáticamente.
+
+**Instalación:**
+
+```bash
+ng add @angular-architects/module-federation --project shell --port 4200
+ng add @angular-architects/module-federation --project remote-cases --port 4201
+```
+
+**Configuración del Host (webpack.config.js):**
+
+```javascript
+const { share, withModuleFederationPlugin } = require('@angular-architects/module-federation/webpack');
+
+module.exports = withModuleFederationPlugin({
+  remotes: {
+    cases: 'http://localhost:4201/remoteEntry.js',
+    tasks: 'http://localhost:4202/remoteEntry.js',
+  },
+
+  shared: share({
+    '@angular/core': { singleton: true, eager: true },
+    '@angular/router': { singleton: true, eager: true },
+    '@angular/common': { singleton: true, eager: true },
+    '@angular/common/http': { singleton: true, eager: true },
+  }),
+});
+```
+
+**Configuración del Remote (webpack.config.js):**
+
+```javascript
+const { share, withModuleFederationPlugin } = require('@angular-architects/module-federation/webpack');
+
+module.exports = withModuleFederationPlugin({
+  name: 'cases',
+  exposes: {
+    './routes': './src/app/app.routes.ts',
+  },
+
+  shared: share({
+    '@angular/core': { singleton: true, eager: false },
+    '@angular/router': { singleton: true, eager: false },
+    '@angular/common': { singleton: true, eager: false },
+  }),
+});
+```
+
+**Manifest de remotes (mf.manifest.json):**
+
+```json
+{
+  "cases": "http://localhost:4201/remoteEntry.js",
+  "tasks": "http://localhost:4202/remoteEntry.js"
+}
+```
+
+**Consideraciones específicas de Angular CLI + Module Federation:**
+
+| Aspecto | Detalle |
+|---------|---------|
+| Modo de build | Angular CLI maneja Webpack internamente; la configuración se extiende via `webpack.config.js` |
+| Dev server | Los remotes se ejecutan en puertos separados (`ng serve --port 4201`); el Host los consume via manifest |
+| HMR | HMR completo en el Host; los remotes tienen HMR limitado (rebuild en cada cambio) |
+| SSR | Soportado con configuración adicional via `@angular-architects/module-federation` |
+| Assets | Los assets estáticos del Remote se sirven desde su propio `ng serve` |
+| Routing | Los remotes exponen rutas Angular que se integran en el router del Host |
+
+**Patrón bootstrap para Angular:**
+
+```typescript
+// remote-cases/src/main.ts
+import { loadManifest } from '@angular-architects/module-federation';
+
+loadManifest('/assets/mf.manifest.json')
+  .catch(err => console.error('Error loading manifest', err))
+  .then(_ => import('./bootstrap'))
+  .catch(err => console.error('Error loading bootstrap', err));
+
+// remote-cases/src/bootstrap.ts
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { AppModule } from './app/app.module';
+
+platformBrowserDynamic()
+  .bootstrapModule(AppModule)
+  .catch(err => console.error(err));
+```
+
+> Angular requiere la doble importación (main → bootstrap) para que Module Federation pueda resolver las dependencias compartidas antes de ejecutar el bootstrap del módulo.
+
+**Configuración de rutas del Remote:**
+
+```typescript
+// remote-cases/src/app/app.routes.ts
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  {
+    path: '',
+    loadComponent: () =>
+      import('./cases/cases.component').then(m => m.CasesComponent),
+  },
+  {
+    path: ':id',
+    loadComponent: () =>
+      import('./cases-detail/cases-detail.component').then(m => m.CasesDetailComponent),
+  },
+];
+```
+
+**Carga de rutas remotas en el Host:**
+
+```typescript
+// shell/src/app/app.routes.ts
+import { Routes } from '@angular/router';
+import { loadRemoteModule } from '@angular-architects/module-federation';
+import { ShellComponent } from './shell/shell.component';
+
+export const routes: Routes = [
+  {
+    path: '',
+    component: ShellComponent,
+    children: [
+      {
+        path: 'cases',
+        loadChildren: () =>
+          loadRemoteModule({
+            type: 'module',
+            remoteEntry: 'http://localhost:4201/remoteEntry.js',
+            exposedModule: './routes',
+          }).then(m => m.routes),
+      },
+      {
+        path: 'tasks',
+        loadChildren: () =>
+          loadRemoteModule({
+            type: 'manifest',
+            remoteName: 'tasks',
+            exposedModule: './routes',
+          }).then(m => m.routes),
+      },
+    ],
+  },
+];
+```
+
+**TypeScript configuration para Module Federation:**
+
+```json
+// tsconfig.json (Host)
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "host/*": ["./types/host/*"]
+    }
+  }
+}
+
+// tsconfig.json (Remote)
+{
+  "compilerOptions": {
+    "baseUrl": "src",
+    "paths": {
+      "host/*": ["./types/host/*"]
+    }
+  }
+}
+```
 
 ### 2. Import Maps — carga de módulos nativa en el navegador
 

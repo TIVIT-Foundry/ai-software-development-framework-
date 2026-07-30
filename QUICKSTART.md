@@ -40,7 +40,7 @@ mi-proyecto/
 ├── src/                   ← Tu código
 │   ├── backend/           ← Python FastAPI (AI/ML core)
 │   ├── api/               ← Bun TypeScript (backend general)
-│   └── web/               ← React (frontend)
+│   └── web/               ← React o Angular (frontend, según el proyecto)
 └── database/
     └── migrations/        ← Migraciones PostgreSQL
 ```
@@ -68,7 +68,7 @@ OpenCode carga `AGENTS.md` y detecta las 83 skills + 4 agentes. Ya estás listo.
 > 2. Fase C (Scaffold): estructura del proyecto
 > 3. Fase D (Especificación): spec de la API
 > 4. Fase E (Backend): base de datos, endpoints, auth
-> 5. Fase F (Frontend): componentes React, hooks de datos
+> 5. Fase F (Frontend): componentes React (hooks) o Angular (services), según el proyecto
 > 6. Fase G (Calidad): tests, revisión, adversarial review
 > 
 > Empecemos con la Fase A. ¿Confirmas?
@@ -109,7 +109,7 @@ Fase C-H (confirmación por bundle — más rápido):
 | **Scaffold** | Estructura del proyecto | `src/`, `database/`, `.env.example` |
 | **Spec** | Especificación API | `specs/users-api.md` con ERD, endpoints, errores |
 | **Backend** | Código del servidor | `handlers/`, `dtos/`, `routes/`, funciones PL/pgSQL |
-| **Frontend** | Componentes React | `UsersList.tsx`, `LoginPage.tsx` |
+| **Frontend** | Componentes React o Angular | `UsersList.tsx`/`UsersListComponent.ts`, `LoginPage.tsx`/`LoginPageComponent.ts` |
 | **Calidad** | Tests + revisión | Unit tests, integration tests, adversarial review |
 | **Operación** | CI/CD + deploy | `github-actions.yml`, `docker-compose.yml` |
 
@@ -243,6 +243,6 @@ Al final del día:
 | El agente inventa patrones | El agente sigue patrones validados del framework |
 | Sin estándares de código | Constitution con 9 artículos + anti-patterns bloqueados |
 | Review manual | Adversarial review con 3+ perspectivas automáticas |
-| Stack inconsistente | Stack forzado: Python/React/Bun/PostgreSQL |
+| Stack inconsistente | Stack forzado: Python/React-o-Angular/Bun/PostgreSQL |
 | Sin trazabilidad | Evidencia en cadena para compliance |
 | Setup manual cada vez | `.workflow/state.json` — resume automático |

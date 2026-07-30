@@ -4,12 +4,12 @@ Scaffolding Generator for TIVIT Foundry Framework.
 
 Parses an api-first-spec markdown document and generates:
 - Backend: Python FastAPI + SQLAlchemy 2.0 OR Bun (TypeScript) + Elysia + postgres.js
-- Frontend: React + Vite (function components, hooks)
+- Frontend: React + Vite (function components, hooks) OR Angular (standalone components, signals)
 - Database: PostgreSQL DDL + functions
 - Tests: Playwright E2E
 
 Usage:
-    python generate.py <spec-file> [--output <output-dir>] [--backend python|bun] [--namespace <ns>] [--schema <schema>]
+    python generate.py <spec-file> [--output <output-dir>] [--backend python|bun] [--frontend react|angular] [--namespace <ns>] [--schema <schema>]
 """
 
 import re
@@ -538,6 +538,63 @@ def jsx_form_fields(fields):
     return "\n".join(lines)
 
 
+# ─── Angular helpers ──────────────────────────────────────────────────────────
+
+def ng_table_headers(fields):
+    lines = []
+    for f in fields:
+        cn = field_camel(f)
+        label = f["name"].replace("_", " ").title()
+        lines.append(f'          <th (click)="onSort(\'{cn}\')">{label}</th>')
+    return "\n".join(lines)
+
+
+def ng_table_cells(fields):
+    lines = []
+    for f in fields:
+        cn = field_camel(f)
+        lines.append(f'            <td>{{{{ item.{cn} }}}}</td>')
+    return "\n".join(lines)
+
+
+def ng_form_controls(fields):
+    lines = []
+    for f in fields:
+        sn = field_snake(f)
+        cn = field_camel(f)
+        validators = []
+        nullable = f["type"].strip("`").endswith("?")
+        if not nullable:
+            validators.append("Validators.required")
+        max_match = re.search(r"(\d+)\s*(?:chars|characters|max)", f.get("desc", ""), re.IGNORECASE)
+        if max_match:
+            validators.append(f"Validators.maxLength({max_match.group(1)})")
+        validators_str = ", ".join(validators) if validators else "[]"
+        lines.append(f"      {sn}: [values?.{cn} ?? null, {validators_str}],")
+    return "\n".join(lines)
+
+
+def ng_form_fields(fields):
+    lines = []
+    for f in fields:
+        sn = field_snake(f)
+        label = re.sub(r"([A-Z])", r" \1", f["name"]).strip().title()
+        base = normalize_spec_type(f["type"])
+        if base in ("int", "integer"):
+            input_type = "number"
+        elif base in ("datetime", "date"):
+            input_type = "datetime-local"
+        elif base in ("bool", "boolean"):
+            input_type = "checkbox"
+        else:
+            input_type = "text"
+        lines.append(
+            f'  <div class="field">\n    <label for="{sn}">{label}</label>\n    '
+            f'<input id="{sn}" formControlName="{sn}" type="{input_type}" />\n  </div>'
+        )
+    return "\n".join(lines)
+
+
 # ─── Bun helpers ─────────────────────────────────────────────────────────────
 
 def bun_insert_cols_csv(fields):
@@ -787,6 +844,12 @@ def build_context(spec, entity):
     table_cells = jsx_table_cells(business_fields)
     form_fields = jsx_form_fields(business_fields)
 
+    # ── Angular extra ──
+    ng_table_headers_val = ng_table_headers(business_fields)
+    ng_table_cells_val = ng_table_cells(business_fields)
+    ng_form_controls_val = ng_form_controls(business_fields)
+    ng_form_fields_val = ng_form_fields(business_fields)
+
     # ── Bun extra ──
     bun_create_lines = [bun_zod_field(f) for f in business_fields]
     bun_update_lines = [bun_zod_field_optional(f) for f in business_fields]
@@ -833,6 +896,13 @@ def build_context(spec, entity):
         "TABLE_CELLS": table_cells,
         "FORM_FIELDS": form_fields,
 
+        # Angular (used when --frontend angular; merged over the React keys above
+        # at render time — see generate())
+        "NG_TABLE_HEADERS": ng_table_headers_val,
+        "NG_TABLE_CELLS": ng_table_cells_val,
+        "NG_FORM_CONTROLS": ng_form_controls_val,
+        "NG_FORM_FIELDS": ng_form_fields_val,
+
         # Bun
         "BUN_CREATE_FIELDS": "\n".join(bun_create_lines),
         "BUN_UPDATE_FIELDS": "\n".join(bun_update_lines),
@@ -855,7 +925,7 @@ _generated_init = False
 _generated_database = False
 
 
-def generate(spec, output_dir, backend="python"):
+def generate(spec, output_dir, backend="python", frontend="react"):
     global _generated_init, _generated_database
 
     output = Path(output_dir)
@@ -919,36 +989,90 @@ def generate(spec, output_dir, backend="python"):
         else:
             raise ValueError(f"Unsupported backend: {backend}")
 
-        # ── Frontend (React + Vite) ──
+        # ── Frontend (React + Vite, or Angular — per --frontend) ──
         frontend_dir = output / "frontend"
         write_file(
             frontend_dir / f"{entity_camel}.model.ts",
             load_template("model.ts.j2").safe_substitute(ctx),
         )
-        write_file(
-            frontend_dir / f"{entity_camel}.api.ts",
-            load_template("api.ts.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / f"{entity_camel}-list.tsx",
-            load_template("component.tsx.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / f"{entity_camel}-table.tsx",
-            load_template("table.component.tsx.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / f"{entity_camel}-form.tsx",
-            load_template("form.component.tsx.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / f"{entity_camel}-page.tsx",
-            load_template("page.component.tsx.j2").safe_substitute(ctx),
-        )
-        write_file(
-            frontend_dir / "index.ts",
-            load_template("index.ts.j2").safe_substitute(ctx),
-        )
+
+        if frontend == "react":
+            write_file(
+                frontend_dir / f"{entity_camel}.api.ts",
+                load_template("api.ts.j2").safe_substitute(ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-list.tsx",
+                load_template("component.tsx.j2").safe_substitute(ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-table.tsx",
+                load_template("table.component.tsx.j2").safe_substitute(ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-form.tsx",
+                load_template("form.component.tsx.j2").safe_substitute(ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-page.tsx",
+                load_template("page.component.tsx.j2").safe_substitute(ctx),
+            )
+            write_file(
+                frontend_dir / "index.ts",
+                load_template("index.ts.j2").safe_substitute(ctx),
+            )
+        elif frontend == "angular":
+            # Angular templates reuse the TABLE_HEADERS/TABLE_CELLS/FORM_FIELDS
+            # placeholder names but with Angular-flavored markup (NG_* in ctx),
+            # plus FORM_CONTROLS for reactive forms — not used by React.
+            ng_ctx = dict(ctx)
+            ng_ctx["TABLE_HEADERS"] = ctx["NG_TABLE_HEADERS"]
+            ng_ctx["TABLE_CELLS"] = ctx["NG_TABLE_CELLS"]
+            ng_ctx["FORM_FIELDS"] = ctx["NG_FORM_FIELDS"]
+            ng_ctx["FORM_CONTROLS"] = ctx["NG_FORM_CONTROLS"]
+
+            write_file(
+                frontend_dir / f"{entity_camel}.service.ts",
+                load_template("angular/service.ts.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-list.component.ts",
+                load_template("angular/component.ts.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-list.component.html",
+                load_template("angular/component.html.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-table.component.ts",
+                load_template("angular/table.component.ts.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-table.component.html",
+                load_template("angular/table.component.html.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-form.component.ts",
+                load_template("angular/form.component.ts.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-form.component.html",
+                load_template("angular/form.component.html.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-page.component.ts",
+                load_template("angular/page.component.ts.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / f"{entity_camel}-page.component.html",
+                load_template("angular/page.component.html.j2").safe_substitute(ng_ctx),
+            )
+            write_file(
+                frontend_dir / "index.ts",
+                load_template("angular/index.ts.j2").safe_substitute(ng_ctx),
+            )
+        else:
+            raise ValueError(f"Unsupported frontend: {frontend}")
 
         # ── Database (PostgreSQL) ──
         db_dir = output / "database"
@@ -976,6 +1100,7 @@ def main():
     parser.add_argument("spec", help="Path to the spec markdown file")
     parser.add_argument("--output", "-o", default="./output", help="Output directory")
     parser.add_argument("--backend", "-b", choices=["python", "bun"], default="python", help="Backend stack")
+    parser.add_argument("--frontend", "-f", choices=["react", "angular"], default="react", help="Frontend stack")
     parser.add_argument("--namespace", "-n", default=None, help="Python package namespace override")
     parser.add_argument("--schema", "-s", default="public", help="Database schema name (PostgreSQL)")
     args = parser.parse_args()
@@ -993,9 +1118,10 @@ def main():
     print(f"Entities: {[e['name'] for e in spec['entities']]}")
     print(f"Endpoints: {len(spec['endpoints'])}")
     print(f"Backend: {args.backend}")
+    print(f"Frontend: {args.frontend}")
     print(f"\nGenerating scaffolding in: {args.output}")
 
-    generate(spec, args.output, backend=args.backend)
+    generate(spec, args.output, backend=args.backend, frontend=args.frontend)
 
     print(f"\nDone. Output: {args.output}")
     print(f"  Backend:  {args.output}/backend/")

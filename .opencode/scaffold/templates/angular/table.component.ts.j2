@@ -1,0 +1,33 @@
+import { Component, input, output, computed } from '@angular/core';
+
+import type { ${ENTITY}ListItem } from './${entity}.model';
+
+@Component({
+  selector: 'app-${entity}-table',
+  standalone: true,
+  imports: [],
+  templateUrl: './${entity}-table.component.html',
+})
+export class ${ENTITY}TableComponent {
+  readonly items = input.required<${ENTITY}ListItem[]>();
+  readonly total = input.required<number>();
+  readonly page = input.required<number>();
+  readonly pageSize = input.required<number>();
+  readonly loading = input<boolean>(false);
+
+  readonly pageChange = output<number>();
+  readonly sortChange = output<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>();
+  readonly edit = output<number>();
+  readonly delete = output<number>();
+
+  readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()) || 1);
+
+  private sortState = { sortBy: 'createdAt', sortOrder: 'DESC' as 'ASC' | 'DESC' };
+
+  onSort(column: string): void {
+    const nextOrder: 'ASC' | 'DESC' =
+      this.sortState.sortBy === column && this.sortState.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+    this.sortState = { sortBy: column, sortOrder: nextOrder };
+    this.sortChange.emit({ sortBy: column, sortOrder: nextOrder });
+  }
+}
