@@ -1,7 +1,7 @@
 ---
 name: integration-testing
 description: "Integration testing patterns with real dependencies. Covers TestContainers for Python/PostgreSQL + pgvector, React Testing Library + MSW for API mocking, Bun backend con Vitest + testcontainers, contract tests between services, test isolation by tenant, setup/teardown patterns, y parallel execution strategies. Trigger: When writing integration tests, setting up test databases, or testing service boundaries."
-version: 1.1
+version: 1.2
 metadata:
   phase:
   - quality
@@ -132,7 +132,7 @@ Esta skill delega:
 # tests/integration/conftest.py
 import pytest
 import asyncpg
-from testcontainers.postgres import PostgresContainer
+from testcontainers.community.postgres import PostgresContainer  # testcontainers.postgres está deprecado
 
 @pytest.fixture(scope="session")
 def postgres_container():
@@ -147,9 +147,9 @@ async def db_pool(postgres_container):
     pool = await asyncpg.create_pool(
         host=postgres_container.get_container_host_ip(),
         port=postgres_container.get_exposed_port(5432),
-        user=postgres_container.POSTGRES_USER,
-        password=postgres_container.POSTGRES_PASSWORD,
-        database=postgres_container.POSTGRES_DB,
+        user=postgres_container.username,
+        password=postgres_container.password,
+        database=postgres_container.dbname,
     )
     # Apply migrations + habilitar extensión pgvector
     async with pool.acquire() as conn:
