@@ -10,7 +10,7 @@
 - **Organización**: TIVIT (empresa brasileña de tecnología)
 - **Autor**: Manuel Aliaga — Ingeniero de IA, TIVIT Foundry
 - **Clasificación**: Proyecto privado interno — Uso exclusivo TIVIT
-- **Última actualización**: 17 de julio de 2026
+- **Última actualización**: 3 de agosto de 2026
 
 ## Confidencialidad
 
@@ -43,7 +43,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 ## Cómo funciona (Flujo de usuario)
 
 1. **Clonas** el framework en tu proyecto (solo la carpeta `.opencode/` + `opencode.json` + `AGENTS.md`)
-2. **Abres OpenCode** en tu proyecto → detecta 108 skills + 4 agentes automáticamente
+2. **Abres OpenCode** en tu proyecto → detecta 113 skills + 4 agentes automáticamente
 3. **Pides lo que necesitas**: "Crea un módulo de usuarios con login, CRUD y roles"
 4. **El orchestrator planifica**: descompone tu solicitud en fases (gobernanza → diseño → backend → frontend → testing)
 5. **Los agentes ejecutan**: design diseña, delivery implementa, control valida
@@ -51,6 +51,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 7. **Obtienes código listo para producción**: FastAPI + React/Angular + PostgreSQL, con tests, CI/CD, y seguridad
 
 📖 **[Guía completa de flujo de usuario →](QUICKSTART.md)**
+🗺️ **[Roadmap →](docs/ROADMAP.md)**
 
 ---
 
@@ -58,7 +59,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 
 | Carpeta | Descripción |
 |---------|-------------|
-| `.opencode/skills/` | 108 skills organizadas por dominio |
+| `.opencode/skills/` | 113 skills organizadas por dominio |
 | `.opencode/agents/` | 4 agentes especializados |
 | `.opencode/validators/` | Scripts PowerShell de validación |
 | `.opencode/scaffold/` | Generador de código desde specs |
@@ -149,24 +150,23 @@ El primer módulo es Gestión de Tareas:
 
 ## Skills Disponibles
 
-108 skills organizadas por dominio (las categorías no son mutuamente excluyentes):
+113 skills organizadas por dominio (las categorías no son mutuamente excluyentes):
 
 - **Framework** (12): governance, discovery, conception, architecture, core-design, pack-design, data-memory-compliance, security, platform, scaffold-implementation, qa-validation, operations-evolution
 - **Gobernanza** (3): governance-constitution, sdd-onboard, documentation
-- **Backend** (12): backend-api, bun-backend, data-access, api-integration, api-gateway, app-bootstrap, shared-libs, error-handling, file-upload, real-time, api-resilience, notifications
+- **Backend** (13): backend-api, bun-backend, data-access, api-integration, api-gateway, app-bootstrap, shared-libs, error-handling, file-upload, real-time, api-resilience, notifications, redis
 - **Frontend** (14): react, react-services, react-upgrade, angular, angular-services, angular-upgrade, microfrontend, design-system, typescript, export-excel, accesibilidad, i18n, feature-flags, mobile-pwa
 - **Database** (9): database-modeling, database-audit, database-security, database-sp, database-migrations, database-seeding, data-migration, pgvector, postgresql-backup
-- **Testing/Calidad** (9): unit-testing, integration-testing, load-testing, security-testing, playwright, code-review, review-adversarial, uat-acceptance, a11y-testing
+- **Testing/Calidad** (12): unit-testing, integration-testing, load-testing, security-testing, playwright, code-review, review-adversarial, uat-acceptance, a11y-testing, acceptance-test-automation, react-doctor, angular-doctor
 - **API/Spec** (9): openapi-docs, api-first-spec, api-first-backend, api-first-frontend, api-first-testing, api-catalog, api-versioning, api-resilience, api-contracts
 - **Seguridad/Auth** (5): security, authentication, authorization, keycloak, oauth2-jwt
-- **Operaciones** (11): ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, infrastructure-as-code, terraform, kubernetes, disaster-recovery, incident-response, postgresql-backup
+- **Operaciones** (12): ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, infrastructure-as-code, terraform, kubernetes, disaster-recovery, incident-response, postgresql-backup
 - **AI/LLM** (4): langchain, costos-llm, kafka, memory-protocol
 - **Observabilidad LLM** (1): langfuse
-- **Proceso** (7): pull-request, hu-template, readme, html-prototype, project-bootstrap, skill-creator, framework-extensions
+- **Proceso** (9): pull-request, hu-template, readme, html-prototype, project-bootstrap, skill-creator, framework-extensions, requirements-intake, client-readiness-checklist
+- **Spec-Driven Development** (3): feature-spec, tasks, converge
 - **Arquitectura** (6): project-architecture, repo-structure, graphql, docker-local, performance, api-versioning
 - **Meta-Skills** (4): agent-backend, agent-frontend, agent-fullstack, agent-qa
-
-**Nuevas skills del catálogo expandido:** `bun-backend`, `redis`, `terraform`, `github-actions`, `gitlab-ci`, `kubernetes`, `prometheus-grafana`, `opentelemetry`, `langfuse`, `pgvector`, `postgresql-backup`, `oauth2-jwt`, `api-contracts`, `mobile-pwa`, `react-upgrade`, `a11y-testing`
 
 ---
 

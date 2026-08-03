@@ -1,7 +1,7 @@
 # VERSIONS.md — Matriz de compatibilidad de TIVIT Foundry
 
 **Proyecto:** TIVIT Foundry — Framework Agéntico  
-**Última actualización:** 17 de julio de 2026
+**Última actualización:** 3 de agosto de 2026
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Versión | Fecha | Skills | Notas |
 |---------|-------|--------|-------|
+| 4.1.0 | 2026-08-03 | 113 | Cierre de gaps: intake de requerimientos (`requirements-intake`, Documento Cero), checklist de onboarding de clientes/proyectos (`client-readiness-checklist`), QA funcional automatizada (`acceptance-test-automation`) |
 | 4.0.0 | 2026-07-30 | 108 | Angular reincorporado como frontend alternativo, coexiste con React (elección por proyecto), ver ADR-005 |
 | 3.0.0 | 2026-07-21 | 103 | Migración de frontend: Angular → React (Vite), ver ADR-004 |
 | 2.0.0 | 2026-07-17 | 102 | Catálogo expandido, scaffold Angular + backend dual |

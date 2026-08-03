@@ -35,6 +35,14 @@
 | framework-qa-validation | quality | implementation | mandatory | QA: contract tests, integración, validación, go/no-go |
 | framework-operations-evolution | operations | operations | mandatory | Operación: monitoreo, incidentes, SLOs, versionado, deprecación |
 
+### Gobernanza (3 skills)
+
+| Skill | Fase | Layer | Enforcement | Descripción |
+|-------|------|-------|-------------|-------------|
+| governance-constitution | governance | governance | mandatory | Constitución: principios inmutables, reglas no negociables, gates de arquitectura, anti-patrones |
+| sdd-onboard | inception | business | recommended | Onboarding a Spec-Driven Development: fases del flujo, ruta por rol, checklist de primera semana |
+| documentation | construction | implementation | recommended | Documentación como fase SDLC de primera clase: ADRs, docs de API, guías de codebase, docs-as-code |
+
 ### Agent Meta-Skills (4 skills) — Orquestación de Agentes
 
 | Skill | Fase | Layer | Enforcement | Descripción |
@@ -44,7 +52,7 @@
 | agent-fullstack | construction | implementation | optional | Activa backend + frontend completo |
 | agent-qa | quality | testing | optional | Activa todas las skills de testing |
 
-### API-* (10 skills) — Diseño e Implementación de APIs
+### API-* (11 skills) — Diseño e Implementación de APIs
 
 | Skill | Fase | Layer | Enforcement | Stack | Descripción |
 |-------|------|-------|-------------|-------|-------------|
@@ -58,6 +66,7 @@
 | api-resilience | construction | backend | recommended | Python | Resiliencia: rate limiting, circuit breakers, retry |
 | api-versioning | construction | backend | mandatory | Python | Versionado: URI, headers, deprecation, backward compat |
 | api-contracts | construction | backend/frontend | mandatory | Multi | Contratos compartidos: Pydantic, TypeScript, OpenAPI components |
+| openapi-docs | construction/operations | backend | mandatory | Python | Generación y mantenimiento de documentación OpenAPI/Swagger |
 
 ### Database-* (8 skills) — Base de Datos PostgreSQL
 
@@ -93,7 +102,7 @@
 | angular | construction | frontend | recommended | Angular | Component architecture, signals, DI, routing, CDK |
 | angular-services | construction | frontend | recommended | Angular | Services, RxJS, @ngneat/query, signals, toSignal() |
 
-### Testing (9 skills) — Aseguramiento de Calidad
+### Testing (11 skills) — Aseguramiento de Calidad
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
@@ -106,6 +115,8 @@
 | react-doctor | quality | testing/frontend | recommended | Gate automatizado (npx react-doctor): anti-patrones React, deterministico |
 | angular-doctor | quality | testing/frontend | recommended | Gate automatizado (npx angular-doctor): lint Angular-aware, health score, dead code |
 | acceptance-test-automation | quality | testing | recommended | Ejecuta criterios de aceptación confirmados contra la implementación real (web/API + fixtures no-UI), evidencia pass/fail/ambiguo por criterio |
+| review-adversarial | quality | testing | recommended | Revisión adversarial: instancias paralelas desde ángulos distintos, veredictos con evidencia |
+| uat-acceptance | quality | business | recommended | UAT: criterios de aceptación, sign-off de stakeholders, entorno UAT, decisión go/no-go |
 
 ### Seguridad (4 skills)
 
@@ -116,7 +127,7 @@
 | authorization | construction | backend | mandatory | RBAC, permisos por recurso, FastAPI Depends |
 | oauth2-jwt | construction | backend/frontend | recommended | OAuth2/JWT puro: token issuance, validation, scopes, refresh |
 
-### Infraestructura (9 skills)
+### Infraestructura (10 skills)
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
@@ -129,6 +140,7 @@
 | github-actions | operations | infrastructure | recommended | Pipelines con GitHub Actions |
 | gitlab-ci | operations | infrastructure | recommended | Pipelines con GitLab CI/CD |
 | disaster-recovery | operations | operations | recommended | Backup/restore, failover, RTO/RPO, DR drills |
+| incident-response | operations | operations | mandatory | Respuesta a incidentes: severidad, runbooks, escalamiento, postmortems blameless |
 
 ### Observabilidad (5 skills)
 
@@ -153,7 +165,7 @@
 | file-upload | construction | backend | recommended | Upload: multipart, storage, MIME, CDN |
 | notifications | construction | backend | recommended | Notificaciones: in-app, email, push, webhook |
 
-### Frontend General (9 skills)
+### Frontend General (11 skills)
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
@@ -166,8 +178,10 @@
 | mobile-pwa | construction | frontend | optional | PWA: service workers, offline, push notifications |
 | react-upgrade | operations | frontend | optional | Migración de versiones React/Vite/Next.js y legacy → moderno |
 | angular-upgrade | operations | frontend | optional | Migración de versiones Angular, NgModules → standalone/signals |
+| export-excel | construction | database/backend/frontend | recommended | Export a Excel: query → handler → endpoint → download hook |
+| feature-flags | construction | frontend | recommended | Feature flags: rollout progresivo, A/B testing, kill switches, targeting |
 
-### Proceso (6 skills)
+### Proceso (7 skills)
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
@@ -177,6 +191,7 @@
 | pull-request | closure | implementation | mandatory | PR template, conventional commits, changelog |
 | code-review | quality | implementation | recommended | Checklist de revisión: backend, frontend, database |
 | readme | closure | implementation | optional | Template README para módulos |
+| framework-extensions | construction | implementation | recommended | Sistema de extensiones: plugin architecture, manifest schema, hooks |
 
 ### Spec-Driven Development (3 skills)
 
@@ -197,14 +212,16 @@ Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-fi
 | kafka | construction | backend | recommended | Apache Kafka: producers, consumers, topics, DLQ |
 | graphql | construction | backend | recommended | GraphQL: schema, resolvers, Strawberry, Apollo |
 | skill-creator | operations | implementation | optional | Crea nuevas skills del framework |
+| memory-protocol | construction | backend | mandatory | Protocolo de memoria persistente para agentes: decisiones, bugs, sesiones, resolución de conflictos |
 
-### Otros (3 skills)
+### Otros (4 skills)
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
 | project-architecture | inception | design | mandatory | Vertical Slice, Modular Monolith, naming |
 | project-bootstrap | inception | scaffold | mandatory | Onboarding a proyecto nuevo |
 | repo-structure | inception | scaffold | recommended | Convenciones de repositorio |
+| performance | construction | database/backend/frontend | recommended | Paginación, caching, query optimization, manejo de datos grandes |
 
 ---
 

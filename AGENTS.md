@@ -3,9 +3,9 @@
 **Proyecto**: TIVIT Foundry — Laboratorio Interno de IA
 **Organización**: TIVIT (Latin America Technology)
 **Autor**: Manuel Aliaga — Ingeniero de IA, TIVIT Foundry
-**Última actualización**: 17 de julio de 2026
+**Última actualización**: 3 de agosto de 2026
 
-Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 108 skills, 4 agentes, 10 MCPs activos para diseñar, implementar y operar aplicaciones con agentes AI.
+Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 113 skills, 4 agentes, 10 MCPs activos para diseñar, implementar y operar aplicaciones con agentes AI.
 
 **Stack de referencia:**
 
@@ -55,12 +55,12 @@ Ver [AGENT-MODEL.md](.opencode/framework/AGENT-MODEL.md) para permisos, responsa
 | **Per-Skill** | 49 | Audit, onboarding, escenarios de alta criticidad |
 
 Por defecto se usa **Hybrid**:
-- **Fases A-B** (N1-N9): modo individual — confirmas cada skill
+- **Fases A-B** (N0-N9, N0 condicional): modo individual — confirmas cada skill
 - **Fases C-H** (N10-N49): modo bundle — ejecuto 6 bundles sin pausas internas
 
 ## Reglas de ejecución
 
-1. **Modo Hybrid por defecto**: Fases A-B per-skill (N1-N9), fases C-H por bundle (N10-N49)
+1. **Modo Hybrid por defecto**: Fases A-B per-skill (N0-N9), fases C-H por bundle (N10-N49)
 2. **Confirmación explícita**: Al completar cada skill (A-B) o cada bundle (C-H), mostrar resumen y esperar confirmación
 3. **Meta-skills solo cuando el usuario las pide explícitamente**: `agent-backend`, `agent-frontend`, `agent-fullstack`, `agent-qa` no se activan automáticamente
 4. **Framework-* skills son obligatorias**: Ninguna excepción sin registro en governance

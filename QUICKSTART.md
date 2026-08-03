@@ -6,7 +6,18 @@
 
 ## Visión general
 
-El Framework Agéntico es un conjunto de **83 skills** y **4 agentes** que se integran con **OpenCode** (CLI de IA). No es una aplicación que ejecutas — es un sistema de conocimiento que OpenCode carga para trabajar de forma estructurada, siguiendo patrones de diseño, arquitectura, seguridad y testing alineados al stack de TIVIT.
+El Framework Agéntico es un conjunto de **113 skills** y **4 agentes** que se integran con **OpenCode** (CLI de IA). No es una aplicación que ejecutas — es un sistema de conocimiento que OpenCode carga para trabajar de forma estructurada, siguiendo patrones de diseño, arquitectura, seguridad y testing alineados al stack de TIVIT.
+
+---
+
+## Paso 0: Antes de clonar — ¿qué tan listo está el cliente/proyecto?
+
+Antes de tocar código, corré mentalmente (o con el agente) el checklist de `client-readiness-checklist`: ¿el cliente trae documentación funcional formal, informal, o nada? ¿es un proyecto greenfield o hay que adaptarse a un stack legado? ¿ya hay accesos y arquitectura definida?
+
+- Si la documentación funcional es informal o inexistente, el primer paso real del proyecto es `requirements-intake` ("Documento Cero"): un template que el equipo llena con el cliente para convertir cualquier input ambiguo en una línea base confirmada, antes de escribir la primera Historia de Usuario. No es obligatorio si el cliente ya trae una spec formal completa.
+- Si es un proyecto brownfield en un stack legado (COBOL, Java monolítico, etc.), el checklist te lleva al flujo de reanálisis en vez de al flujo greenfield estándar de abajo.
+
+Esto evita el error más caro: arrancar el flujo greenfield de este documento con un cliente que en realidad necesitaba el flujo de reanálisis, o con requerimientos tan ambiguos que el equipo termina repreguntando durante todo el desarrollo.
 
 ---
 
@@ -31,7 +42,7 @@ mi-proyecto/
 ├── AGENTS.md              ← OpenCode carga esto al iniciar
 ├── opencode.json          ← Configuración de OpenCode
 ├── .opencode/
-│   ├── skills/            ← 83 skills organizadas por dominio
+│   ├── skills/            ← 113 skills organizadas por dominio
 │   ├── agents/            ← 4 agentes especializados
 │   ├── framework/         ← Documentos de gobierno
 │   ├── validators/        ← Scripts de validación (PowerShell)
@@ -54,7 +65,7 @@ mi-proyecto/
 opencode
 ```
 
-OpenCode carga `AGENTS.md` y detecta las 83 skills + 4 agentes. Ya estás listo.
+OpenCode carga `AGENTS.md` y detecta las 113 skills + 4 agentes. Ya estás listo.
 
 ### 3.2 Flujo típico — Crear un módulo nuevo
 
@@ -77,6 +88,11 @@ OpenCode carga `AGENTS.md` y detecta las 83 skills + 4 agentes. Ya estás listo.
 
 ```
 Fase A-B (confirmación por skill — tú ves y apruebas cada paso):
+  ├── N0: requirements-intake → design agent   (condicional — solo si el
+  │     cliente no trae documentación funcional formal, ver Paso 0)
+  │     "Genero el Documento Cero con las 10 secciones a partir de lo
+  │      que el cliente entregó, listo para confirmar con él"
+  │     [Tú confirmas]
   ├── N1: framework-governance → control agent
   │     "Defino las reglas del proyecto: multi-tenant, RBAC, audit"
   │     [Tú confirmas]
@@ -103,6 +119,7 @@ Fase C-H (confirmación por bundle — más rápido):
 
 | Fase | ¿Qué produce? | Archivos de ejemplo |
 |------|--------------|-------------------|
+| **Documento Cero** (N0, condicional) | Línea base de requerimientos confirmada | `docs/documento-cero-{modulo}.md` |
 | **Governance** | Reglas del proyecto | `constitution.md` |
 | **Discovery** | Análisis del dominio | Documento de actores, procesos, datos |
 | **Conception** | Definición funcional | Capacidades, flujos, criterios MVP |
@@ -110,7 +127,7 @@ Fase C-H (confirmación por bundle — más rápido):
 | **Spec** | Especificación API | `specs/users-api.md` con ERD, endpoints, errores |
 | **Backend** | Código del servidor | `handlers/`, `dtos/`, `routes/`, funciones PL/pgSQL |
 | **Frontend** | Componentes React o Angular | `UsersList.tsx`/`UsersListComponent.ts`, `LoginPage.tsx`/`LoginPageComponent.ts` |
-| **Calidad** | Tests + revisión | Unit tests, integration tests, adversarial review |
+| **Calidad** | Tests + revisión + evidencia de aceptación | Unit tests, integration tests, adversarial review, reporte JSON de `acceptance-test-automation` (pass/fail/ambiguo por criterio) |
 | **Operación** | CI/CD + deploy | `github-actions.yml`, `docker-compose.yml` |
 
 ### 3.4 Ejemplo concreto de output
@@ -207,8 +224,8 @@ No necesitas pasar por todo el flujo. Puedes invocar skills específicas directa
 # Output esperado:
 #   OK check-dependencies
 #   OK check-refs
-#   OK check-secrets
-#   ... 13/13 passed
+#   OK check-secrets       (secretos hardcodeados y URLs hardcodeadas en código)
+#   ... 14/14 passed
 ```
 
 ## Paso 7: El ciclo diario
