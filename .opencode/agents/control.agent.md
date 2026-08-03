@@ -55,6 +55,7 @@ Carga el SKILL.md correspondiente antes de producir artefactos de cada área:
 | security | secundario | [SKILL.md](../skills/security/SKILL.md) |
 | keycloak | primario | [SKILL.md](../skills/keycloak/SKILL.md) |
 | converge | primario | [SKILL.md](../skills/converge/SKILL.md) |
+| acceptance-test-automation | primario | [SKILL.md](../skills/acceptance-test-automation/SKILL.md) |
 | react-doctor | secundario | [SKILL.md](../skills/react-doctor/SKILL.md) |
 | angular-doctor | secundario | [SKILL.md](../skills/angular-doctor/SKILL.md) |
 

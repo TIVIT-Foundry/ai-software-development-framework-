@@ -5,7 +5,7 @@ description: 'Usa esta skill para diseñar la capa de QA y validación del frame
   end-to-end, validación de guardrails, multi-tenancy, trazabilidad, criterios de
   aceptación y go/no-go. Trigger: Cuando ya existe scaffold y se necesita validar:
   estrategia de pruebas, contract tests, trazabilidad y criterios go/no-go.'
-version: 1.0
+version: 1.1
 metadata:
   when_to_use:
   - Cuando ya existe scaffold o implementación inicial y se necesita validar que funciona.
@@ -127,7 +127,8 @@ Esta skill sí decide:
 Esta skill delega:
 - la implementación del scaffold a `framework-scaffold-implementation`;
 - la definición del producto a `framework-conception` y `framework-pack-design`;
-- la operación continua del release a `framework-operations-evolution`.
+- la operación continua del release a `framework-operations-evolution`;
+- la ejecución automatizada de criterios de aceptación contra la implementación real (evidencia pass/fail/ambiguo por criterio) a `acceptance-test-automation`.
 
 ## Qué debe definir el diseño
 

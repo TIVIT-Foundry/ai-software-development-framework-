@@ -2,7 +2,7 @@
 name: agent-qa
 description: 'Meta-skill: activates all testing skills in sequence for QA and quality
   assurance work. Trigger: When creating test plans, writing tests, or reviewing quality.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -76,6 +76,7 @@ Meta-skill for QA workflows. Activates testing-related skills and guides test cr
 - **API tests**: Run before E2E. They catch contract breaks faster.
 - **Coverage reports**: Fail CI if coverage drops below threshold. Enforce in pipeline config.
 - **Flaky test handling**: Tag flaky tests with `@flaky`, set retries to 2 in Playwright config.
+- **Non-UI domain fixtures** (audio, documents, images — not covered by Playwright/pytest): run via `acceptance-test-automation`, which defines the `tests/fixtures/{feature}/` pattern for this class of acceptance criteria.
 
 ## Common Pitfalls
 

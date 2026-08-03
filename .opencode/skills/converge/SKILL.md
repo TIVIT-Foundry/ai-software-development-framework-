@@ -4,7 +4,7 @@ description: 'Verify that implemented code matches its spec (api-first-spec or
   feature-spec) and that all tasks in tasks.md are actually done, before a PR is
   created. Trigger: Before creating a PR for a spec-driven feature, or when asked
   to check spec-code alignment.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -18,6 +18,7 @@ metadata:
   consumed_by:
   - framework-qa-validation
   - pull-request
+  - acceptance-test-automation
   agent_roles:
   - control-agent
   validation_profile: skill-contract
@@ -33,6 +34,8 @@ Catch the gap between "the spec says X" and "the code actually does X" before it
 This skill is an **agent-executed review checklist**, not a deterministic script. The control agent reads the spec, reads the diff/code, and reports mismatches — the same trust model as every other skill in this framework. It catches structural and behavioral drift reliably; it does not guarantee byte-for-byte conformance the way a parser-based diff would.
 
 A deterministic version is a natural next step: `.opencode/scaffold/generate.py` already parses `api-first-spec` markdown (entities, endpoints, DTOs) — that parser could be extended into a standalone checker that diffs a spec against generated route/schema files and runs in CI. That is future work, tracked as a `framework-operations-evolution` candidate, not something this skill claims to do today.
+
+Note the scope split: this skill catches **structural** drift (spec says X, code doesn't implement X). It does not execute acceptance criteria to catch **behavioral** drift (code implements X, but not correctly for real inputs) — that is what `acceptance-test-automation` does, feeding the same go/no-go decision from a different angle.
 
 ## When to use this skill
 
@@ -53,6 +56,7 @@ Activate when:
 | `tasks` | Input | Verifies each task's `Verify` step actually passes |
 | `framework-qa-validation` | Consumer | Uses this as one input to the go/no-go decision |
 | `pull-request` | Consumer | Should run before the PR is opened, not after |
+| `acceptance-test-automation` | Consumer | Runs alongside this skill's structural check to add behavioral evidence (acceptance criteria pass/fail) |
 
 ## What the agent must do
 

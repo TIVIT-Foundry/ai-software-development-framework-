@@ -1,7 +1,7 @@
 # SKILL-ROUTING.md — Tabla de Routing de Skills
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 1.2.0
+**Versión:** 1.3.0
 **Última actualización:** 3 de agosto de 2026
 
 ---
@@ -36,7 +36,7 @@ Este documento define qué skill(s) se activan según el tipo de cambio solicita
 | **Incidente en producción** | incident-response → observabilidad → disaster-recovery | ci-cd | delivery |
 | **UAT / Aceptación** | uat-acceptance → framework-qa-validation | hu-template | control |
 | **Documentación de producto** | documentation → readme | governance-constitution, api-catalog, openapi-docs | design / delivery |
-| **Testing y calidad** | unit-testing → integration-testing → playwright → security-testing | code-review, load-testing, a11y-testing | control |
+| **Testing y calidad** | unit-testing → integration-testing → playwright → security-testing | code-review, load-testing, a11y-testing, acceptance-test-automation | control |
 | **Operación y despliegue** | ci-cd → observabilidad → disaster-recovery | framework-operations-evolution, prometheus-grafana, opentelemetry | delivery |
 | **Infraestructura cloud** | framework-platform → infrastructure-as-code → terraform → kubernetes | docker-local, github-actions, gitlab-ci | delivery |
 | **Bun backend** | bun-backend → api-contracts | shared-libs, error-handling | delivery |
@@ -128,6 +128,8 @@ N42: load-testing           → control
 N43: code-review            → control
 N44: accesibilidad          → control
 ```
+
+`acceptance-test-automation` corre en paralelo a N38-N40 (no tiene nivel propio, para no renumerar la secuencia existente): ejecuta los criterios de aceptación confirmados y alimenta el mismo gate de go/no-go que `framework-qa-validation`.
 
 ### Fase H — Operación (N45-N49)
 

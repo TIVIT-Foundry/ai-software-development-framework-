@@ -1,9 +1,9 @@
 # SKILLS-MANIFEST.md — Catálogo de Skills del Framework
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 2.1.0
+**Versión:** 2.2.0
 **Última actualización:** 3 de agosto de 2026
-**Total de skills:** 112
+**Total de skills:** 113
 
 ---
 
@@ -93,7 +93,7 @@
 | angular | construction | frontend | recommended | Angular | Component architecture, signals, DI, routing, CDK |
 | angular-services | construction | frontend | recommended | Angular | Services, RxJS, @ngneat/query, signals, toSignal() |
 
-### Testing (8 skills) — Aseguramiento de Calidad
+### Testing (9 skills) — Aseguramiento de Calidad
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
@@ -105,6 +105,7 @@
 | a11y-testing | quality | testing/frontend | recommended | A11y automatizado: axe-core, Playwright, keyboard nav |
 | react-doctor | quality | testing/frontend | recommended | Gate automatizado (npx react-doctor): anti-patrones React, deterministico |
 | angular-doctor | quality | testing/frontend | recommended | Gate automatizado (npx angular-doctor): lint Angular-aware, health score, dead code |
+| acceptance-test-automation | quality | testing | recommended | Ejecuta criterios de aceptación confirmados contra la implementación real (web/API + fixtures no-UI), evidencia pass/fail/ambiguo por criterio |
 
 ### Seguridad (4 skills)
 
@@ -217,7 +218,7 @@ Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-fi
 | D — Especificación | N16 | api-first-spec, api-contracts | 1 |
 | E — Backend | N17-N31 | api-first-backend, data-access, database-*, pgvector, authentication, authorization, oauth2-jwt, error-handling, shared-libs, api-integration, api-resilience, api-versioning, api-gateway, redis, real-time, file-upload, notifications, costos-llm, langfuse | 1 |
 | F — Frontend | N32-N37 | api-first-frontend, api-contracts, react, angular, react-services, angular-services, typescript, design-system, i18n, mobile-pwa, react-upgrade, angular-upgrade | 1 |
-| G — Calidad | N38-N44 | unit-testing, integration-testing, playwright, security-testing, load-testing, code-review, accesibilidad, a11y-testing | 1 |
+| G — Calidad | N38-N44 | unit-testing, integration-testing, playwright, security-testing, load-testing, code-review, accesibilidad, a11y-testing, acceptance-test-automation | 1 |
 | H — Operación | N45-N49 | ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, infrastructure-as-code, terraform, kubernetes, disaster-recovery, postgresql-backup, pull-request, langfuse | 1 |
 
 > **N0 (`requirements-intake`) es condicional**: solo se activa cuando el cliente no trae documentación funcional formal — ver `client-readiness-checklist`. No cuenta como confirmación extra cuando se omite.
