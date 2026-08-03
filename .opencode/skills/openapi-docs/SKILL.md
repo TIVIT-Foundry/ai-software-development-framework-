@@ -7,7 +7,7 @@ when_to_use:
   - Generating API docs from code annotations
   - Publishing interactive API documentation
   - Validating API spec completeness before consumer handoff
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - construction
@@ -396,11 +396,12 @@ rules:
 ```
 
 ```bash
-# Ejecutar validación
-npx @redocly/cli lint openapi.yaml --config .spectral.yaml
+# Ejecutar validación con Spectral (consume directamente .spectral.yaml)
+npx @stoplight/spectral-cli lint openapi.yaml --ruleset .spectral.yaml
 
-# O con Spectral directamente
-spectral lint openapi.yaml --ruleset .spectral.yaml
+# Alternativa: Redocly CLI, pero usa SU PROPIO formato de config (redocly.yaml),
+# no es compatible con reglas de Spectral (.spectral.yaml)
+npx @redocly/cli lint openapi.yaml --config redocly.yaml
 ```
 
 ### 5. Documentación de errores

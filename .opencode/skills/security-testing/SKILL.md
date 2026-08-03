@@ -1,7 +1,7 @@
 ---
 name: security-testing
 description: "Security testing and vulnerability scanning patterns. Covers SAST (SonarQube/Semgrep), DAST (OWASP ZAP), dependency scanning (bun audit, pip-audit, Dependabot, Snyk), secret scanning, OAuth2/Keycloak auth testing, security gates in CI, and vulnerability reporting. Trigger: When implementing security testing, configuring SAST/DAST in pipelines, or performing security audits."
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -188,7 +188,7 @@ version: '3.8'
 services:
   zap:
     image: zaproxy/zap-stable
-    command:zap-baseline.py -t ${TARGET_URL} -J zap-report.json || true
+    command: zap-baseline.py -t ${TARGET_URL} -J zap-report.json || true
     volumes:
       - ./reports:/zap/reports
     networks:
@@ -231,16 +231,15 @@ on:
 jobs:
   sast:
     runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
       - name: Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/security-audit
-            p/secrets
-            p/owasp-top-ten
-          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+        run: semgrep ci
+        env:
+          SEMGREP_RULES: p/security-audit p/secrets p/owasp-top-ten
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
   dependency-scan:
     runs-on: ubuntu-latest

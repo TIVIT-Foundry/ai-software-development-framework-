@@ -1,7 +1,7 @@
 ---
 name: load-testing
 description: "Load and performance testing patterns. Covers k6/Gatling/Locust, test scenarios, load profiles, SLO validation, regression benchmarks, soak testing, and CI integration. Trigger: When validating system performance under load, setting SLOs for latency and throughput, or running stress tests."
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -247,9 +247,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: grafana/k6-action@v0.3.1
+      - uses: grafana/setup-k6-action@v1
+      - uses: grafana/run-k6-action@v1
         with:
-          filename: tests/load/scenarios/average.js
+          path: |
+            tests/load/scenarios/average.js
         env:
           BASE_URL: ${{ secrets.STAGING_URL }}
           AUTH_TOKEN: ${{ secrets.LOAD_TEST_TOKEN }}
