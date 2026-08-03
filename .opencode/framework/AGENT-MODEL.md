@@ -1,8 +1,8 @@
 # AGENT-MODEL.md — Modelo de Agentes del Framework
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 2.0.0
-**Última actualización:** 17 de julio de 2026
+**Versión:** 2.1.0
+**Última actualización:** 3 de agosto de 2026
 
 ---
 
@@ -229,6 +229,8 @@ Skills independientes se ejecutan en paralelo. El orchestrator hace fan-in y mer
 ```
 
 Múltiples instancias de control revisan el mismo output desde diferentes perspectivas. El orchestrator actúa como árbitro y resuelve conflictos. Usar cuando la skill es crítica (security, compliance, data integrity).
+
+**Por qué existe este modelo:** cuando dos desarrolladores (o dos agentes) parten del mismo input funcional, cada uno trae su propio criterio y el resultado puede divergir (ej. un mismo requerimiento implementado con decisiones de UI o de arquitectura distintas). Adversarial review no elimina esa divergencia en el momento de escribir código, pero la detecta antes del PR — junto con `converge`, que verifica que el código implementado coincide con el spec (`api-first-spec`/`feature-spec`) antes de abrir el PR. Ambos mecanismos, combinados, son la respuesta estructural del framework a esa variabilidad.
 
 ### Model 4: Chained Review
 

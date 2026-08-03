@@ -3,7 +3,7 @@ name: hu-template
 description: 'Template for writing User Stories (Historias de Usuario) in a standard
   format. Input for API First specs. Follows standard format with acceptance criteria.
   Trigger: When writing user stories, creating HUs, defining requirements.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - inception
@@ -22,7 +22,9 @@ mcp_usage: none
 ---
 
 ## Purpose
-HU (WHAT the user wants) → API First (HOW to implement it) → Implementation
+Documento Cero (`requirements-intake`, WHAT the client actually needs, confirmed) → HU (WHAT the user wants, decomposed) → API First (HOW to implement it) → Implementation
+
+When the client's functional documentation is informal, incomplete, or absent, run `requirements-intake` first to produce a confirmed baseline — HUs then decompose directly from its sections instead of from an ambiguous source doc.
 
 ## HU Template
 ```markdown

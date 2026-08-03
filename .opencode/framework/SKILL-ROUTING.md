@@ -1,8 +1,8 @@
 # SKILL-ROUTING.md — Tabla de Routing de Skills
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 1.1.0
-**Última actualización:** 17 de julio de 2026
+**Versión:** 1.2.0
+**Última actualización:** 3 de agosto de 2026
 
 ---
 
@@ -16,6 +16,8 @@ Este documento define qué skill(s) se activan según el tipo de cambio solicita
 
 | Tipo de Cambio | Skills Primarias | Skills Secundarias | Agente |
 |----------------|-----------------|-------------------|--------|
+| **Cliente/proyecto nuevo (onboarding comercial)** | client-readiness-checklist → framework-discovery | requirements-intake (si aplica), project-bootstrap | orchestrator |
+| **Requerimientos funcionales ambiguos o inexistentes** | requirements-intake → hu-template | framework-discovery | design |
 | **Proyecto nuevo completo** | framework-governance → framework-discovery → framework-conception → framework-architecture → framework-core-design → framework-pack-design → framework-scaffold-implementation | Todas las skills de construction | orchestrator |
 | **Nuevo módulo vertical** | framework-conception → framework-pack-design → api-first-spec → api-first-backend → api-first-frontend | database-modeling, database-sp, unit-testing | orchestrator |
 | **Nuevo módulo backend** | api-first-spec → api-first-backend → data-access | database-sp, error-handling, shared-libs | delivery |
@@ -45,14 +47,17 @@ Este documento define qué skill(s) se activan según el tipo de cambio solicita
 
 ## Routing por Fase del Framework
 
-### Fase A — Gobierno (N1-N4)
+### Fase A — Gobierno (N0-N4)
 
 ```
+N0: requirements-intake      → design    (condicional: cliente sin documentación funcional formal)
 N1: framework-governance     → control
 N2: framework-discovery      → design
 N3: framework-conception     → design
 N4: hu-template              → design
 ```
+
+`client-readiness-checklist` corre antes de N0/N1, como parte del onboarding comercial, y decide si N0 se activa.
 
 ### Fase B — Arquitectura (N5-N9)
 

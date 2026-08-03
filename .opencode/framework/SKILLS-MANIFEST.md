@@ -1,9 +1,9 @@
 # SKILLS-MANIFEST.md — Catálogo de Skills del Framework
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 2.0.0
-**Última actualización:** 17 de julio de 2026
-**Total de skills:** 110
+**Versión:** 2.1.0
+**Última actualización:** 3 de agosto de 2026
+**Total de skills:** 112
 
 ---
 
@@ -166,10 +166,12 @@
 | react-upgrade | operations | frontend | optional | Migración de versiones React/Vite/Next.js y legacy → moderno |
 | angular-upgrade | operations | frontend | optional | Migración de versiones Angular, NgModules → standalone/signals |
 
-### Proceso (4 skills)
+### Proceso (6 skills)
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
+| client-readiness-checklist | discovery | business | recommended | Checklist de qué necesita el framework para operar en un cliente/proyecto nuevo |
+| requirements-intake | inception | business | recommended | "Documento Cero": convierte input funcional ambiguo del cliente en línea base confirmada |
 | hu-template | inception | business | mandatory | Template de Historias de Usuario |
 | pull-request | closure | implementation | mandatory | PR template, conventional commits, changelog |
 | code-review | quality | implementation | recommended | Checklist de revisión: backend, frontend, database |
@@ -209,7 +211,7 @@ Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-fi
 
 | Fase | Niveles | Skills | Confirmaciones |
 |------|---------|--------|---------------|
-| A — Gobierno | N1-N4 | framework-governance, framework-discovery, framework-conception, hu-template | 4 |
+| A — Gobierno | N0-N4 | requirements-intake, framework-governance, framework-discovery, framework-conception, hu-template | 5 |
 | B — Arquitectura | N5-N9 | framework-architecture, framework-core-design, framework-pack-design, framework-data-memory-compliance, framework-security | 5 |
 | C — Scaffold | N10-N15 | framework-scaffold-implementation, project-architecture, project-bootstrap, repo-structure, app-bootstrap, backend-api, bun-backend | 1 |
 | D — Especificación | N16 | api-first-spec, api-contracts | 1 |
@@ -217,5 +219,7 @@ Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-fi
 | F — Frontend | N32-N37 | api-first-frontend, api-contracts, react, angular, react-services, angular-services, typescript, design-system, i18n, mobile-pwa, react-upgrade, angular-upgrade | 1 |
 | G — Calidad | N38-N44 | unit-testing, integration-testing, playwright, security-testing, load-testing, code-review, accesibilidad, a11y-testing | 1 |
 | H — Operación | N45-N49 | ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, infrastructure-as-code, terraform, kubernetes, disaster-recovery, postgresql-backup, pull-request, langfuse | 1 |
+
+> **N0 (`requirements-intake`) es condicional**: solo se activa cuando el cliente no trae documentación funcional formal — ver `client-readiness-checklist`. No cuenta como confirmación extra cuando se omite.
 
 **Nota:** Las fases mantienen 15 confirmaciones en modo Hybrid. Las skills `recommended`/`optional` se activan bajo demanda según el contexto del proyecto. Las skills adicionales del catálogo expandido incluyen: `api-contracts`, `bun-backend`, `redis`, `terraform`, `github-actions`, `gitlab-ci`, `kubernetes`, `prometheus-grafana`, `opentelemetry`, `langfuse`, `pgvector`, `postgresql-backup`, `oauth2-jwt`, `mobile-pwa`, `react-upgrade`, `a11y-testing`, `feature-spec`, `tasks`, `converge`.

@@ -183,3 +183,8 @@ docker-compose.override.yml
 # ============================================
 .opencode/cache/
 CLAUDE.md
+
+# ============================================
+# Internal feedback / meeting transcripts
+# ============================================
+feedback/

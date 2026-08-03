@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check-secrets.py — Scan for accidentally committed secrets."""
+"""check-secrets.py — Scan for accidentally committed secrets and hardcoded URLs."""
 import re
 import sys
 from pathlib import Path
@@ -11,6 +11,13 @@ PATTERNS = [
 ]
 SKIP = {".git", "__pycache__", "node_modules", ".venv"}
 warnings = []
+url_warnings = []
+
+# URLs should be environment-configured, not hardcoded — but this only applies
+# to actual code/generated-code templates, never to .md docs (which legitimately
+# show example URLs). Hosts below are conventionally safe placeholders/local dev.
+URL_PATTERN = r'(?i)\b(url|endpoint|host|base_url|api_url)\s*[=:]\s*["\']https?://(?!localhost|127\.0\.0\.1|0\.0\.0\.0|example\.(com|org))[^"\']+["\']'
+URL_CODE_EXTS = {".py", ".ts", ".tsx", ".js", ".j2"}
 
 for f in ROOT.rglob("*"):
     if f.is_file() and f.suffix not in (".pyc", ".exe", ".dll", ".so", ".png", ".jpg"):
@@ -26,6 +33,8 @@ for f in ROOT.rglob("*"):
         for pat in PATTERNS:
             if re.search(pat, text):
                 warnings.append(f"Possible secret in: {f.relative_to(ROOT)}")
+        if f.suffix in URL_CODE_EXTS and re.search(URL_PATTERN, text):
+            url_warnings.append(f"Possible hardcoded URL (should be env var): {f.relative_to(ROOT)}")
 
 if warnings:
     for w in warnings:
@@ -33,4 +42,12 @@ if warnings:
     print(f"\n{len(warnings)} possible secret(s) found (review manually)")
 else:
     print("No secrets found")
+
+if url_warnings:
+    for w in url_warnings:
+        print(f"WARN: {w}")
+    print(f"\n{len(url_warnings)} possible hardcoded URL(s) found (review manually)")
+else:
+    print("No hardcoded URLs found")
+
 sys.exit(0)

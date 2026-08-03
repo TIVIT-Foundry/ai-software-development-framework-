@@ -27,7 +27,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 | **AI/ML Core** | Python 3.12 / FastAPI |
 | **Backend General** | Bun (TypeScript) |
 | **Orchestration LLM** | LangChain / LangGraph |
-| **Frontend** | React 18+ (Vite) o Angular 17+, TypeScript (elección por proyecto) |
+| **Frontend** | React 18+ (Vite, o Next.js App Router para SSR/SEO) o Angular 17+, TypeScript (elección por proyecto) |
 | **Database** | PostgreSQL 16 + pgvector |
 | **Cache/Colas** | Redis + Kafka |
 | **Auth** | OAuth2/JWT / Keycloak |

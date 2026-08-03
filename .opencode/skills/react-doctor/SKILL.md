@@ -1,7 +1,7 @@
 ---
 name: react-doctor
 description: 'Automated static analysis gate for React codebases using the react-doctor CLI (npx react-doctor@latest) — deterministic scan for anti-patterns across state & effects, performance, architecture, security, and accessibility. Complements the manual checklist in code-review, does not replace it. Trigger: before opening a PR that touches react/react-services code, or when wiring the CI quality gate for a React project.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -24,6 +24,8 @@ mcp_usage: none
 [React Doctor](https://www.react.doctor/) es una herramienta externa (paquete npm, ~600K descargas/semana) que escanea código React de forma determinista — no es un linter genérico, busca anti-patrones específicos de React: `useEffect` innecesarios, prop drilling evitable con Context, problemas de accesibilidad, seguridad y arquitectura. Funciona con Next.js, Vite, TanStack, React Native, Expo.
 
 Esta skill NO reimplementa esa lógica — documenta cómo invocarla y cómo interpretar su salida dentro del flujo de este framework.
+
+**A diferencia de `angular-doctor`, React Doctor NO produce un score agregado 0-100** — reporta hallazgos individuales por severidad (Error/Critical, Warning, Info/Suggestion). No usar "score ≥ N" como gate de calidad para React; el gate correcto es "cero hallazgos Error/Critical sin excepción documentada" (ver "Interpretación de resultados" abajo).
 
 ## Critical Rules
 
