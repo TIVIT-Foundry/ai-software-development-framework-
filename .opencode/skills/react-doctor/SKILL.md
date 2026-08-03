@@ -1,7 +1,7 @@
 ---
 name: react-doctor
 description: 'Automated static analysis gate for React codebases using the react-doctor CLI (npx react-doctor@latest) — deterministic scan for anti-patterns across state & effects, performance, architecture, security, and accessibility. Complements the manual checklist in code-review, does not replace it. Trigger: before opening a PR that touches react/react-services code, or when wiring the CI quality gate for a React project.'
-version: 1.1
+version: 1.2
 metadata:
   phase:
   - quality
@@ -21,11 +21,11 @@ mcp_usage: none
 
 ## Qué es
 
-[React Doctor](https://www.react.doctor/) es una herramienta externa (paquete npm, ~600K descargas/semana) que escanea código React de forma determinista — no es un linter genérico, busca anti-patrones específicos de React: `useEffect` innecesarios, prop drilling evitable con Context, problemas de accesibilidad, seguridad y arquitectura. Funciona con Next.js, Vite, TanStack, React Native, Expo.
+[React Doctor](https://react.doctor/) es una herramienta externa (paquete npm `react-doctor`, alto volumen de descargas semanales) que escanea código React de forma determinista — no es un linter genérico, busca anti-patrones específicos de React: `useEffect` innecesarios, prop drilling evitable con Context, problemas de accesibilidad, seguridad y arquitectura, además de dead-code y supply-chain de dependencias. Funciona con Next.js, Vite, TanStack, React Native, Expo.
 
 Esta skill NO reimplementa esa lógica — documenta cómo invocarla y cómo interpretar su salida dentro del flujo de este framework.
 
-**A diferencia de `angular-doctor`, React Doctor NO produce un score agregado 0-100** — reporta hallazgos individuales por severidad (Error/Critical, Warning, Info/Suggestion). No usar "score ≥ N" como gate de calidad para React; el gate correcto es "cero hallazgos Error/Critical sin excepción documentada" (ver "Interpretación de resultados" abajo).
+**Sí produce un score agregado 0-100** (verificado corriendo `npx react-doctor@latest` — el gauge "N / 100" es lo primero que muestra en consola, antes que el detalle de hallazgos). El score también está disponible por separado con `--score` (imprime solo el número, útil para scripts/agentes) y dentro de `--json` (para reportes estructurados). En CI, `react-doctor ci install --commit-status` publica ese score como commit status. No es una skill "sin score" como se documentó en una versión anterior de este archivo — la diferencia real con `angular-doctor` es que aquí el gate por defecto es a nivel de severidad (`--blocking error|warning|none`), no un umbral de score fijo; se puede usar cualquiera de los dos.
 
 ## Critical Rules
 
@@ -39,25 +39,32 @@ Esta skill NO reimplementa esa lógica — documenta cómo invocarla y cómo int
 ## Instalación y uso
 
 ```bash
-# Local, antes de PR (no requiere instalación previa)
+# Local, antes de PR (no requiere instalación previa) — escanea el directorio actual
 npx react-doctor@latest
 
-# Contra un directorio específico (monorepo)
-npx react-doctor@latest --path apps/web
+# Contra un directorio específico (monorepo) — el directorio es un argumento posicional
+npx react-doctor@latest apps/web
 
-# Como agent skill instalable directamente en Claude Code
-npx react-doctor@latest --install-skill claude-code
+# Solo el score (para scripts/agentes)
+npx react-doctor@latest --score
+
+# Reporte estructurado completo
+npx react-doctor@latest --json
+
+# Instala la skill del agente + hooks nativos en el repo (setup interactivo, o --yes para no-interactivo)
+npx react-doctor@latest install --yes
 ```
 
 ### Integración CI/CD
 
-React Doctor soporta GitHub Actions de forma nativa (comenta en el PR solo los issues que introduce el diff, no el backlog completo) y un scaffold gate-only para GitLab CI. Wire esto en la skill `ci-cd` como un job adicional, no como reemplazo de `unit-testing`/`playwright`:
+React Doctor soporta GitHub Actions de forma nativa (auto-detectado) y un scaffold gate-only para GitLab CI (`--provider gitlab-ci`). El comando `ci install` genera el workflow — no escribirlo a mano. Wire esto en la skill `ci-cd` como un job adicional, no como reemplazo de `unit-testing`/`playwright`:
 
-```yaml
-# .github/workflows/react-doctor.yml (fragmento)
-- name: React Doctor
-  run: npx react-doctor@latest --format github-pr-comment
+```bash
+# Genera el workflow de CI, con gate por severidad y comentario en el PR
+npx react-doctor@latest ci install --blocking error --comment --commit-status
 ```
+
+Por defecto el scope de un scan en PR es `changed` (solo lo que introduce el diff, no el backlog completo) — usar `--scope full` explícitamente para escanear todo el proyecto en cada PR.
 
 ## Categorías que detecta
 
@@ -78,6 +85,13 @@ Esto se solapa parcialmente con la tabla "Frontend (React)" de `code-review` y c
 | Error/Critical | Blocker — no mergear hasta resolver o documentar excepción explícita |
 | Warning | Igual tratamiento que un warning de `code-review`: debe discutirse |
 | Info/Suggestion | Opcional, criterio del reviewer |
+
+| Score | Interpretación |
+|---|---|
+| 100 | Sin hallazgos (o proyecto React no detectado — verificar que el scan realmente corrió contra código React antes de confiar en un 100) |
+| Por debajo del mínimo acordado para el módulo | Blocker si se usa como gate de score (`--blocking` complementario, no sustituto) |
+
+El score es un agregado útil como tendencia/dashboard; el gate real que bloquea merge en este framework sigue siendo "cero Error/Critical sin excepción documentada" — no fijar un umbral de score arbitrario sin haber corrido el scan contra el proyecto real primero.
 
 ## Verification checklist
 

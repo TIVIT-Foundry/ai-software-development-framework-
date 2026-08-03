@@ -183,8 +183,8 @@ El primer módulo es Gestión de Tareas:
 
 | Tipo de consulta | Contacto |
 |------------------|----------|
-| **Framework y skills** | Manuel Aliaga — TIVIT Foundry |
-| **Arquitectura y diseño** | TIVIT Foundry — Laboratorio de IA |
+| **Framework y skills** | Matías Méndez — TIVIT Foundry |
+| **Arquitectura y diseño** | Manuel Aliaga — TIVIT Foundry |
 
 ---
 

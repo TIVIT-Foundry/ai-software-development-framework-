@@ -1,7 +1,7 @@
 ---
 name: angular-doctor
 description: 'Automated static analysis gate for Angular codebases using the angular-doctor CLI (npx angular-doctor@latest) — Angular-aware linting (components, directives, pipes, performance, architecture), dead code detection via knip, and a 0-100 health score. Complements the manual checklist in code-review, does not replace it. Trigger: before opening a PR that touches angular/angular-services code, or when wiring the CI quality gate for an Angular project.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
   - quality
@@ -37,25 +37,37 @@ Esta skill NO reimplementa esa lógica — documenta cómo invocarla y cómo int
 ## Instalación y uso
 
 ```bash
-# Local, antes de PR (no requiere instalación previa)
-npx angular-doctor@latest
+# Local, antes de PR (no requiere instalación previa) — directorio es argumento posicional
+npx angular-doctor@latest .
 
 # Contra un proyecto específico dentro de un workspace Angular CLI o npm/pnpm
-npx angular-doctor@latest --project apps/admin
+npx angular-doctor@latest . --project apps/admin
 
-# Como agent skill instalable directamente en Claude Code
-npx angular-doctor@latest --install-skill claude-code
+# Solo el score (para scripts/agentes)
+npx angular-doctor@latest . --score
+
+# Solo archivos cambiados vs. una rama base (dead-code detection se salta en este modo)
+npx angular-doctor@latest . --diff main
+
+# Instalar la skill del agente (Claude Code, Cursor, Windsurf, Codex, Gemini CLI, OpenCode) — script, no flag de la CLI
+curl -fsSL https://raw.githubusercontent.com/antonygiomarxdev/angular-doctor/main/install-skill.sh | bash
 ```
 
 ### Integración CI/CD
 
-Angular Doctor se integra a GitHub Actions posteando el health score y los diagnósticos como comentario de PR, y puede usarse como quality gate (fallar el pipeline por debajo de un score mínimo). Wire esto en la skill `ci-cd` como job adicional, no como reemplazo de `unit-testing`/`playwright`:
+Angular Doctor se integra a GitHub Actions vía la **GitHub Action oficial** (`antonygiomarxdev/angular-doctor@v1.2.0`), no vía un flag de la CLI — postea el health score y los diagnósticos como comentario de PR, y `score-threshold` falla el build si el score cae por debajo del mínimo. Wire esto en la skill `ci-cd` como job adicional, no como reemplazo de `unit-testing`/`playwright`:
 
 ```yaml
-# .github/workflows/angular-doctor.yml (fragmento)
+# .github/workflows/angular-doctor.yml
 - name: Angular Doctor
-  run: npx angular-doctor@latest --project ${{ env.PROJECT }} --min-score 80
+  uses: antonygiomarxdev/angular-doctor@v1.2.0
+  with:
+    directory: .
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    score-threshold: 75  # falla el build si el score < 75
 ```
+
+Para GitLab CI (sin Action nativa), correr `npx angular-doctor@latest . --score` en un job y comparar el número contra el umbral manualmente — no hay un flag `--min-score` en la CLI.
 
 ## Categorías que detecta
 
