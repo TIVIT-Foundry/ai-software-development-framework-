@@ -27,6 +27,8 @@ python .opencode\scaffold\generate.py spec.md --output .\my-module --backend pyt
 
 `--backend` y `--frontend` son independientes: cualquier combinación (Python+React, Python+Angular, Bun+React, Bun+Angular) es válida.
 
+`--namespace` (solo aplica con `--backend python`) anida el output bajo `backend/<partes del namespace>/` con `__init__.py` en cada nivel — por ejemplo `--namespace app.mymodule` genera `backend/app/mymodule/*.py` en vez de `backend/*.py`, como un paquete Python real e importable. Si se omite, el output queda plano (`backend/`), igual que antes de que existiera el flag.
+
 ## Estructura generada
 
 ```

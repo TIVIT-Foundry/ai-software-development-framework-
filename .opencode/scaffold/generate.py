@@ -925,7 +925,7 @@ _generated_init = False
 _generated_database = False
 
 
-def generate(spec, output_dir, backend="python", frontend="react"):
+def generate(spec, output_dir, backend="python", frontend="react", namespace=None):
     global _generated_init, _generated_database
 
     output = Path(output_dir)
@@ -941,12 +941,29 @@ def generate(spec, output_dir, backend="python", frontend="react"):
         module_lower = ctx["MODULE_CAMEL"]
 
         # ── Backend ──
-        backend_dir = output / "backend"
+        # --namespace nests the generated package under backend/<namespace parts>/
+        # (e.g. "app.mymodule" -> backend/app/mymodule/) with __init__.py at every
+        # level, so the relative imports in router.py.j2/service.py.j2 resolve as
+        # a real Python package path. Only applies to the python backend — bun/TS
+        # has no equivalent namespace-package concept. Left unset (None), behavior
+        # is unchanged from before --namespace existed: flat backend/.
+        if backend == "python" and namespace:
+            backend_dir = output / "backend"
+            for part in namespace.split("."):
+                backend_dir = backend_dir / part
+        else:
+            backend_dir = output / "backend"
 
         if backend == "python":
-            # __init__.py (once)
+            # __init__.py (once) — one per directory level, from output/backend/
+            # down to backend_dir, so the namespace path is an importable package.
             if not _generated_init:
-                write_file(backend_dir / "__init__.py", "")
+                init_dir = output / "backend"
+                write_file(init_dir / "__init__.py", "")
+                if namespace:
+                    for part in namespace.split("."):
+                        init_dir = init_dir / part
+                        write_file(init_dir / "__init__.py", "")
                 _generated_init = True
 
             # database.py (once)
@@ -1121,10 +1138,14 @@ def main():
     print(f"Frontend: {args.frontend}")
     print(f"\nGenerating scaffolding in: {args.output}")
 
-    generate(spec, args.output, backend=args.backend, frontend=args.frontend)
+    generate(spec, args.output, backend=args.backend, frontend=args.frontend, namespace=args.namespace)
+
+    backend_path = "/backend/"
+    if args.backend == "python" and args.namespace:
+        backend_path = "/backend/" + args.namespace.replace(".", "/") + "/"
 
     print(f"\nDone. Output: {args.output}")
-    print(f"  Backend:  {args.output}/backend/")
+    print(f"  Backend:  {args.output}{backend_path}")
     print(f"  Frontend: {args.output}/frontend/")
     print(f"  Database: {args.output}/database/")
     print(f"  Tests:    {args.output}/tests/")

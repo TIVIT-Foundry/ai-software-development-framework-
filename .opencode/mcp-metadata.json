@@ -29,7 +29,7 @@
     "docker": {
       "type": "automation",
       "risk_tier": "medium",
-      "purpose": "Gestión de containers Docker locales para desarrollo y testing",
+      "purpose": "Docker MCP Gateway oficial (docker/mcp-gateway) para gestión de containers locales en desarrollo y testing. Requiere Docker Desktop o Docker Engine con el plugin MCP Toolkit instalado — no se distribuye por npm/npx como el resto de los MCP de esta lista, se invoca vía `docker mcp gateway run`.",
       "authorized_by": "control-agent",
       "authorized_date": "2026-05-30",
       "scope": ["global"],

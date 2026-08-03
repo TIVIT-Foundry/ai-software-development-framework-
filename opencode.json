@@ -31,9 +31,10 @@
     "docker": {
       "type": "local",
       "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-docker"
+        "docker",
+        "mcp",
+        "gateway",
+        "run"
       ],
       "enabled": true
     },
