@@ -7,7 +7,7 @@ metadata:
   - quality
   layer:
   - testing
-  enforcement: mandatory
+  enforcement: recommended
   depends_on:
   - integration-testing
   consumed_by:

@@ -58,6 +58,18 @@ if isinstance(fs_cmd, list):
         if arg in ("examples", "docs"):
             warnings.append(f"filesystem MCP references '{arg}/' which may not exist")
 
+# Check 5: enabled flag + governance dates for every MCP
+enabled_count = 0
+for name, cfg in oc_mcp.items():
+    enabled = cfg.get("enabled", True)
+    if enabled:
+        enabled_count += 1
+    meta = mcp_servers.get(name, {})
+    if enabled and meta.get("authorized_date") in (None, ""):
+        warnings.append(f"MCP '{name}' is enabled but mcp-metadata has no authorized_date")
+    if enabled and meta.get("review_date") in (None, ""):
+        warnings.append(f"MCP '{name}' is enabled but mcp-metadata has no review_date")
+
 if errors:
     for e in errors:
         print(f"FAIL: {e}", file=sys.stderr)
@@ -66,4 +78,4 @@ if errors:
 for w in warnings:
     print(f"WARN: {w}")
 
-print(f"Valid config with {len(oc_mcp)} MCP servers in opencode.json, {len(mcp_servers)} in metadata")
+print(f"Valid config with {len(oc_mcp)} MCP servers in opencode.json ({enabled_count} enabled), {len(mcp_servers)} in metadata")

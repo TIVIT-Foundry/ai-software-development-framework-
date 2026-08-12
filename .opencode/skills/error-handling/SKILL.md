@@ -101,21 +101,35 @@ const handleSubmit = async (data: FormData) => {
 };
 ```
 
-## Error Response Format
+## Contrato de Respuestas API (canónico — ver también `api-contracts`)
+
+**Convención única del framework:** el envelope se usa SIEMPRE, tanto en éxito como en error. El cliente generado (`api.ts.j2` / Angular `service.ts.j2`) devuelve `data` desenvuelto y lanza `ApiError` en `!ok` **o** en `2xx + success:false` (nunca tratar un error como éxito).
+
+- **Éxito (2xx):** `{ "success": true, "data": {...}, "message": null }`
+- **Error (4xx/5xx, o 2xx con success:false):**
 ```json
 {
   "success": false,
-  "errors": [
-    { "code": "VAL_001", "field": "Name", "message": "Name is required" }
-  ]
+  "error": {
+    "code": "VAL_001",
+    "message": "Validation failed",
+    "details": [ { "code": "VAL_001", "field": "Name", "message": "Name is required" } ]
+  },
+  "data": null,
+  "meta": { "trace_id": "550e8400-...", "timestamp": "2026-08-12T10:00:00Z" }
 }
 ```
+- `error.code` y `error.message` son obligatorios; `error.details` es opcional (array de `{code, field, message}` para errores de validación de campos, o payload libre para otros errores).
+- `meta.trace_id` = `X-Correlation-ID` (ver sección de correlación); `meta.timestamp` = ISO 8601 UTC.
+- **Regla para clientes frontend:** si el backend responde HTTP 2xx con `success:false`, es un error de negocio/API y debe propagarse como error, jamás como éxito.
 
 ## Python FastAPI Exception Handling
 
 ```python
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
+from uuid import uuid4
+from datetime import datetime, timezone
 
 class AppException(HTTPException):
     def __init__(self, status_code: int, code: str, message: str, field: str | None = None):
@@ -129,13 +143,41 @@ async def app_exception_handler(request: Request, exc: AppException):
         status_code=exc.status_code,
         content={
             "success": False,
-            "errors": [{
+            "error": {
                 "code": exc.code,
-                "field": exc.field,
                 "message": exc.detail,
-            }],
+                "details": [{"code": exc.code, "field": exc.field, "message": exc.detail}]
+                if exc.field else None,
+            },
+            "data": None,
+            "meta": {
+                "trace_id": getattr(request.state, "correlation_id", str(uuid4())),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
         },
     )
+```
+
+## Frontend — Consumo de errores (contrato unificado)
+
+El cliente generado lanza `ApiError { status, code, message, details }` (ver `api.ts.j2`). Consumir así:
+
+```typescript
+// Logic hook pattern
+const handleSubmit = async (data: FormData) => {
+    try {
+        await createMutation(data, {
+            onSuccess: () => toast.success("Created successfully"),
+        });
+    } catch (err) {
+        if (err instanceof ApiError && Array.isArray(err.details)) {
+            // Set form field errors from err.details array {code, field, message}
+            err.details.forEach(e => form.setError(e.field, { message: e.message }));
+        } else {
+            toast.error(err instanceof ApiError ? err.message : "Unexpected error");
+        }
+    }
+};
 ```
 
 ## Security Considerations

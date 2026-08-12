@@ -54,13 +54,22 @@ for fase, niveles, skills_col in rows:
 
 # Cross-check: every skill flagged `enforcement: mandatory` in the catalog tables
 # (outside this section) should appear in at least one bundle row, so it's actually
-# scheduled somewhere in the pipeline.
+# scheduled somewhere in the pipeline. Wildcards (database-*) are expanded.
 catalog_rows = re.findall(r"^\|\s*([a-z][a-z0-9\-]*)\s*\|.*?\|.*?\|\s*mandatory\s*\|", content, re.MULTILINE)
 bundled_skills = set()
 for _, _, skills_col in rows:
     for raw in skills_col.split(","):
         name = raw.strip().strip("`")
-        if name and "*" not in name and not name.startswith("("):
+        if not name:
+            continue
+        if name.startswith("("):
+            continue
+        if name.endswith("-*") or name.endswith("*"):
+            prefix = name.rstrip("*")
+            bundled_skills.update(s for s in skills if s.startswith(prefix))
+        elif name not in skills:
+            continue  # unknown literal handled above
+        else:
             bundled_skills.add(name)
 
 for skill_name in sorted(set(catalog_rows)):

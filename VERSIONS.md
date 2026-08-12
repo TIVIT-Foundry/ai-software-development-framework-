@@ -15,6 +15,19 @@
 | 2.0.0 | 2026-07-17 | 102 | Catálogo expandido, scaffold Angular + backend dual |
 | 1.0.0 | 2026-07-16 | 76 | Versión inicial consolidada |
 
+## Versiones de los documentos de gobierno
+
+Los documentos de `.opencode/framework/` tienen versionado propio (independiente de la versión del framework):
+
+| Documento | Versión | Última actualización |
+|-----------|---------|----------------------|
+| SKILLS-MANIFEST.md | 2.2.0 | 2026-08-03 |
+| AGENT-MODEL.md | 2.1.0 | 2026-08-03 |
+| SKILL-EXECUTION-PROTOCOL.md | 2.0.0 | 2026-07-17 |
+| SKILL-ROUTING.md | 1.3.0 | 2026-08-03 |
+
+Regla: al cambiar un documento de gobierno, incrementar su versión propia **y** anotar aquí la fila correspondiente (la versión del framework solo sube cuando cambia el catálogo o el contrato entre capas).
+
 ## Stack certificado
 
 | Capa | Tecnología | Versión mínima | Versión recomendada |

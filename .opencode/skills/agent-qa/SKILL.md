@@ -9,7 +9,7 @@ metadata:
   layer:
   - backend
   - frontend
-  enforcement: recommended
+  enforcement: optional
   depends_on:
   - playwright
   - api-first-testing

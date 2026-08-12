@@ -14,7 +14,7 @@ metadata:
   - closure
   layer:
   - process
-  enforcement: recommended
+  enforcement: optional
   depends_on:
   - project-bootstrap
   - repo-structure

@@ -26,6 +26,10 @@ export class ${ENTITY}PageComponent implements OnInit, OnDestroy {
   readonly page = signal<number>(1);
   readonly pageSize = signal<number>(20);
   readonly searchFilter = signal<string>('');
+  readonly sort = signal<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
+    sortBy: 'created_at',
+    sortOrder: 'DESC',
+  });
   readonly loading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
   readonly showForm = signal<boolean>(false);
@@ -46,6 +50,8 @@ export class ${ENTITY}PageComponent implements OnInit, OnDestroy {
     const params: ${ENTITY}QueryParams = {
       page: this.page(),
       pageSize: this.pageSize(),
+      sortBy: this.sort().sortBy,
+      sortOrder: this.sort().sortOrder,
       searchFilter: this.searchFilter() || undefined,
     };
     this.service.list(params).pipe(takeUntil(this.destroy$)).subscribe({
@@ -73,6 +79,8 @@ export class ${ENTITY}PageComponent implements OnInit, OnDestroy {
   }
 
   onSort(sort: { sortBy: string; sortOrder: 'ASC' | 'DESC' }): void {
+    this.sort.set(sort);
+    this.page.set(1);
     this.load();
   }
 

@@ -5,7 +5,7 @@
 **Autor**: Manuel Aliaga — Ingeniero de IA, TIVIT Foundry
 **Última actualización**: 3 de agosto de 2026
 
-Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 113 skills, 4 agentes, 10 MCPs activos para diseñar, implementar y operar aplicaciones con agentes AI.
+Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 113 skills, 4 agentes, 10 MCPs configurados (7 activos: context7, playwright, docker, package-registry, filesystem, github, postgres) para diseñar, implementar y operar aplicaciones con agentes AI.
 
 **Stack de referencia:**
 
@@ -50,7 +50,7 @@ Ver [AGENT-MODEL.md](.opencode/framework/AGENT-MODEL.md) para permisos, responsa
 
 | Modo | Confirmaciones | Cuándo usar |
 |------|---------------|-------------|
-| **Hybrid** (default) | 15 | Nuevos packs verticales, balance calidad-velocidad |
+| **Hybrid** (default) | 15 (16 si N0 está activo) | Nuevos packs verticales, balance calidad-velocidad |
 | **Meta-Skills** | 6 | Módulos adicionales del mismo pack |
 | **Per-Skill** | 49 | Audit, onboarding, escenarios de alta criticidad |
 

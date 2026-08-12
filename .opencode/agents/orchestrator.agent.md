@@ -50,6 +50,7 @@ Para cada skill en el path:
 - ¿Sus depends_on han producido artefactos?
 - ¿Tiene enforcement: mandatory? Si no puede ejecutarse, documentar bloqueo.
 - ¿Hay skills cross-cutting que inyectar? (multi-tenancy, datos sensibles, MCP nuevo)
+- Si el path incluye CI/CD o entrega a un repo remoto: ¿el repositorio existe y es accesible con el token disponible? (`git remote -v` / `git ls-remote` / `gh repo view`). Si no se puede verificar, NO dar por bueno el repo base: pedir URL verificable o credencial con scope (preflight de `ci-cd`).
 
 ### 3. Delegar al agente correcto
 

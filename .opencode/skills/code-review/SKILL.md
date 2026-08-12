@@ -10,7 +10,7 @@ metadata:
   - construction
   layer:
   - process
-  enforcement: mandatory
+  enforcement: recommended
   depends_on:
   - react-doctor
   - angular-doctor

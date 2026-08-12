@@ -38,7 +38,7 @@ Activate this skill when:
 
 **Do not** activate when:
 
-- Using simple JWT without Keycloak (use `authentication`)
+- Using custom JWT/OAuth2 without Keycloak (use `oauth2-jwt`)
 - Only implementing basic RBAC (use `authorization`)
 - Working with frontend-only auth patterns (use `react` or `angular`)
 
@@ -46,7 +46,8 @@ Activate this skill when:
 
 | Skill | Relation | Description |
 |-------|----------|-------------|
-| `authentication` | Predecesora | Base JWT/OAuth2 patterns |
+| `authentication` | Predecesora | Patrones generales de auth (login, sesiones, BFF, WebAuthn); Keycloak es el IdP recomendado |
+| `oauth2-jwt` | Complementaria | JWT/OAuth2 custom sin IdP — si no usas Keycloak, usa esta |
 | `authorization` | Complementaria | RBAC implementation details |
 | `security` | Complementaria | General security patterns |
 | `react` / `angular` | Consumidora | Frontend Keycloak integration (según el framework elegido por el proyecto) |
@@ -100,8 +101,8 @@ settings = KeycloakSettings()
 ### Token Validation with JWKS
 
 ```python
-from jose import jwt, jwk
-from jose.utils import base64url_decode
+import jwt
+from jwt import PyJWKSet
 import httpx
 from fastapi import Depends, HTTPException, Request
 from typing import Optional
@@ -120,38 +121,25 @@ class KeycloakTokenValidator:
             response = await client.get(self.settings.jwks_url)
             response.raise_for_status()
             jwks = response.json()
-            self.jwks_cache["jwks"] = jwwks
+            self.jwks_cache["jwks"] = jwks
             return jwks
     
     async def validate_token(self, token: str) -> dict:
         # Get JWKS
         jwks = await self.get_jwks()
         
-        # Decode header to get kid
-        header = jwt.get_unverified_header(token)
-        kid = header.get("kid")
-        
-        # Find matching key
-        key = None
-        for k in jwks["keys"]:
-            if k["kid"] == kid:
-                key = jwk.construct(k)
-                break
-        
-        if not key:
-            raise HTTPException(status_code=401, detail="Invalid token: key not found")
-        
-        # Verify signature and decode
+        # Verify signature and decode (PyJWT selecciona la key por kid del header)
         try:
+            signing_key = PyJWKSet.from_dict(jwks).get_signing_key_from_jwt(token)
             payload = jwt.decode(
                 token,
-                key.to_pem().decode(),
+                signing_key.key,
                 algorithms=["RS256"],
                 issuer=self.settings.issuer,
                 audience=self.settings.KEYCLOAK_CLIENT_ID
             )
             return payload
-        except jwt.JWTError as e:
+        except jwt.InvalidTokenError as e:
             raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
 validator = KeycloakTokenValidator(settings)

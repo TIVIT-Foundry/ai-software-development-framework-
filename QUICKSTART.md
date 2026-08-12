@@ -104,9 +104,9 @@ Fase A-B (confirmación por skill — tú ves y apruebas cada paso):
   │     "Capacidades: autenticación, autorización, gestión de usuarios.
   │      MVP: login + registro + CRUD básico"
   │     [Tú confirmas]
-  └── N4: governance-constitution → design agent
-        "Artículos: test-first, simplicity, anti-abstraction..."
-        [Tú confirmas]
+   └── N4: hu-template → design agent
+         "HU del MVP: login, CRUD básico, roles..."
+         [Tú confirmas]
 
 Fase C-H (confirmación por bundle — más rápido):
   Fase C (Scaffold) → 1 confirmación

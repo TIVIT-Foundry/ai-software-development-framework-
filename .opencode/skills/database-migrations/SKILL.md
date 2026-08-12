@@ -56,14 +56,14 @@ Usa esta skill para responder estas preguntas:
 4. Verificar que las columnas de auditoría (RecordStatus, RecordCreationUser, etc.) estén en toda tabla nueva.
 5. Documentar el orden de dependencia entre migraciones.
 6. Probar que las migraciones son reversibles en un entorno de desarrollo antes de promover.
-7. Validar que las migraciones respetan las convenciones de `database` (naming, schemas, tipos).
+7. Validar que las migraciones respetan las convenciones de `database-modeling` (naming, schemas, tipos).
 8. Generar un manifiesto de migración que liste versión, descripción y entorno.
 
 ## Entradas esperadas
 
 Esta skill asume que ya existe:
 - diseño de tablas validado (`database-modeling`);
-- convenciones de naming y schemas (`database`);
+- convenciones de naming y schemas (`database-modeling`);
 - stored procedures que dependen del esquema (`database-sp`);
 - columnas de auditoría definidas (`database-audit`).
 
@@ -104,7 +104,7 @@ Esta skill sí decide:
 
 Esta skill delega:
 - el diseño de tablas a `database-modeling`;
-- las convenciones generales de BD a `database`;
+- las convenciones generales de BD a `database-modeling`;
 - la inserción de datos de catálogo a `database-seeding`;
 - la lógica de negocio en SPs a `database-sp`.
 
@@ -150,6 +150,17 @@ Definir:
 - script de post-verificación (verificar que el cambio existe);
 - cómo manejar migraciones que fallan a la mitad;
 - logging de migraciones aplicadas (tabla de historial).
+
+### 6. ⚠️ Columnas computadas por la DB + ORM async (`onupdate=func.now()`)
+
+Si una columna usa `DEFAULT NOW()` / `ON UPDATE` computado por la DB (p. ej.
+`updated_at TIMESTAMPTZ DEFAULT NOW()`) y el proyecto usa SQLAlchemy 2.0 async,
+el modelo debe declarar la columna de forma coherente con el patrón de acceso
+(`server_default` / `onupdate=func.now()`) y los endpoints que mutan la entidad
+deben hacer `await session.refresh(entity)` post-flush antes de serializar el DTO.
+Sin eso, acceder al atributo expired dispara `MissingGreenlet` (HTTP 500).
+Ver la advertencia completa en `database-modeling` ("SQLAlchemy async + columnas
+computadas por la DB") y el patrón de refresh en `data-access`.
 
 ## Preguntas guía
 

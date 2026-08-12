@@ -22,7 +22,7 @@ export class ${ENTITY}TableComponent {
 
   readonly totalPages = computed(() => Math.ceil(this.total() / this.pageSize()) || 1);
 
-  private sortState = { sortBy: 'createdAt', sortOrder: 'DESC' as 'ASC' | 'DESC' };
+  private sortState = { sortBy: 'created_at', sortOrder: 'DESC' as 'ASC' | 'DESC' };
 
   onSort(column: string): void {
     const nextOrder: 'ASC' | 'DESC' =

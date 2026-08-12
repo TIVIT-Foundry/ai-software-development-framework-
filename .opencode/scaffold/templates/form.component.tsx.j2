@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 
 import type { ${ENTITY}CreateRequest, ${ENTITY}UpdateRequest } from './${entity}.model';
 
@@ -14,7 +14,7 @@ interface ${ENTITY}FormProps {
 export function ${ENTITY}Form({ initialValues = null, loading = false, onSubmitForm, onCancel }: ${ENTITY}FormProps) {
   const [values, setValues] = useState<${ENTITY}FormValues>(initialValues ?? {});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSubmitForm(values as ${ENTITY}CreateRequest | ${ENTITY}UpdateRequest);
   };

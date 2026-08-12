@@ -11,7 +11,7 @@ metadata:
   - operations
   layer:
   - infrastructure
-  enforcement: recommended
+  enforcement: mandatory
   depends_on: []
   consumed_by:
   - agent-backend

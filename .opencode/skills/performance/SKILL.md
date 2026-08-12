@@ -13,7 +13,7 @@ metadata:
   - frontend
   enforcement: recommended
   depends_on:
-  - database
+  - database-modeling
   - backend-api
   consumed_by:
   - agent-backend

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, finalize, Observable, throwError } from 'rxjs';
+import { catchError, finalize, map, Observable, throwError } from 'rxjs';
 
 import type {
   ${ENTITY}ListItem,
@@ -10,6 +10,20 @@ import type {
   ${ENTITY}ListResponse,
   ${ENTITY}QueryParams,
 } from './${entity}.model';
+
+/**
+ * Contrato de respuestas (ver skills api-contracts / error-handling):
+ * - Éxito: HTTP 2xx con envelope { success: true, data, message } — este servicio
+ *          devuelve `data` (payload) desenvuelto.
+ * - Error: HTTP !ok (HttpErrorResponse) o HTTP 2xx con { success: false, error }.
+ *          Ambos casos se propagan como error; un 2xx con success:false nunca se
+ *          trata como éxito (bug clásico: "HTTP 200 tratado como error").
+ */
+interface ApiEnvelope<T> {
+  success?: boolean;
+  data?: T;
+  error?: { code?: string; message?: string; details?: unknown } | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ${ENTITY}Service {
@@ -26,8 +40,28 @@ export class ${ENTITY}Service {
     this._loading.set(value);
   }
 
+  private unwrap<T>(obs: Observable<ApiEnvelope<T>>): Observable<T> {
+    return obs.pipe(
+      map((body) => {
+        if (body === null || body === undefined) {
+          return undefined as T; // 204 No Content
+        }
+        if (body.success === false) {
+          throw new Error(body.error?.message ?? 'API error');
+        }
+        return body.data as T;
+      }),
+    );
+  }
+
   private handleError(operation: string, err: unknown): Observable<never> {
-    const message = err instanceof Error ? err.message : `Unknown error during ${operation}`;
+    let message = err instanceof Error ? err.message : `Unknown error during ${operation}`;
+    if (err instanceof HttpErrorResponse) {
+      // Envelope de error { error: { code, message, details } } enviado por el backend.
+      const apiError = err.error?.error;
+      if (apiError?.message) message = apiError.message;
+      else if (typeof err.error === 'string' && err.error) message = err.error;
+    }
     this._error.set(message);
     return throwError(() => (err instanceof Error ? err : new Error(message)));
   }
@@ -43,7 +77,7 @@ export class ${ENTITY}Service {
     if (params.sortOrder) httpParams = httpParams.set('sort_order', params.sortOrder);
     if (params.searchFilter) httpParams = httpParams.set('search_filter', params.searchFilter);
 
-    return this.http.get<${ENTITY}ListResponse>(this.baseUrl, { params: httpParams }).pipe(
+    return this.unwrap<${ENTITY}ListResponse>(this.http.get<ApiEnvelope<${ENTITY}ListResponse>>(this.baseUrl, { params: httpParams })).pipe(
       finalize(() => this.setLoading(false)),
       catchError((err) => this.handleError('list ${entities}', err)),
     );
@@ -54,28 +88,28 @@ export class ${ENTITY}Service {
   }
 
   get(id: number): Observable<${ENTITY}ListItem> {
-    return this.http.get<${ENTITY}ListItem>(`${this.baseUrl}/${id}`).pipe(
+    return this.unwrap<${ENTITY}ListItem>(this.http.get<ApiEnvelope<${ENTITY}ListItem>>(`${this.baseUrl}/${id}`)).pipe(
       finalize(() => this.setLoading(false)),
       catchError((err) => this.handleError(`get ${entity} ${id}`, err)),
     );
   }
 
   create(body: ${ENTITY}CreateRequest): Observable<${ENTITY}ListItem> {
-    return this.http.post<${ENTITY}ListItem>(this.baseUrl, body).pipe(
+    return this.unwrap<${ENTITY}ListItem>(this.http.post<ApiEnvelope<${ENTITY}ListItem>>(this.baseUrl, body)).pipe(
       finalize(() => this.setLoading(false)),
       catchError((err) => this.handleError('create ${entity}', err)),
     );
   }
 
   update(id: number, body: ${ENTITY}UpdateRequest): Observable<${ENTITY}ListItem> {
-    return this.http.put<${ENTITY}ListItem>(`${this.baseUrl}/${id}`, body).pipe(
+    return this.unwrap<${ENTITY}ListItem>(this.http.put<ApiEnvelope<${ENTITY}ListItem>>(`${this.baseUrl}/${id}`, body)).pipe(
       finalize(() => this.setLoading(false)),
       catchError((err) => this.handleError(`update ${entity} ${id}`, err)),
     );
   }
 
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`).pipe(
+    return this.unwrap<void>(this.http.delete<ApiEnvelope<void>>(`${this.baseUrl}/${id}`)).pipe(
       finalize(() => this.setLoading(false)),
       catchError((err) => this.handleError(`delete ${entity} ${id}`, err)),
     );

@@ -63,7 +63,7 @@ Usa esta skill para responder estas preguntas:
 Esta skill asume que ya existe:
 - esquema de base de datos creado por `database-migrations`;
 - stored procedures que dependen de catálogos (`database-sp`);
-- convenciones de naming y auditoría (`database`, `database-audit`).
+- convenciones de naming y auditoría (`database-modeling`, `database-audit`).
 
 Si falta esta base, la skill debe pedirla antes de concluir.
 

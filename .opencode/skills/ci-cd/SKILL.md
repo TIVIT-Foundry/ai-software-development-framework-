@@ -10,7 +10,7 @@ metadata:
   - operations
   layer:
   - infrastructure
-  enforcement: recommended
+  enforcement: mandatory
   depends_on: []
   consumed_by:
   - agent-backend
@@ -42,6 +42,28 @@ Diseñar pipelines CI/CD repetibles, seguros y auditable: ejecución por etapas,
 - `security` define políticas de secretos, firma de artefactos y compliance.
 - `docker-local` define cómo se construyen y versionan imágenes de contenedor.
 
+## Preflight del repositorio (obligatorio antes de diseñar el pipeline)
+
+Nunca asumir que el repositorio base del proyecto existe, es accesible o tiene CI habilitado. Antes de producir cualquier pipeline:
+
+1. Verificar el remoto: `git remote -v` (debe existir un `origin` apuntando al repo real).
+2. Verificar acceso de lectura/escritura con el token disponible (p. ej. `gh repo view <owner>/<repo>` o `git ls-remote <url>`); si falla, **detener** y pedir al usuario la URL verificable o credencial con scope a la organización.
+3. Confirmar que el CI provider está habilitado en el repo (Actions habilitado / runner configurado) — si no, registrar como bloqueo, no como supuesto.
+4. Registrar en el state del workflow el origen real del repo (URL, visibilidad, estado de acceso) y el resultado del preflight.
+
+Si el repo no existe o no es accesible, el pipeline YAML puede quedar listo como artefacto, pero el estado debe ser `BLOQUEADO` (handoff del protocolo), no `COMPLETADO`.
+
+## Gates automatizados por stack (dónde vive cada gate)
+
+| Gate | Skill | Dónde se ejecuta |
+|------|-------|------------------|
+| React | `react-doctor` (`npx react-doctor@latest`, score mínimo) | Job CI adicional del frontend (recomendado) — si el proyecto no lo cablea, gate manual obligatorio en `code-review` antes del PR |
+| Angular | `angular-doctor` (`npx angular-doctor@latest`, health score) | Job CI adicional del frontend (recomendado) — igual que React |
+| Backend Python | ruff + pytest + coverage | Job CI del backend (mandatorio) |
+| DB | `database-security` + migraciones en CI | Job CI / validate stage (mandatorio) |
+
+Regla: si el pipeline NO incluye el gate doctor del stack frontend del proyecto, el checklist de `code-review` debe exigirlo manualmente antes del PR (los jobs doctor son deterministas y no se repiten a mano).
+
 ## Qué debe hacer el agente
 
 1. Diseñar pipeline con etapas secuenciales: lint → test → build → security scan → publish → deploy.
@@ -53,6 +75,10 @@ Diseñar pipelines CI/CD repetibles, seguros y auditable: ejecución por etapas,
 7. Promover el mismo artefacto entre entornos, no reconstruir.
 8. Bloquear deploys a prod con aprobación manual (protected environment).
 9. Registrar evidencia de cada deploy (commit, artefacto, resultado, responsable).
+10. Incluir un **job de tests por stack presente en el repo**: backend (pytest), frontend
+    (Vitest/RTL o ng test), Bun (Vitest). Si el repo tiene código frontend con lógica
+    (contexts, hooks, guards, services), el pipeline DEBE ejecutar sus tests — el gate
+    Test-First del protocolo aplica por capa, no solo al backend.
 
 ## Alcance
 
@@ -204,6 +230,10 @@ steps:
 ## Criterios de calidad
 
 - El pipeline pasa lint + test + security scan antes de build.
+- Cada stack con código (backend, frontend, bun) tiene su job de tests en CI; el job de
+  frontend corre Vitest/RTL o `ng test` cuando existe lógica frontend (no solo build).
+- El gate doctor del stack frontend está cableado como job CI, o el checklist de
+  `code-review` lo exige manualmente (ver "Gates automatizados por stack").
 - No hay secretos en ningún archivo del repositorio.
 - Cada deploy produce un artefacto inmutable trazable a un commit.
 - El rollback está definido y es ejecutable por un solo comando.

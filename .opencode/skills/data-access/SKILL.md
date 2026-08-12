@@ -164,6 +164,10 @@ class ProductoRepository:
                 )
                 session.add(entity)
                 await session.commit()
+                # Obligatorio si el modelo tiene columnas computadas por la DB
+                # (DEFAULT NOW() / onupdate=func.now()): el commit deja el atributo
+                # expired y, en sesión async, accederlo sin refresh lanza
+                # MissingGreenlet (ver database-modeling).
                 await session.refresh(entity)
                 return self._to_dto(entity)
             except IntegrityError as ex:
@@ -191,6 +195,8 @@ class ProductoRepository:
                     entity.precio = request.precio
 
                 await session.commit()
+                # Refresh post-commit: mismo motivo que en create — atributos
+                # computados por la DB quedan expired (ver database-modeling).
                 await session.refresh(entity)
                 return self._to_dto(entity)
             except DatabaseError as ex:

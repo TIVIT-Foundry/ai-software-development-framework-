@@ -174,6 +174,6 @@ Antes de cada release:
 - SQLAlchemy 2.0 async para DB
 - Alembic para migraciones
 - pytest + httpx para tests
-- python-jose/passlib para JWT
+- PyJWT/passlib para JWT
 - FastAPI para endpoints
 - PostgreSQL 16 como base de datos

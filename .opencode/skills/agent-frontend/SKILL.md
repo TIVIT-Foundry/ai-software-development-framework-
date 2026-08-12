@@ -9,7 +9,7 @@ metadata:
   - construction
   layer:
   - frontend
-  enforcement: recommended
+  enforcement: optional
   depends_on:
   - react
   - angular

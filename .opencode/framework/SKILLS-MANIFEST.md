@@ -10,7 +10,7 @@
 ## Convenciones
 
 - **Fase:** inception | conception | governance | architecture | scaffold | construction | quality | operations | closure
-- **Layer:** business | design | implementation | infrastructure | testing | operations
+- **Layer:** business | design | implementation | infrastructure | testing | operations | backend | frontend | database | governance | process | scaffold | testing/frontend
 - **Enforcement:** mandatory | recommended | optional
 - **Stack:** Python/FastAPI | React o Angular | Bun/TypeScript | PostgreSQL | Multi
 
@@ -30,7 +30,7 @@
 | framework-pack-design | conception | design | mandatory | Pack vertical como producto: capacidades, agentes, prompts, runbooks |
 | framework-data-memory-compliance | architecture | design | mandatory | Datos, memoria y compliance: taxonomía, stores, retención, cifrado |
 | framework-security | architecture | design | mandatory | Seguridad: RBAC, guardrails, secretos, auditoría, tool calling |
-| framework-platform | platform | infrastructure | mandatory | Plataforma: K8s, despliegue, namespaces, mensajería, observabilidad |
+| framework-platform | operations | infrastructure | mandatory | Plataforma: K8s, despliegue, namespaces, mensajería, observabilidad |
 | framework-scaffold-implementation | scaffold | implementation | mandatory | Scaffold: repos, módulos, SDK, core, pack, entorno local |
 | framework-qa-validation | quality | implementation | mandatory | QA: contract tests, integración, validación, go/no-go |
 | framework-operations-evolution | operations | operations | mandatory | Operación: monitoreo, incidentes, SLOs, versionado, deprecación |
@@ -185,7 +185,7 @@
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
-| client-readiness-checklist | discovery | business | recommended | Checklist de qué necesita el framework para operar en un cliente/proyecto nuevo |
+| client-readiness-checklist | inception | business | recommended | Checklist de qué necesita el framework para operar en un cliente/proyecto nuevo |
 | requirements-intake | inception | business | recommended | "Documento Cero": convierte input funcional ambiguo del cliente en línea base confirmada |
 | hu-template | inception | business | mandatory | Template de Historias de Usuario |
 | pull-request | closure | implementation | mandatory | PR template, conventional commits, changelog |
@@ -231,13 +231,15 @@ Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-fi
 |------|---------|--------|---------------|
 | A — Gobierno | N0-N4 | requirements-intake, framework-governance, framework-discovery, framework-conception, hu-template | 5 |
 | B — Arquitectura | N5-N9 | framework-architecture, framework-core-design, framework-pack-design, framework-data-memory-compliance, framework-security | 5 |
-| C — Scaffold | N10-N15 | framework-scaffold-implementation, project-architecture, project-bootstrap, repo-structure, app-bootstrap, backend-api, bun-backend | 1 |
-| D — Especificación | N16 | api-first-spec, api-contracts | 1 |
-| E — Backend | N17-N31 | api-first-backend, data-access, database-*, pgvector, authentication, authorization, oauth2-jwt, error-handling, shared-libs, api-integration, api-resilience, api-versioning, api-gateway, redis, real-time, file-upload, notifications, costos-llm, langfuse | 1 |
-| F — Frontend | N32-N37 | api-first-frontend, api-contracts, react, angular, react-services, angular-services, typescript, design-system, i18n, mobile-pwa, react-upgrade, angular-upgrade | 1 |
+| C — Scaffold | N10-N15 | framework-scaffold-implementation, project-architecture, project-bootstrap, repo-structure, app-bootstrap, backend-api | 1 |
+| D — Especificación | N16 | api-first-spec | 1 |
+| E — Backend | N17-N31 | api-first-backend, data-access, database-*, pgvector, authentication, authorization, oauth2-jwt, error-handling, shared-libs, api-integration, api-resilience, api-versioning, api-gateway, redis, real-time, file-upload, notifications, costos-llm | 1 |
+| F — Frontend | N32-N37 | api-first-frontend, react, angular, react-services, angular-services, typescript, design-system, i18n, mobile-pwa | 1 |
 | G — Calidad | N38-N44 | unit-testing, integration-testing, playwright, security-testing, load-testing, code-review, accesibilidad, a11y-testing, acceptance-test-automation | 1 |
 | H — Operación | N45-N49 | ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, infrastructure-as-code, terraform, kubernetes, disaster-recovery, postgresql-backup, pull-request, langfuse | 1 |
 
 > **N0 (`requirements-intake`) es condicional**: solo se activa cuando el cliente no trae documentación funcional formal — ver `client-readiness-checklist`. No cuenta como confirmación extra cuando se omite.
+>
+> `api-contracts` se activa junto a la Fase D o E cuando el módulo define contratos compartidos (sin nivel propio).
 
-**Nota:** Las fases mantienen 15 confirmaciones en modo Hybrid. Las skills `recommended`/`optional` se activan bajo demanda según el contexto del proyecto. Las skills adicionales del catálogo expandido incluyen: `api-contracts`, `bun-backend`, `redis`, `terraform`, `github-actions`, `gitlab-ci`, `kubernetes`, `prometheus-grafana`, `opentelemetry`, `langfuse`, `pgvector`, `postgresql-backup`, `oauth2-jwt`, `mobile-pwa`, `react-upgrade`, `a11y-testing`, `feature-spec`, `tasks`, `converge`.
+**Nota:** Las fases suman 16 confirmaciones con N0 activo (A=5, B=5, C-H=6); en modo Hybrid el total es **15** porque N0 no cuenta cuando se omite (A queda en 4). Las skills `recommended`/`optional` se activan bajo demanda según el contexto del proyecto. Las skills del catálogo que no tienen nivel propio en las fases (p. ej. `react-upgrade`, `angular-upgrade`, `github-actions`, `gitlab-ci`, `terraform`, `kubernetes`, `prometheus-grafana`, `opentelemetry`, `postgresql-backup`, `feature-spec`, `tasks`, `converge`, `bun-backend`) se activan por routing de cambio de tipo (ver SKILL-ROUTING).

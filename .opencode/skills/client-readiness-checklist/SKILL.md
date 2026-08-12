@@ -4,7 +4,7 @@ description: 'Checklist run during commercial onboarding to determine what a new
 version: 1.0
 metadata:
   phase:
-  - discovery
+  - inception
   layer:
   - business
   enforcement: recommended
@@ -51,7 +51,7 @@ Cuando el proyecto existente está en un stack no cubierto por el framework (ej.
 
 Este flujo es más lento que un proyecto greenfield — debe comunicarse así en la estimación, no tratarse como un proyecto estándar con overhead adicional.
 
-### Nivel de infraestructura (placeholder)
+### Nivel de infraestructura (tiers en evaluación)
 
 La definición detallada de tiers básico/medio/avanzado (modelos, throughput de tokens, tamaño de equipo, costo) es un tema en evaluación — ver `framework-platform` (portabilidad cloud/on-premise) y `costos-llm` (que hoy excluye explícitamente modelos self-hosted/open-source de su alcance). Esta skill solo registra qué tier pidió o necesita el cliente; el diseño técnico del tier se resuelve en esas otras skills.
 

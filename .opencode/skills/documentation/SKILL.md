@@ -150,9 +150,9 @@ User → React/Angular → Bun API → (Kafka events) → Python AI → pgvector
                 PostgreSQL
 
 ## Key Decisions
-- [ADR-0001](adr/0001-use-postgresql.md): PostgreSQL + pgvector
-- [ADR-0002](adr/0002-use-keycloak.md): Keycloak for auth
-- [ADR-0003](adr/0003-bun-for-backend.md): Bun for general backend
+- [ADR-003](../../docs/adr/ADR-003-postgresql-pgvector.md): PostgreSQL + pgvector
+- [ADR-002](../../docs/adr/ADR-002-backend-dual.md): Keycloak for auth
+- [ADR-001](../../docs/adr/ADR-001-angular.md): Bun for general backend
 
 ## Repository Map
 | Directory | Purpose | Language | Owner |

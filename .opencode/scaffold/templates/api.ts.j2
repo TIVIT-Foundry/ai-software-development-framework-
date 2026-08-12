@@ -8,17 +8,57 @@ import type {
 
 const BASE_URL = '/api/${entities}';
 
+/**
+ * Error tipado de la API.
+ *
+ * Contrato de respuestas (ver skills api-contracts / error-handling):
+ * - Éxito:   HTTP 2xx con envelope { success: true, data, message } — este cliente
+ *            devuelve `data` (payload) desenvuelto.
+ * - Error:   HTTP !ok, o HTTP 2xx con { success: false, error: { code, message, details } }.
+ *            Ambos casos lanzan ApiError para que el consumidor nunca trate
+ *            un error como éxito (bug clásico: "HTTP 200 tratado como error").
+ * - 204:     sin cuerpo → undefined.
+ */
+export class ApiError extends Error {
+  status: number;
+  code: string;
+  details?: unknown;
+
+  constructor(status: number, code: string, message: string, details?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   });
-  if (!res.ok) {
-    const message = await res.text().catch(() => res.statusText);
-    throw new Error(message || `Request failed (${res.status})`);
-  }
   if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+
+  const body: unknown = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const err = (body as { error?: { code?: string; message?: string; details?: unknown } } | null)?.error;
+    throw new ApiError(res.status, err?.code ?? `HTTP_${res.status}`, err?.message ?? res.statusText, err?.details);
+  }
+
+  // HTTP 2xx con success:false → error de negocio/API; nunca debe tratarse como éxito.
+  if (body && typeof body === 'object' && (body as { success?: boolean }).success === false) {
+    const err = (body as { error?: { code?: string; message?: string; details?: unknown } }).error;
+    throw new ApiError(res.status, err?.code ?? 'API_ERROR', err?.message ?? 'API error', err?.details);
+  }
+
+  // Envelope { success, data, message }: devolver el payload desenvuelto.
+  if (body && typeof body === 'object' && 'data' in (body as object)) {
+    return (body as { data: T }).data;
+  }
+  // Respuesta plana: devolver el body tal cual.
+  return body as T;
 }
 
 function buildQuery(params: ${ENTITY}QueryParams): string {

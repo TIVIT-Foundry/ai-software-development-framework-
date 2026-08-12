@@ -13,7 +13,7 @@ metadata:
   - inception
   layer:
   - process
-  enforcement: recommended
+  enforcement: mandatory
   depends_on:
   - framework-scaffold-implementation
   consumed_by:

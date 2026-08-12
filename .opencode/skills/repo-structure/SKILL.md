@@ -9,7 +9,7 @@ metadata:
   layer:
   - backend
   - frontend
-  enforcement: mandatory
+  enforcement: recommended
   depends_on: []
   consumed_by:
   - project-bootstrap

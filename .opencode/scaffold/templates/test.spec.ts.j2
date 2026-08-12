@@ -13,7 +13,8 @@ test.describe('$ENTITY Module', () => {
 
   test('should create a new $entity', async ({ page }) => {
     await page.getByRole('button', { name: 'New $ENTITY' }).click();
-    await page.getByRole('button', { name: /create/i }).first().click();
+    await page.locator('form input[type="text"]').first().fill('Test $ENTITY');
+    await page.getByRole('button', { name: 'Save' }).first().click();
     await expect(page.locator('table tbody tr')).toBeVisible();
   });
 

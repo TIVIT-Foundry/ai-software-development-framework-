@@ -220,8 +220,9 @@ server {
 Para escenarios donde se usa FastAPI como BFF/light gateway:
 
 ```python
-from fastapi import FastAPI, Request, HTTPException
-from jose import jwt, JWTError
+from fastapi import FastAPI, Request, HTTPException, JSONResponse
+import jwt
+from jwt.exceptions import InvalidTokenError
 import os
 
 app = FastAPI()
@@ -252,7 +253,7 @@ async def gateway_auth_middleware(request: Request, call_next):
             (b"x-roles", ",".join(payload.get("roles", [])).encode()),
             (b"x-tenant-id", payload.get("tenant_id", "").encode()),
         ])
-    except JWTError:
+    except InvalidTokenError:
         return JSONResponse(
             status_code=401,
             content={"success": False, "error": {"code": "AUTH_002", "message": "Invalid token"}}

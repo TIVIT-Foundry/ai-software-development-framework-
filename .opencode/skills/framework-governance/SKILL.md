@@ -107,6 +107,14 @@ El agente debe:
    - decisiones de solución,
    - decisiones de proveedor,
    - personalización por tenant.
+8. **Pedir explícitamente (HITL) el nombre del ingeniero a cargo / owner del sistema**
+   antes de asentar aprobadores de excepciones, decisiones arquitectónicas o deuda.
+   Nunca inferir el owner del proyecto desde el autor del framework (p. ej. AGENTS.md):
+   el autor del framework NO es el owner de los proyectos construidos con él.
+   Si el dato no se provee, marcar `Aprobador: [PENDIENTE — confirmar con owner]`.
+9. Registrar la deuda técnica y de seguridad pendiente en el artefacto de governance
+   (sección "Deuda técnica y deuda de seguridad") con owner y fecha de revisión —
+   nunca solo en el state del workflow (`.workflow/state.json`), que puede perderse.
 
 ## Reglas obligatorias
 
@@ -134,6 +142,10 @@ Estas reglas son no negociables salvo excepción aprobada.
 - Toda interacción relevante del agente debe ser trazable y auditable.
 - Deben existir guardrails y gestión de secretos.
 - Debe existir control de políticas de acceso y uso.
+- Toda deuda de seguridad conocida (denylist pendiente, rate-limit ausente, headers
+  faltantes, dependencias vulnerables, etc.) debe registrarse en el artefacto de
+  governance (ver "Deuda técnica y deuda de seguridad") con owner y fecha de revisión —
+  no solo en el state del workflow.
 
 ### 6. Portabilidad e infraestructura
 - La lógica propia del framework debe ser portable y correr sobre Kubernetes estándar.
@@ -185,6 +197,29 @@ Toda excepción debe documentarse con:
 - fecha de revisión o expiración;
 - responsable de aprobación.
 
+## Deuda técnica y deuda de seguridad
+
+La deuda conocida y aceptada (técnica o de seguridad) no es una excepción aprobada,
+pero tampoco puede quedar solo en el state del workflow (`.workflow/state.json`), que
+puede perderse o no leerse en el siguiente ciclo. Debe registrarse en el artefacto de
+governance del proyecto:
+
+| Campo | Descripción |
+|---|---|
+| ID | `DEUDA-001` correlativo |
+| Tipo | `seguridad` \| `técnica` \| `calidad` |
+| Descripción | Qué queda pendiente y por qué se acepta hoy |
+| Riesgo si no se paga | Impacto concreto (ej. "tokens accesibles vía denylist sin rate-limit") |
+| Mitigación temporal | Control parcial aplicado mientras tanto |
+| Owner | Persona responsable (pedida por HITL — ver §"Qué debe hacer el agente") |
+| Fecha de revisión | Cuándo se revisa/paga (deuda de seguridad: máx. 30 días) |
+
+Reglas:
+- Deuda de seguridad **nunca** se cierra sin owner + fecha de revisión.
+- Al pagar la deuda, actualizar el artefacto (estado `pagada`) y registrar el fix.
+- Las observaciones de `review-adversarial` y `framework-qa-validation` que queden
+  pendientes se registran aquí, no solo en el resumen del bundle.
+
 ## Salidas esperadas de esta skill
 
 Cuando esta skill responda, debe devolver uno o varios de estos formatos:
@@ -230,6 +265,8 @@ Cuando esta skill responda, debe devolver uno o varios de estos formatos:
 Antes de validar una solución, preguntar:
 
 - ¿Qué tipo de proyecto es: framework base, pack vertical, PoC, MVP o solución enterprise?
+- **¿Quién es el ingeniero a cargo / owner del sistema y quién aprueba las decisiones
+  arquitectónicas?** (HITL obligatorio — no inferir del autor del framework)
 - ¿Es single-tenant temporal o multi-tenant desde el inicio?
 - ¿Qué vertical o dominio se está atendiendo?
 - ¿Qué requisitos regulatorios existen?

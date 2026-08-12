@@ -250,3 +250,5 @@ if violations:
 - [ ] Constitution loaded by all agents at session start
 - [ ] Violations tracked and resolved
 - [ ] Constitution version-controlled
+- [ ] Owner/aprobador del sistema confirmado por HITL (nunca inferido del autor del framework) — aplicar `framework-governance` si falta
+- [ ] Deuda técnica/seguridad pendiente registrada en governance (no solo en state.json)

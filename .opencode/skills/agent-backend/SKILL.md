@@ -8,9 +8,9 @@ metadata:
   - construction
   layer:
   - backend
-  enforcement: recommended
+  enforcement: optional
   depends_on:
-  - database
+  - database-modeling
   - backend-api
   consumed_by:
   - agent-fullstack
@@ -29,7 +29,7 @@ Load each skill in order before generating artifacts.
 
 | Step | Skill | Artifacts |
 |------|-------|-----------|
-| 1 | `database` | SQL conventions review |
+| 1 | `database-modeling` | SQL conventions review |
 | 2 | `database-modeling` | Table design |
 | 3 | `database-sp` | Stored procedures / queries |
 | 4 | `database-audit` | Audit columns, soft delete |

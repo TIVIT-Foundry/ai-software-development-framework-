@@ -130,11 +130,15 @@ Antes de avanzar entre steps, se evalúan gates condicionales:
 | Gate | Condición | Acción si falla |
 |------|-----------|-----------------|
 | **Simplicity Gate** | La solución es la más simple posible | Replanificar |
-| **Test Gate** | Tests existen y pasan antes del código | Escribir tests primero |
+| **Test Gate** | Tests existen y pasan antes del código, **por cada capa/stack presente** (backend, frontend, Bun, DB): si el cambio toca lógica frontend, el gate exige su job de tests en CI (Vitest/RTL o `ng test`), no solo backend | Escribir tests primero por stack |
 | **Constitution Gate** | Respeta los 9 artículos de la constitución | Revisar con `governance-constitution` |
 | **Security Gate** | No hay vulnerabilidades OWASP Top 10 | Ejecutar `security-testing` |
 | **Dependency Gate** | Skills en `depends_on` completadas | Ejecutar dependencias faltantes |
 | **Artifact Gate** | Artefactos de entrada existen y son válidos | Solicitar al usuario |
+
+> **Test Gate por capa:** el checklist del Art. 4 de la constitución ("Run in CI pipeline")
+> aplica a cada stack con lógica en el cambio. Un PR que modifica `AuthContext`/`LoginPage`
+> sin job de tests frontend en CI NO pasa el gate, aunque el backend esté cubierto.
 
 ```python
 class GateEvaluator:
@@ -197,7 +201,7 @@ async def fan_out_execute(skills: list[str], context: WorkflowContext):
 
 ### Delegation Models
 
-El orchestrator puede delegar en 3 modelos:
+El orchestrator puede delegar en 4 modelos (ver AGENT-MODEL.md):
 
 | Modelo | Descripción | Agentes aplicables |
 |--------|-------------|-------------------|
@@ -245,28 +249,35 @@ El orchestrator debe detener la ejecución y escalar cuando:
 | **Incident rule** | Error irrecuperable en skill mandatory | Detener workflow, notificar usuario |
 | **Long-session rule** | Sesión > 2 horas sin checkpoint | Guardar estado, sugerir resume |
 | **Fresh review rule** | Más de 10 skills ejecutadas sin review | Ejecutar `review-adversarial` |
+| **Constitution violation** | Cualquier violación de `governance-constitution` | Detener, reportar a control agent |
 
 ---
 
 ## Modos de Ejecución
 
-### Modo Individual (Fases A-B, N1-N9)
+### Modo Individual / Per-Skill (Fases A-B, N0-N9)
 
 - Cada skill se ejecuta por separado
-- Se confirma cada skill antes de continuar
+- Se confirma cada skill antes de continuar (49 confirmaciones en flujo completo)
 - Máximo control, máximo tiempo
 
 ### Modo Bundle (Fases C-H, N10-N49)
 
 - Skills del mismo bundle se ejecutan en secuencia
-- Se confirma una vez al completar el bundle
+- Se confirma una vez al completar el bundle (6 confirmaciones)
 - Balance control/velocidad
+
+### Modo Meta-Skills (6 confirmaciones)
+
+- Solo cuando el usuario lo pide explícitamente (`agent-backend`, `agent-frontend`,
+  `agent-fullstack`, `agent-qa`)
+- Cada meta-skill encadena sus skills de dominio y confirma al final del encadenamiento
 
 ### Modo Hybrid (default)
 
 - Fases A-B: Individual (confirmación por skill)
 - Fases C-H: Bundle (confirmación por bundle)
-- 15 confirmaciones totales
+- 15 confirmaciones totales (16 si N0 está activo — ver SKILLS-MANIFEST)
 
 ---
 

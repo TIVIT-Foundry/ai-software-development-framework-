@@ -13,7 +13,7 @@ metadata:
   - inception
   layer:
   - frontend
-  enforcement: recommended
+  enforcement: optional
   depends_on:
   - hu-template
   consumed_by:

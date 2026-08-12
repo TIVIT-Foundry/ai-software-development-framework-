@@ -31,13 +31,17 @@ def parse_list_field(fm, field):
     depends_on:
       - foo
       - bar
-    Stops at the next top-level (non-indented, non '-') key.
+    Also handles inline lists: depends_on: [foo, bar]
     """
     lines = fm.splitlines()
     items = []
     in_field = False
     for line in lines:
         stripped = line.strip()
+        inline = re.match(rf"^{field}\s*:\s*\[(.*)\]\s*$", stripped)
+        if inline:
+            items.extend(x.strip().strip("'\"") for x in inline.group(1).split(",") if x.strip())
+            continue
         if re.match(rf"^{field}\s*:\s*$", stripped):
             in_field = True
             continue
@@ -99,7 +103,36 @@ for name in sorted(skills):
     if color[name] == WHITE:
         dfs(name)
 
-# --- consumed_by / depends_on mirror check ---
+# --- Cycle detection over the consumed_by graph (mirror) ---
+# A cycle in consumed_by is reported as a WARNING, not a failure: consumed_by
+# lists are informational mirrors (who consumes my artifacts), and in a tightly
+# interconnected framework they legitimately form cycles (QA validates ops,
+# ops runs QA gates). depends_on cycles above are the real deadlocks.
+color2 = {name: WHITE for name in skills}
+path2 = []
+
+
+def dfs_consumed(node):
+    color2[node] = GRAY
+    path2.append(node)
+    for consumer in sorted(skills.get(node, {}).get("consumed_by", [])):
+        if consumer not in skills:
+            continue
+        if color2.get(consumer, WHITE) == GRAY:
+            cycle_start = path2.index(consumer)
+            cycle = path2[cycle_start:] + [consumer]
+            warnings.append("consumed_by cycle: " + " -> ".join(cycle))
+        elif color2.get(consumer, WHITE) == WHITE:
+            dfs_consumed(consumer)
+    path2.pop()
+    color2[node] = BLACK
+
+
+for name in sorted(skills):
+    if color2[name] == WHITE:
+        dfs_consumed(name)
+
+# --- consumed_by / depends_on mirror check (both directions) ---
 for name, data in sorted(skills.items()):
     for dep in data["depends_on"]:
         if dep not in skills:
@@ -107,6 +140,13 @@ for name, data in sorted(skills.items()):
         if name not in skills[dep]["consumed_by"]:
             warnings.append(
                 f"'{name}' depends_on '{dep}', but '{dep}' does not list '{name}' in consumed_by"
+            )
+    for consumer in data["consumed_by"]:
+        if consumer not in skills:
+            continue
+        if name not in skills[consumer]["depends_on"]:
+            warnings.append(
+                f"'{name}' lists '{consumer}' in consumed_by, but '{consumer}' does not list '{name}' in depends_on"
             )
 
 if errors:

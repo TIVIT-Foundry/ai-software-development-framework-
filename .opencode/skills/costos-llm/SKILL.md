@@ -11,7 +11,7 @@ metadata:
   - operations
   layer:
   - infrastructure
-  enforcement: optional
+  enforcement: recommended
   depends_on:
   - observabilidad
   - framework-platform

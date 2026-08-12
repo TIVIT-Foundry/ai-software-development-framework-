@@ -9,7 +9,7 @@ metadata:
   - construction
   layer:
   - backend
-  enforcement: mandatory
+  enforcement: recommended
   depends_on: []
   consumed_by:
   - backend-api

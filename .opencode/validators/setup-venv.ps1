@@ -21,5 +21,11 @@ if (-not (Test-Path $VenvPy)) {
     Write-Host "Venv already exists at $VenvDir"
 }
 
+# Ensure PyYAML is available so check-skill-contract.py can validate
+# frontmatter with a strict YAML parser (catches unescaped apostrophes,
+# broken indentation, etc.). Idempotent.
+Write-Host "Ensuring PyYAML in venv ..."
+& $VenvPy -m pip install --quiet --disable-pip-version-check pyyaml
+
 Write-Host ""
 Write-Host "Done. Validator runner: powershell -File $(Join-Path $ScriptDir 'run-all.ps1')"

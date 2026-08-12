@@ -152,7 +152,7 @@ El primer módulo es Gestión de Tareas:
 
 113 skills organizadas por dominio (las categorías no son mutuamente excluyentes):
 
-- **Framework** (12): governance, discovery, conception, architecture, core-design, pack-design, data-memory-compliance, security, platform, scaffold-implementation, qa-validation, operations-evolution
+- **Framework** (12): framework-governance, framework-discovery, framework-conception, framework-architecture, framework-core-design, framework-pack-design, framework-data-memory-compliance, framework-security, framework-platform, framework-scaffold-implementation, framework-qa-validation, framework-operations-evolution
 - **Gobernanza** (3): governance-constitution, sdd-onboard, documentation
 - **Backend** (13): backend-api, bun-backend, data-access, api-integration, api-gateway, app-bootstrap, shared-libs, error-handling, file-upload, real-time, api-resilience, notifications, redis
 - **Frontend** (14): react, react-services, react-upgrade, angular, angular-services, angular-upgrade, microfrontend, design-system, typescript, export-excel, accesibilidad, i18n, feature-flags, mobile-pwa

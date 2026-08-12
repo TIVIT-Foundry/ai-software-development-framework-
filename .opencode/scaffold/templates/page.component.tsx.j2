@@ -16,6 +16,10 @@ export function ${ENTITY}Page() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [searchFilter, setSearchFilter] = useState('');
+  const [sort, setSort] = useState<{ sortBy: string; sortOrder: 'ASC' | 'DESC' }>({
+    sortBy: 'created_at',
+    sortOrder: 'DESC',
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -27,6 +31,8 @@ export function ${ENTITY}Page() {
     const params: ${ENTITY}QueryParams = {
       page,
       pageSize,
+      sortBy: sort.sortBy,
+      sortOrder: sort.sortOrder,
       searchFilter: searchFilter || undefined,
     };
     try {
@@ -38,7 +44,12 @@ export function ${ENTITY}Page() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, searchFilter]);
+  }, [page, pageSize, searchFilter, sort]);
+
+  const handleSort = (next: { sortBy: string; sortOrder: 'ASC' | 'DESC' }) => {
+    setSort(next);
+    setPage(1);
+  };
 
   useEffect(() => {
     load();
@@ -104,7 +115,7 @@ export function ${ENTITY}Page() {
         error={error}
         onSearch={handleSearch}
         onPageChange={setPage}
-        onSortChange={() => load()}
+        onSortChange={handleSort}
         onCreate={handleCreate}
         onEdit={handleEdit}
         onDelete={handleDelete}

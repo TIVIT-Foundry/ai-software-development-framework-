@@ -50,6 +50,22 @@ Activate when:
 4. Do not hand-write types that duplicate generated contracts.
 5. Version contracts with the API version.
 
+## Response Envelope Contract (canónico)
+
+El formato de respuesta (éxito y error) es único en el framework y está definido en
+`error-handling` ("Contrato de Respuestas API"). Resumen para contratos y DTOs:
+
+- **Éxito (2xx):** `{ success: true, data: T, message: string | null }`
+- **Error (4xx/5xx, o 2xx con success:false):** `{ success: false, error: { code, message, details? }, data: null, meta: { trace_id, timestamp } }`
+
+Reglas para tipos generados:
+
+1. `data` es el DTO del recurso (`T`); los tipos generados describen solo `T` (el cliente
+   generado por `api.ts.j2`/`service.ts.j2` desenvuelve `data` y lanza `ApiError`).
+2. Los errores de validación de campos van en `error.details` como array
+   `{ code, field, message }`.
+3. **Nunca** tratar `HTTP 2xx + success:false` como éxito en el cliente (ver `error-handling`).
+
 ## Outputs produced
 
 | Artifact | Path | Description |

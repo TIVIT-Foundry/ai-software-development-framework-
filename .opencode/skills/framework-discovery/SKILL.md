@@ -15,7 +15,7 @@ metadata:
   - Cuando se debe priorizar un caso de uso inicial dentro de un vertical.
   - Cuando se desea preparar insumos para conception, pack design y architecture.
   phase:
-  - discovery
+  - inception
   layer:
   - business
   enforcement: mandatory

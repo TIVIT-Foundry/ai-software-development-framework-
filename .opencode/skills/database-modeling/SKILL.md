@@ -178,6 +178,26 @@ CREATE TABLE {schema}.{table} (
 | `I` | Inactive | Disabled but visible in admin |
 | `*` | Logical Delete | Soft-deleted, filtered out in all queries |
 
+## ⚠️ SQLAlchemy async + columnas computadas por la DB (`onupdate=func.now()`, `server_default`)
+
+**Advertencia (bug conocido en proyectos async — MissingGreenlet):** si un modelo
+SQLAlchemy declara `updated_at = Column(DateTime(timezone=True), onupdate=func.now())`
+(o cualquier valor que la DB compute en INSERT/UPDATE), el atributo queda **expired**
+tras el `flush()` (el ORM no conoce el valor hasta re-query). En sesiones **async**,
+acceder a ese atributo dispara un lazy-load síncrono → `sqlalchemy.exc.MissingGreenlet`
+(`greenlet_spawn has not been called`) → HTTP 500 en endpoints que hacen
+`flush()`/`commit()` y luego serializan la entidad (update/soft_delete).
+
+**Reglas:**
+1. Si el modelo usa `onupdate=func.now()` (o defaults computados por la DB), hacer
+   `await session.refresh(entity)` DESPUÉS del `flush()`/`commit()` y ANTES de armar
+   cualquier DTO con el ORM (ver `data-access`).
+2. Alternativas equivalentes: `UPDATE ... RETURNING` (SQLAlchemy 2.0) o
+   `eager_defaults=True` en el engine.
+3. `expire_on_commit=False` NO cubre este caso: el expire ocurre en el flush, no en el commit.
+4. Aplica a TODOS los métodos que mutan y serializan la entidad (update, soft delete),
+   no solo al create (el insert no deja atributos expired).
+
 ## CTEs vs Temp Tables (PostgreSQL)
 
 | Scenario | Use CTE | Use TEMP TABLE |

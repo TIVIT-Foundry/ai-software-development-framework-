@@ -20,7 +20,7 @@ $SQL_COLUMNS_RETURN
 )
 LANGUAGE plpgsql
 STABLE
-AS $$
+AS $$$$$$
 DECLARE
     v_search_pattern VARCHAR(102);
     v_offset INTEGER;
@@ -54,7 +54,7 @@ $SQL_SELECT_COLS
     OFFSET v_offset
     LIMIT p_page_size;
 END;
-$$;
+$$$$$$;
 
 /* ============================================================
    Function: $SCHEMA.get_$TABLE
@@ -73,7 +73,7 @@ $SQL_COLUMNS_RETURN
 )
 LANGUAGE plpgsql
 STABLE
-AS $$
+AS $$$$
 BEGIN
     RETURN QUERY
     SELECT
@@ -91,7 +91,7 @@ $SQL_SELECT_COLS
         RAISE EXCEPTION '${MODULE}_001: $ENTITY not found' USING ERRCODE = 'P0002';
     END IF;
 END;
-$$;
+$$$$;
 
 /* ============================================================
    Function: $SCHEMA.create_$TABLE
@@ -109,7 +109,7 @@ $SQL_COLUMNS_RETURN
     record_status CHAR(1)
 )
 LANGUAGE plpgsql
-AS $$
+AS $$$$
 DECLARE
     v_new_id INTEGER;
 BEGIN
@@ -120,12 +120,12 @@ $SQL_INSERT_COLS
 $SQL_VALUES_PLACEHOLDERS
         p_current_user_id
     )
-    RETURNING $SCHEMA.$TABLE.id INTO v_new_id;
+    RETURNING id INTO v_new_id;
 
     RETURN QUERY
     SELECT * FROM $SCHEMA.get_$TABLE(v_new_id);
 END;
-$$;
+$$$$;
 
 /* ============================================================
    Function: $SCHEMA.update_$TABLE
@@ -144,7 +144,7 @@ $SQL_COLUMNS_RETURN
     record_status CHAR(1)
 )
 LANGUAGE plpgsql
-AS $$
+AS $$$$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM $SCHEMA.$TABLE
@@ -162,7 +162,7 @@ $SQL_UPDATE_SET
     RETURN QUERY
     SELECT * FROM $SCHEMA.get_$TABLE(p_id);
 END;
-$$;
+$$$$;
 
 /* ============================================================
    Function: $SCHEMA.delete_$TABLE
@@ -174,7 +174,7 @@ CREATE OR REPLACE FUNCTION $SCHEMA.delete_$TABLE(
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
-AS $$
+AS $$$$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM $SCHEMA.$TABLE
@@ -192,4 +192,4 @@ BEGIN
 
     RETURN TRUE;
 END;
-$$;
+$$$$;

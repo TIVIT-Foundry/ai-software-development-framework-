@@ -51,7 +51,7 @@ Define los agentes del framework, sus roles, permisos, límites de autonomía y 
 | **Rol** | Producir artefactos de diseño del framework |
 | **Owner skills** | framework-discovery, framework-conception, framework-architecture, framework-core-design, framework-pack-design |
 | **Consulta skills** | framework-governance, framework-data-memory-compliance, framework-security |
-| **Stack skills** | api-versioning, api-resilience, database-migrations, database-seeding, data-migration |
+| **Stack skills** | api-first-spec, hu-template, requirements-intake, design-system, database-migrations, database-seeding, data-migration |
 | **Bash** | deny |
 | **Edit** | allow |
 | **Task** | allow |
@@ -78,7 +78,7 @@ Define los agentes del framework, sus roles, permisos, límites de autonomía y 
 | **Rol** | Garantizar integridad del framework: governance, seguridad, compliance, validación |
 | **Owner skills** | framework-governance, framework-security, framework-data-memory-compliance, framework-qa-validation |
 | **Consulta skills** | framework-architecture, framework-core-design, framework-platform |
-| **Stack skills** | security-testing, authentication, authorization, unit-testing, integration-testing, load-testing, infrastructure-as-code, disaster-recovery, playwright, code-review, security, keycloak |
+| **Stack skills** | security-testing, authentication, authorization, database-security, accesibilidad, unit-testing, integration-testing, load-testing, playwright, code-review, security, keycloak |
 | **Bash** | deny |
 | **Edit** | allow |
 | **Task** | allow |
@@ -106,7 +106,7 @@ Define los agentes del framework, sus roles, permisos, límites de autonomía y 
 | **Rol** | Materializar diseño en implementación y operación |
 | **Owner skills** | framework-platform, framework-scaffold-implementation, framework-operations-evolution |
 | **Consulta skills** | framework-core-design, framework-pack-design, framework-security, framework-qa-validation |
-| **Stack skills** | database-migrations, database-seeding, data-migration, i18n, feature-flags, file-upload, real-time, load-testing, infrastructure-as-code, terraform, kubernetes, disaster-recovery, ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, langfuse, langchain, kafka, api-versioning, api-resilience, bun-backend, redis, pgvector |
+| **Stack skills** | project-architecture, error-handling, database-audit, database-sp, database-migrations, database-seeding, data-migration, shared-libs, api-integration, api-gateway, api-versioning, api-resilience, typescript, pull-request, oauth2-jwt, i18n, feature-flags, file-upload, real-time, notifications, infrastructure-as-code, terraform, kubernetes, disaster-recovery, ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, langfuse, langchain, kafka, bun-backend, redis, pgvector |
 | **Bash** | allow |
 | **Edit** | allow |
 | **Task** | allow |
@@ -132,7 +132,7 @@ Define los agentes del framework, sus roles, permisos, límites de autonomía y 
 
 | Condición | Skills delegadas |
 |-----------|-----------------|
-| Proyecto nuevo o módulo nuevo | framework-discovery, framework-conception, framework-architecture, framework-core-design, framework-pack-design |
+| Proyecto nuevo o módulo nuevo | framework-discovery, framework-conception, framework-architecture, framework-core-design, framework-pack-design, api-first-spec |
 | Cambio de diseño | Las que apliquen del dominio de diseño |
 
 ### orchestrator → control

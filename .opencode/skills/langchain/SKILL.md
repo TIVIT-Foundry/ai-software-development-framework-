@@ -49,7 +49,7 @@ Activate this skill when:
 |-------|----------|-------------|
 | `costos-llm` | Complementaria | Token tracking and cost management for LLM calls |
 | `observabilidad` | Complementaria | OpenTelemetry + Langfuse for LLM observability |
-| `database` | Predecesora | pgvector for embeddings and memory storage |
+| `database-modeling` | Predecesora | pgvector for embeddings and memory storage |
 | `authentication` | Complementaria | Multi-tenant isolation for agent sessions |
 | `api-resilience` | Complementaria | Retry and fallback for LLM calls |
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """check-content-quality.py — Basic quality checks on skill files."""
+import re
 import sys
 from pathlib import Path
 
@@ -16,7 +17,7 @@ for skill_dir in sorted(SKILLS_DIR.iterdir()):
     content = skill_md.read_text(encoding="utf-8")
     if len(content.strip()) < 50:
         errors.append(f"Skill '{skill_dir.name}': SKILL.md too short ({len(content.strip())} chars)")
-    if "description:" not in content[:500]:
+    if not re.search(r"^description\s*:\s*", content[:500], re.MULTILINE):
         errors.append(f"Skill '{skill_dir.name}': missing description in frontmatter")
 
 if errors:

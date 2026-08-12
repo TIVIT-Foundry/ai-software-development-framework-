@@ -21,4 +21,5 @@ if errors:
     for e in errors:
         print(f"FAIL: {e}", file=sys.stderr)
     sys.exit(1)
-print(f"All {len(list(SKILLS_DIR.iterdir()))} skill names valid")
+count = len([d for d in SKILLS_DIR.iterdir() if d.is_dir()])
+print(f"All {count} skill names valid")

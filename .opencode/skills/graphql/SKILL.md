@@ -4,7 +4,7 @@ description: 'GraphQL API design: schema design, resolvers, N+1 problem, DataLoa
   mutations, subscriptions, authentication, error handling, cursor-based pagination.
   Trigger: When designing or implementing GraphQL APIs in Bun (TypeScript), Python
   (AI/ML core), or React (Apollo Client) / Angular (Apollo Angular) frontend
-  consumption, per the project's frontend choice.'
+  consumption, per the project''s frontend choice.'
 version: 1.1
 metadata:
   phase:
@@ -236,9 +236,9 @@ const resolvers = {
 ```
 
 ```python
-# Python + Strawberry: auth Keycloak/OAuth2 con python-jose
-from jose import jwt, JWTError
-from jose.utils import get_unverified_header
+# Python + Strawberry: auth Keycloak/OAuth2 con PyJWT
+import jwt
+from jwt import PyJWKSet
 from fastapi import Request
 import strawberry
 from strawberry.types import Info
@@ -253,17 +253,16 @@ async def get_current_user(request: Request) -> dict | None:
         return None
     token = auth.split(" ", 1)[1]
     try:
-        # Validar firma contra JWKS de Keycloak
-        header = get_unverified_header(token)
+        # Validar firma contra JWKS de Keycloak (PyJWT selecciona la key por kid)
         jwks = await fetch_jwks(JWKS_URL)
-        key = next(k for k in jwks["keys"] if k["kid"] == header["kid"])
+        signing_key = PyJWKSet.from_dict(jwks).get_signing_key_from_jwt(token)
         payload = jwt.decode(
-            token, key,
+            token, signing_key.key,
             issuer=f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}",
             algorithms=["RS256"],
         )
         return payload  # { sub, tenant_id, realm_access: { roles: [...] } }
-    except (JWTError, StopIteration):
+    except (jwt.InvalidTokenError, StopIteration):
         return None
 
 @strawberry.type

@@ -25,7 +25,8 @@ from typing import Any, Dict, Optional, Set
 import httpx
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwk, jwt
+import jwt
+from jwt import PyJWK
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +179,7 @@ class TokenValidator:
         """
         try:
             unverified_header = jwt.get_unverified_header(token)
-        except JWTError as exc:
+        except jwt.InvalidTokenError as exc:
             raise self._unauthorized("Invalid token header") from exc
 
         kid = unverified_header.get("kid")
@@ -190,7 +191,7 @@ class TokenValidator:
             raise self._unauthorized(f"Unknown key ID: {kid}")
 
         try:
-            public_key = jwk.construct(jwk_data)
+            public_key = PyJWK(jwk_data)
         except Exception as exc:
             raise self._unauthorized("Failed to construct JWK") from exc
 
@@ -210,9 +211,7 @@ class TokenValidator:
             )
         except jwt.ExpiredSignatureError as exc:
             raise self._unauthorized("Token has expired") from exc
-        except jwt.JWTClaimsError as exc:
-            raise self._unauthorized(f"Invalid token claims: {exc}") from exc
-        except JWTError as exc:
+        except jwt.InvalidTokenError as exc:
             raise self._unauthorized(f"Token validation failed: {exc}") from exc
 
         return payload

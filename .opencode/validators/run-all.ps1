@@ -30,12 +30,15 @@ function Run-Check {
         [string]$Script
     )
     $script:total++
-    try {
-        & $Py (Join-Path $ScriptDir $Script) 2>&1 | Out-Null
+    # Capture all output but decide success by the exit code, not by stderr
+    # presence: a check that fails printing to stdout only must still FAIL,
+    # and a check that warns to stderr while passing must still PASS.
+    & $Py (Join-Path $ScriptDir $Script) *> $null
+    if ($LASTEXITCODE -eq 0) {
         Write-Host "  OK $Name" -ForegroundColor Green
         $script:passed++
-    } catch {
-        Write-Host "  FAIL $Name" -ForegroundColor Red
+    } else {
+        Write-Host "  FAIL $Name (exit $LASTEXITCODE)" -ForegroundColor Red
         $script:failed++
     }
 }

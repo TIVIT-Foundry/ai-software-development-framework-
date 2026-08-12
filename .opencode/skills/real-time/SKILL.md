@@ -126,7 +126,8 @@ Esta skill delega:
 
 ```python
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
-from jose import jwt, JWTError
+import jwt
+from jwt.exceptions import InvalidTokenError
 from typing import Dict
 import json
 
@@ -164,7 +165,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         if user_id is None:
             await websocket.close(code=4001, reason="Invalid token")
             return
-    except JWTError:
+    except InvalidTokenError:
         await websocket.close(code=4001, reason="Invalid token")
         return
 

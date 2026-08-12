@@ -1,9 +1,9 @@
 ---
 name: authentication
 description: 'Authentication patterns: token-based auth, session management, identity
-  propagation. Covers Keycloak as IdP, OAuth2/OIDC with python-jose + passlib + FastAPI,
+  propagation. Covers Keycloak as IdP, OAuth2/OIDC with PyJWT + passlib + FastAPI,
   React fetch wrappers and route guards, or Angular HTTP interceptors and route guards
-  (per project's frontend choice). Trigger: When implementing login, logout,
+  (per project''s frontend choice). Trigger: When implementing login, logout,
   tokens, session management, or auth flow.'
 version: 2.1
 metadata:
@@ -148,8 +148,9 @@ async def get_current_user(
     """Validar token JWT de Keycloak."""
     token = credentials.credentials
     try:
-        # Opción 1: Validación directa con JWKS
-        from jose import jwt, JWTError
+        # Opción 1: Validación directa con JWKS (PyJWT 2.x acepta el JWKS como key)
+        import jwt
+        from jwt.exceptions import InvalidTokenError
         jwks = await get_keycloak_jwks()
         payload = jwt.decode(
             token,
@@ -164,7 +165,7 @@ async def get_current_user(
             "roles": payload.get("realm_access", {}).get("roles", []),
             "groups": payload.get("groups", []),
         }
-    except JWTError as e:
+    except InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token: {e}",
@@ -269,11 +270,12 @@ Creates internal identity header → Forwards to internal services →
 Internal services read identity from header (no re-validation)
 ```
 
-## Python FastAPI JWT (python-jose + passlib)
+## Python FastAPI JWT (PyJWT + passlib)
 
 ```python
 from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -309,7 +311,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
         if user_id is None:
             raise credentials_exception
         return {"user_id": user_id, "scopes": payload.get("scopes", [])}
-    except JWTError:
+    except InvalidTokenError:
         raise credentials_exception
 
 # Login endpoint
@@ -442,13 +444,20 @@ async def register_finish(credential: RegistrationCredential):
 
 **Ejemplo Python (JWKS con rotación)**:
 ```python
-from authlib.jose import JsonWebKey
+from jwt.algorithms import RSAAlgorithm
+from jwt import PyJWK
 
-# Generar nuevo par de claves
-new_key = JsonWebKey.generate_key('RSA', 2048, kid='key-2026-01')
-old_key = JsonWebKey.generate_key('RSA', 2048, kid='key-2025-06')
+# Generar nuevos pares de claves (PyJWT + cryptography)
+new_private_key = RSAAlgorithm.generate_key(2048)   # PEM bytes
+old_private_key = RSAAlgorithm.generate_key(2048)
 
-jwks = {"keys": [new_key.as_dict(), old_key.as_dict()]}
+# JWKS: exponer solo la parte pública con kid
+new_jwk = PyJWK.from_pem(new_private_key).to_dict()
+new_jwk["kid"] = "key-2026-01"
+old_jwk = PyJWK.from_pem(old_private_key).to_dict()
+old_jwk["kid"] = "key-2025-06"
+
+jwks = {"keys": [new_jwk, old_jwk]}
 
 @app.get("/.well-known/jwks.json")
 async def get_jwks():
@@ -456,6 +465,7 @@ async def get_jwks():
 
 # Firmar tokens con la key nueva:
 # header = {"kid": "key-2026-01", "alg": "RS256"}
+# jwt.encode(payload, new_private_key, algorithm="RS256", headers={"kid": "key-2026-01"})
 ```
 
 ---

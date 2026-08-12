@@ -9,7 +9,7 @@ Middleware stack for an API Gateway built on FastAPI. Handles:
   - CORS preflight
   - Request timeout enforcement
 
-Stack: Python 3.12+ / FastAPI / slowapi (rate limiting) / python-jose (JWT) / structlog
+Stack: Python 3.12+ / FastAPI / slowapi (rate limiting) / PyJWT (JWT) / structlog
 
 Usage:
     from gateway_middleware import GatewayMiddlewareStack
@@ -242,8 +242,8 @@ class GatewayAuthMiddleware(BaseHTTPMiddleware):
 
     def _decode_token(self, token: str) -> dict:
         """Decode and validate JWT token. Raises on failure."""
-        from jose import jwt
-        from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
+        import jwt
+        from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
         try:
             payload = jwt.decode(
@@ -257,12 +257,7 @@ class GatewayAuthMiddleware(BaseHTTPMiddleware):
                 status_code=401,
                 detail={"success": False, "error": {"code": "AUTH_TOKEN_EXPIRED", "message": "Token has expired"}},
             )
-        except JWTClaimsError:
-            raise HTTPException(
-                status_code=401,
-                detail={"success": False, "error": {"code": "AUTH_INVALID_CLAIMS", "message": "Invalid token claims"}},
-            )
-        except JWTError as e:
+        except InvalidTokenError as e:
             raise HTTPException(
                 status_code=401,
                 detail={"success": False, "error": {"code": "AUTH_INVALID_TOKEN", "message": f"Invalid token: {str(e)}"}},

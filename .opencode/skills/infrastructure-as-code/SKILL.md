@@ -7,7 +7,7 @@ metadata:
   - operations
   layer:
   - infrastructure
-  enforcement: recommended
+  enforcement: mandatory
   depends_on:
   - framework-platform
   consumed_by:

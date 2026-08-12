@@ -16,10 +16,10 @@ Este documento define qué skill(s) se activan según el tipo de cambio solicita
 
 | Tipo de Cambio | Skills Primarias | Skills Secundarias | Agente |
 |----------------|-----------------|-------------------|--------|
-| **Cliente/proyecto nuevo (onboarding comercial)** | client-readiness-checklist → framework-discovery | requirements-intake (si aplica), project-bootstrap | orchestrator |
+| **Cliente/proyecto nuevo (onboarding comercial)** | client-readiness-checklist → framework-discovery | requirements-intake (si aplica), project-bootstrap | orchestrator → design/delivery |
 | **Requerimientos funcionales ambiguos o inexistentes** | requirements-intake → hu-template | framework-discovery | design |
-| **Proyecto nuevo completo** | framework-governance → framework-discovery → framework-conception → framework-architecture → framework-core-design → framework-pack-design → framework-scaffold-implementation | Todas las skills de construction | orchestrator |
-| **Nuevo módulo vertical** | framework-conception → framework-pack-design → api-first-spec → api-first-backend → api-first-frontend | database-modeling, database-sp, unit-testing | orchestrator |
+| **Proyecto nuevo completo** | framework-governance → framework-discovery → framework-conception → framework-architecture → framework-core-design → framework-pack-design → framework-scaffold-implementation | Todas las skills de construction | orchestrator → control (governance/security) + design (discovery→pack) + delivery (scaffold→ops) |
+| **Nuevo módulo vertical** | framework-conception → framework-pack-design → api-first-spec → api-first-backend → api-first-frontend | database-modeling, database-sp, unit-testing | orchestrator → design (concepción/spec) + delivery (backend/frontend) |
 | **Nuevo módulo backend** | api-first-spec → api-first-backend → data-access | database-sp, error-handling, shared-libs | delivery |
 | **Nuevo módulo frontend** | api-first-spec → api-first-frontend → react (o angular, según elección del proyecto) | typescript, design-system, i18n | delivery |
 | **Feature spec-first sin API** | feature-spec → tasks → (skills de implementación) → converge | hu-template, framework-conception | design → delivery → control |

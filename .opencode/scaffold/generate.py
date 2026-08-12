@@ -29,7 +29,7 @@ def load_template(name):
     path = TEMPLATES_DIR / name
     if not path.exists():
         raise FileNotFoundError(f"Template not found: {path}")
-    return Template(path.read_text())
+    return Template(path.read_text(encoding="utf-8"))
 
 
 # ─── Pluralization ───────────────────────────────────────────────────────────
@@ -43,6 +43,15 @@ def pluralize(word):
 
 
 # ─── Name helpers ────────────────────────────────────────────────────────────
+
+def normalize_entity_name(name):
+    """Normalize an entity heading (e.g. 'Product Category') to PascalCase ('ProductCategory')."""
+    return "".join(w.capitalize() for w in re.split(r"[\s_/-]+", name.strip()))
+
+
+def normalize_field_name(name):
+    """Normalize a field name (e.g. 'Due Date') to snake_case ('due_date')."""
+    return re.sub(r"[\s_/-]+", "_", name.strip().strip("`* ")).strip("_")
 
 def camel(s):
     return s[0].lower() + s[1:] if s else s
@@ -67,7 +76,7 @@ def pascal_plural(name):
 # ─── Spec parsing ────────────────────────────────────────────────────────────
 
 def parse_spec(filepath):
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
     module_name = extract_module_name(content)
@@ -114,7 +123,7 @@ def extract_entities(content):
         if ent_match:
             if current_entity and fields:
                 entities.append({"name": current_entity, "fields": fields})
-            current_entity = ent_match.group(1).strip()
+            current_entity = normalize_entity_name(ent_match.group(1))
             fields = []
             header_mode = True
             continue
@@ -140,7 +149,7 @@ def extract_entities(content):
                 header_mode = False
             continue
 
-        field_name = parts[0].strip("`* ")
+        field_name = normalize_field_name(parts[0])
         field_type = parts[1].strip("`* ") if len(parts) > 1 else "string"
         field_desc = parts[2].strip() if len(parts) > 2 else ""
         fields.append({"name": field_name, "type": field_type, "desc": field_desc})
@@ -170,7 +179,7 @@ def extract_first_table(body):
                     continue
                 if all(p.strip("-: ") == "" for p in parts):
                     continue
-                field_name = parts[0].strip("`* ")
+                field_name = normalize_field_name(parts[0])
                 field_type = parts[1].strip("`* ")
                 fields.append({"name": field_name, "type": field_type, "desc": parts[2].strip() if len(parts) > 2 else ""})
         elif in_table and fields:
@@ -260,7 +269,7 @@ def extract_dtos(content):
                 header_mode = False
             continue
 
-        field_name = parts[0].strip("`* ")
+        field_name = normalize_field_name(parts[0])
         field_type = parts[1].strip("`* ")
         field_required = parts[2].strip() if len(parts) > 2 else "Yes"
         fields.append({"name": field_name, "type": field_type, "required": field_required})
@@ -450,6 +459,10 @@ def pg_column_def(field):
     pgt = pg_type(field["type"])
     nullable = field["type"].strip("`").endswith("?")
     null_clause = "" if nullable else " NOT NULL"
+    if sn == "id":
+        # The PK constraint comes from the template (pk_${TABLE}); the column
+        # must be auto-incrementing or every generated INSERT will fail.
+        return f"    id SERIAL NOT NULL,"
     return f"    {sn} {pgt}{null_clause},"
 
 
@@ -469,19 +482,19 @@ def pg_fn_param(field):
 
 
 def pg_insert_col(field):
-    """Generate INSERT column name."""
-    return f"        {field_snake(field)}"
+    """Generate INSERT column name (trailing comma: more lines always follow)."""
+    return f"        {field_snake(field)},"
 
 
 def pg_insert_value(field, index):
-    """Generate INSERT value placeholder."""
-    return f"        p_{field_snake(field)}"
+    """Generate INSERT value placeholder (trailing comma)."""
+    return f"        p_{field_snake(field)},"
 
 
 def pg_update_set(field):
-    """Generate SET clause for UPDATE."""
+    """Generate SET clause for UPDATE (trailing comma)."""
     sn = field_snake(field)
-    return f"        {sn} = p_{sn}"
+    return f"        {sn} = p_{sn},"
 
 
 # ─── React (JSX) helpers ─────────────────────────────────────────────────────
@@ -489,9 +502,10 @@ def pg_update_set(field):
 def jsx_table_headers(fields):
     lines = []
     for f in fields:
-        cn = field_camel(f)
+        sn = field_snake(f)
         label = f["name"].replace("_", " ").title()
-        lines.append(f"              <th onClick={{() => handleSort('{cn}')}}>{label}</th>")
+        # snake_case: the backend getattr() resolves sort_by against snake names
+        lines.append(f"              <th onClick={{() => handleSort('{sn}')}}>{label}</th>")
     return "\n".join(lines)
 
 
@@ -543,9 +557,9 @@ def jsx_form_fields(fields):
 def ng_table_headers(fields):
     lines = []
     for f in fields:
-        cn = field_camel(f)
+        sn = field_snake(f)
         label = f["name"].replace("_", " ").title()
-        lines.append(f'          <th (click)="onSort(\'{cn}\')">{label}</th>')
+        lines.append(f'          <th (click)="onSort(\'{sn}\')">{label}</th>')
     return "\n".join(lines)
 
 
@@ -570,7 +584,9 @@ def ng_form_controls(fields):
         if max_match:
             validators.append(f"Validators.maxLength({max_match.group(1)})")
         validators_str = ", ".join(validators) if validators else "[]"
-        lines.append(f"      {sn}: [values?.{cn} ?? null, {validators_str}],")
+        # FormControl: [initialValue, syncValidatorsArray] — putting validators in
+        # the third slot would make them asyncValidators (runtime error).
+        lines.append(f"      {sn}: [values?.{cn} ?? null, [{validators_str}]],")
     return "\n".join(lines)
 
 
@@ -628,6 +644,19 @@ def generate_bun_service(entity, ctx):
     insert_values = bun_insert_values_csv(business_fields)
     update_set = bun_update_set_csv(business_fields)
 
+    # Search clause over text-ish business fields (never hardcode 'title':
+    # entities may not have such a column).
+    searchable = [
+        f for f in business_fields
+        if normalize_spec_type(f["type"]) in ("string", "str", "text")
+    ]
+    search_clause = ""
+    if searchable:
+        extra = " OR ".join(
+            f"{field_snake(f)} ILIKE ${{`%${{searchFilter}}%`}}" for f in searchable
+        )
+        search_clause = f" OR {extra}"
+
     return f"""import {{ sql }} from './{entity_camel}.db';
 import type {{
   {entity_name}Create,
@@ -646,7 +675,7 @@ export async function list{entities_pascal}(params: {entity_name}QueryParams) {{
   const offset = (page - 1) * pageSize;
 
   const searchClause = searchFilter
-    ? sql`AND (CAST(id AS TEXT) ILIKE ${{`%${{searchFilter}}%`}} OR title ILIKE ${{`%${{searchFilter}}%`}})`
+    ? sql`AND (CAST(id AS TEXT) ILIKE ${{`%${{searchFilter}}%`}}{search_clause})`
     : sql``;
 
   const items = await sql`
@@ -815,16 +844,16 @@ def build_context(spec, entity):
     ts_update_lines = [ts_field_decl(f) for f in business_fields]
 
     # ── PostgreSQL ──
-    # Table DDL + SELECTs include every spec field so the schema matches the model.
-    pg_col_lines = []
-    if "id" not in existing_snakes:
-        pg_col_lines.append("    id SERIAL NOT NULL,")
-    pg_col_lines.extend(pg_column_def(f) for f in all_fields)
+    # DDL/SELECT/RETURNS TABLE include id + only business (non-system) fields:
+    # audit/system columns (created_at, created_by, updated_at, updated_by,
+    # record_status) are added by the templates themselves, so including them
+    # here too would generate duplicate columns. id is always added once
+    # (SERIAL) whether or not the spec declares it.
+    pg_col_lines = ["    id SERIAL NOT NULL,"]
+    pg_col_lines.extend(pg_column_def(f) for f in business_fields)
 
-    pg_select_lines = []
-    if "id" not in existing_snakes:
-        pg_select_lines.append("        t.id,")
-    pg_select_lines.extend(pg_select_col(f) for f in all_fields)
+    pg_select_lines = ["        t.id,"]
+    pg_select_lines.extend(pg_select_col(f) for f in business_fields)
 
     # CRUD params only operate on business fields (no audit/system fields).
     fn_params_create_lines = [pg_fn_param(f) for f in business_fields]
@@ -880,8 +909,8 @@ def build_context(spec, entity):
         "SQL_COLUMNS": "\n".join(pg_col_lines),
         "SQL_SELECT_COLS": "\n".join(pg_select_lines),
         "SQL_COLUMNS_RETURN": "\n".join(
-            (["    id INTEGER,"] if "id" not in existing_snakes else [])
-            + [f"    {field_snake(f)} {pg_type(f['type'])}," for f in all_fields]
+            ["    id INTEGER,"]
+            + [f"    {field_snake(f)} {pg_type(f['type'])}," for f in business_fields]
         ),
         "SQL_INSERT_COLS": "\n".join(insert_cols),
         "SQL_VALUES_PLACEHOLDERS": "\n".join(insert_values),
@@ -917,7 +946,7 @@ def build_context(spec, entity):
 
 def write_file(path, content):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content)
+    path.write_text(content, encoding="utf-8")
     print(f"  Created: {path}")
 
 
@@ -1034,10 +1063,6 @@ def generate(spec, output_dir, backend="python", frontend="react", namespace=Non
                 frontend_dir / f"{entity_camel}-page.tsx",
                 load_template("page.component.tsx.j2").safe_substitute(ctx),
             )
-            write_file(
-                frontend_dir / "index.ts",
-                load_template("index.ts.j2").safe_substitute(ctx),
-            )
         elif frontend == "angular":
             # Angular templates reuse the TABLE_HEADERS/TABLE_CELLS/FORM_FIELDS
             # placeholder names but with Angular-flavored markup (NG_* in ctx),
@@ -1084,10 +1109,6 @@ def generate(spec, output_dir, backend="python", frontend="react", namespace=Non
                 frontend_dir / f"{entity_camel}-page.component.html",
                 load_template("angular/page.component.html.j2").safe_substitute(ng_ctx),
             )
-            write_file(
-                frontend_dir / "index.ts",
-                load_template("angular/index.ts.j2").safe_substitute(ng_ctx),
-            )
         else:
             raise ValueError(f"Unsupported frontend: {frontend}")
 
@@ -1102,11 +1123,43 @@ def generate(spec, output_dir, backend="python", frontend="react", namespace=Non
             load_template("sql_fn.sql.j2").safe_substitute(ctx),
         )
 
-        # ── Tests (Playwright) ──
-        tests_dir = output / "tests"
+    # ── Module-level files (once per module, not per entity) ──
+    # index.ts must export ALL entities and the E2E spec must not be
+    # overwritten by the last entity in the loop.
+    frontend_dir = output / "frontend"
+    tests_dir = output / "tests"
+    if spec["entities"]:
+        module_snake = to_snake(spec["module"])
+
+        barrel_lines = []
+        for e in spec["entities"]:
+            ectx = build_context(spec, e)
+            ec = ectx["entity"]
+            if frontend == "react":
+                barrel_lines.extend([
+                    f"export * from './{ec}.model';",
+                    f"export * from './{ec}.api';",
+                    f"export {{ {ectx['ENTITY']}List }} from './{ec}-list';",
+                    f"export {{ {ectx['ENTITY']}Table }} from './{ec}-table';",
+                    f"export {{ {ectx['ENTITY']}Form }} from './{ec}-form';",
+                    f"export {{ {ectx['ENTITY']}Page }} from './{ec}-page';",
+                ])
+            else:
+                barrel_lines.extend([
+                    f"export * from './{ec}.model';",
+                    f"export * from './{ec}.service';",
+                    f"export {{ {ectx['ENTITY']}ListComponent }} from './{ec}-list.component';",
+                    f"export {{ {ectx['ENTITY']}TableComponent }} from './{ec}-table.component';",
+                    f"export {{ {ectx['ENTITY']}FormComponent }} from './{ec}-form.component';",
+                    f"export {{ {ectx['ENTITY']}PageComponent }} from './{ec}-page.component';",
+                ])
+        write_file(frontend_dir / "index.ts", "\n".join(barrel_lines) + "\n")
+
+        # Single Playwright spec per module (representative: first entity).
+        first_ctx = build_context(spec, spec["entities"][0])
         write_file(
-            tests_dir / f"{module_lower}.spec.ts",
-            load_template("test.spec.ts.j2").safe_substitute(ctx),
+            tests_dir / f"{module_snake}.spec.ts",
+            load_template("test.spec.ts.j2").safe_substitute(first_ctx),
         )
 
 

@@ -14,7 +14,7 @@ metadata:
   - Cuando se necesita resolver escalado, aislamiento por tenant y costos por workload.
   - Cuando se prepara la solución para producción o para un MVP operable.
   phase:
-  - platform
+  - operations
   layer:
   - infrastructure
   enforcement: mandatory

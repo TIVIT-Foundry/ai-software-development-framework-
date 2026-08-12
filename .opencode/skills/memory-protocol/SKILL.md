@@ -46,7 +46,7 @@ Activate this skill when:
 |-------|----------|-------------|
 | `langchain` | Consumidora | Memory Protocol feeds context into LangChain agents |
 | `costos-llm` | Complementaria | Memory-aware cost optimization |
-| `database` | Complementaria | pgvector for semantic search over memories |
+| `database-modeling` | Complementaria | pgvector for semantic search over memories |
 
 ## Critical Rules
 

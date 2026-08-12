@@ -37,9 +37,9 @@ Activate when:
 
 | Skill | Relation | Description |
 |-------|----------|-------------|
-| `authentication` | parent | Auth patterns |
+| `authentication` | parent | Patrones generales de auth (login, sesiones, BFF); oauth2-jwt cubre el JWT custom sin IdP |
 | `authorization` | consumer | RBAC from JWT claims |
-| `keycloak` | sibling | IdP-specific integration |
+| `keycloak` | sibling | IdP-specific integration (Keycloak es el IdP recomendado del framework) |
 | `security` | cross-cutting | OWASP controls |
 
 ## Critical Rules
