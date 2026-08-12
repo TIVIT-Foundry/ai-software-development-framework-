@@ -16,10 +16,13 @@ metadata:
   depends_on:
   - security
   consumed_by:
+  - api-gateway
+  - app-bootstrap
   - authorization
   - backend-api
-  - app-bootstrap
-  - api-gateway
+  - keycloak
+  - oauth2-jwt
+  - real-time
   agent_roles:
   - design-agent
   - control-agent

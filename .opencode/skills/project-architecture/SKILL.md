@@ -15,12 +15,15 @@ metadata:
   depends_on:
   - repo-structure
   consumed_by:
-  - backend-api
-  - react
-  - angular
   - agent-backend
   - agent-frontend
   - agent-fullstack
+  - angular
+  - backend-api
+  - bun-backend
+  - framework-extensions
+  - react
+  - redis
   agent_roles:
   - design-agent
   - orchestrator-agent

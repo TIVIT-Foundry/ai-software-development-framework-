@@ -23,6 +23,7 @@ metadata:
   - framework-platform
   consumed_by:
   - framework-qa-validation
+  - project-bootstrap
   agent_roles:
   - delivery-agent
   - design-agent

@@ -12,11 +12,13 @@ metadata:
   depends_on:
   - openapi-docs
   consumed_by:
-  - react
   - angular
-  - react-services
   - angular-services
   - api-first-frontend
+  - i18n
+  - microfrontend
+  - react
+  - react-services
   agent_roles:
   - design-agent
   - delivery-agent

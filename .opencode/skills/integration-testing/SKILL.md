@@ -9,12 +9,14 @@ metadata:
   - testing
   enforcement: mandatory
   depends_on:
-  - unit-testing
+  - angular-services
   - data-access
   - react-services
-  - angular-services
+  - unit-testing
   consumed_by:
   - framework-qa-validation
+  - load-testing
+  - security-testing
   agent_roles:
   - delivery-agent
   - control-agent

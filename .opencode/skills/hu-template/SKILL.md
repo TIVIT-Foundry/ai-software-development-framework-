@@ -10,10 +10,13 @@ metadata:
   layer:
   - process
   enforcement: mandatory
-  depends_on: []
+  depends_on:
   consumed_by:
+  - acceptance-test-automation
   - api-first-spec
+  - feature-spec
   - html-prototype
+  - uat-acceptance
   agent_roles:
   - design-agent
   - orchestrator-agent

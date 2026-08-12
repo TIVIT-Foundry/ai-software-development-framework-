@@ -11,12 +11,16 @@ metadata:
   - backend
   enforcement: mandatory
   depends_on:
-  - database-sp
   - backend-api
+  - database-sp
   consumed_by:
-  - api-first-backend
   - agent-backend
   - agent-fullstack
+  - api-first-backend
+  - api-integration
+  - error-handling
+  - export-excel
+  - integration-testing
   agent_roles:
   - design-agent
   - delivery-agent

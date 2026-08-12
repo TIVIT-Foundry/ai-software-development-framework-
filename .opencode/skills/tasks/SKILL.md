@@ -16,6 +16,7 @@ metadata:
   - feature-spec
   consumed_by:
   - converge
+  - sdd-onboard
   agent_roles:
   - design-agent
   - delivery-agent

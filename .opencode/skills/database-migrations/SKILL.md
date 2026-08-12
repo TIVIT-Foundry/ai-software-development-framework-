@@ -13,6 +13,7 @@ metadata:
   - database-sp
   consumed_by:
   - data-access
+  - data-migration
   - database-seeding
   - integration-testing
   agent_roles:

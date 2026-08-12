@@ -13,7 +13,9 @@ metadata:
   depends_on:
   - api-first-testing
   consumed_by:
+  - a11y-testing
   - agent-qa
+  - real-time
   agent_roles:
   - delivery-agent
   validation_profile: skill-contract

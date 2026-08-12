@@ -11,12 +11,15 @@ metadata:
   - backend
   enforcement: mandatory
   depends_on:
-  - database-sp
   - data-access
+  - database-sp
   - shared-libs
   consumed_by:
   - agent-backend
   - agent-fullstack
+  - api-resilience
+  - graphql
+  - kafka
   agent_roles:
   - design-agent
   - control-agent

@@ -11,11 +11,13 @@ metadata:
   layer:
   - infrastructure
   enforcement: mandatory
-  depends_on: []
+  depends_on:
   consumed_by:
   - agent-backend
   - agent-fullstack
   - agent-qa
+  - github-actions
+  - gitlab-ci
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency

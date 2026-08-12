@@ -12,14 +12,18 @@ metadata:
   - backend
   - frontend
   enforcement: mandatory
-  depends_on: []
+  depends_on:
   consumed_by:
+  - angular
   - authentication
   - authorization
-  - database-security
   - backend-api
+  - database-security
+  - file-upload
+  - graphql
+  - oauth2-jwt
   - react
-  - angular
+  - security-testing
   agent_roles:
   - control-agent
   - design-agent

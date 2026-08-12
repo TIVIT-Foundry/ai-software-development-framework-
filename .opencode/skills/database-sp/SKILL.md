@@ -11,12 +11,17 @@ metadata:
   - database
   enforcement: mandatory
   depends_on:
-  - database-modeling
   - database-audit
+  - database-modeling
   - database-security
   consumed_by:
-  - data-access
   - api-first-backend
+  - api-integration
+  - backend-api
+  - data-access
+  - database-migrations
+  - error-handling
+  - export-excel
   agent_roles:
   - design-agent
   - delivery-agent

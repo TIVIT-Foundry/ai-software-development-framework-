@@ -13,6 +13,8 @@ metadata:
   - infrastructure-as-code
   consumed_by:
   - framework-operations-evolution
+  - incident-response
+  - postgresql-backup
   agent_roles:
   - delivery-agent
   - control-agent

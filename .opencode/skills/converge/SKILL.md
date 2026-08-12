@@ -16,9 +16,10 @@ metadata:
   - feature-spec
   - tasks
   consumed_by:
+  - acceptance-test-automation
   - framework-qa-validation
   - pull-request
-  - acceptance-test-automation
+  - sdd-onboard
   agent_roles:
   - control-agent
   validation_profile: skill-contract

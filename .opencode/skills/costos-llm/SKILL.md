@@ -13,13 +13,16 @@ metadata:
   - infrastructure
   enforcement: recommended
   depends_on:
-  - observabilidad
-  - framework-platform
-  - framework-data-memory-compliance
   - backend-api
+  - framework-data-memory-compliance
+  - framework-platform
+  - observabilidad
   consumed_by:
   - agent-backend
   - agent-fullstack
+  - langchain
+  - langfuse
+  - memory-protocol
   agent_roles:
   - design-agent
   - control-agent

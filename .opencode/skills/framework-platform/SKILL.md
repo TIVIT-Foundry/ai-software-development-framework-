@@ -20,11 +20,16 @@ metadata:
   enforcement: mandatory
   depends_on:
   - framework-architecture
-  - framework-security
   - framework-data-memory-compliance
+  - framework-security
   consumed_by:
-  - framework-scaffold-implementation
+  - costos-llm
+  - disaster-recovery
   - framework-operations-evolution
+  - framework-scaffold-implementation
+  - infrastructure-as-code
+  - kubernetes
+  - terraform
   agent_roles:
   - delivery-agent
   - control-agent

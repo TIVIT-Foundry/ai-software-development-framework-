@@ -16,6 +16,11 @@ SKILLS_DIR = OPENCODE_DIR / "skills"
 errors = []
 warnings = []
 
+# Meta-skills orchestrate domain skills; their activation relation lives in
+# their own depends_on. Mirroring them into every skill's consumed_by would
+# inflate ~40 files without value, so they are exempt from the mirror rule.
+META_SKILLS = {"agent-backend", "agent-frontend", "agent-fullstack", "agent-qa"}
+
 
 def parse_frontmatter(content):
     if not content.startswith("---"):
@@ -132,8 +137,19 @@ for name in sorted(skills):
     if color2[name] == WHITE:
         dfs_consumed(name)
 
-# --- consumed_by / depends_on mirror check (both directions) ---
+# --- consumed_by / depends_on mirror check ---
+# Direccion A (deps -> consumed, WARN por arista, meta: 0):
+#   si A depends_on B, B debe listar A en consumed_by — siempre verdadero.
+# Direccion B (consumed -> depends, metrica informativa, NO warning):
+#   si A lista B en consumed_by, B no necesariamente depende de A: consumed_by
+#   es una lista informativa (quien consume mis artefactos). Volcarla en
+#   depends_on crearia ciclos de prerequisitos (p.ej. project-bootstrap <->
+#   repo-structure), asi que solo se reporta el conteo.
+missing_a = 0
+missing_b = 0
 for name, data in sorted(skills.items()):
+    if name in META_SKILLS:
+        continue  # meta-skills exempt from the mirror rule (see header)
     for dep in data["depends_on"]:
         if dep not in skills:
             continue
@@ -141,13 +157,12 @@ for name, data in sorted(skills.items()):
             warnings.append(
                 f"'{name}' depends_on '{dep}', but '{dep}' does not list '{name}' in consumed_by"
             )
+            missing_a += 1
     for consumer in data["consumed_by"]:
         if consumer not in skills:
             continue
         if name not in skills[consumer]["depends_on"]:
-            warnings.append(
-                f"'{name}' lists '{consumer}' in consumed_by, but '{consumer}' does not list '{name}' in depends_on"
-            )
+            missing_b += 1
 
 if errors:
     for e in errors:
@@ -157,4 +172,9 @@ if errors:
 for w in warnings:
     print(f"WARN: {w}")
 
-print(f"No dependency cycles found across {len(skills)} skills ({len(warnings)} consumed_by drift warning(s))")
+cycle_warns = len(warnings) - missing_a
+print(
+    f"No dependency cycles found across {len(skills)} skills "
+    f"({missing_a} depends->consumed drift, {missing_b} consumed->depends informative edges, "
+    f"{cycle_warns} consumed_by cycle warning(s) - informational)"
+)

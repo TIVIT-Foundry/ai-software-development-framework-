@@ -12,7 +12,9 @@ metadata:
   - framework-platform
   consumed_by:
   - ci-cd
+  - disaster-recovery
   - framework-operations-evolution
+  - terraform
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency

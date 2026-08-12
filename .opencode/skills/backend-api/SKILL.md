@@ -12,9 +12,24 @@ metadata:
   depends_on:
   - database-sp
   consumed_by:
-  - api-first-backend
   - agent-backend
   - agent-fullstack
+  - api-first-backend
+  - api-gateway
+  - api-integration
+  - api-resilience
+  - api-versioning
+  - app-bootstrap
+  - costos-llm
+  - data-access
+  - file-upload
+  - graphql
+  - notifications
+  - openapi-docs
+  - performance
+  - real-time
+  - redis
+  - unit-testing
   agent_roles:
   - design-agent
   - delivery-agent

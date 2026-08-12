@@ -24,8 +24,9 @@ metadata:
   - framework-conception
   - framework-governance
   consumed_by:
-  - framework-scaffold-implementation
+  - framework-architecture
   - framework-qa-validation
+  - framework-scaffold-implementation
   agent_roles:
   - design-agent
   - delivery-agent

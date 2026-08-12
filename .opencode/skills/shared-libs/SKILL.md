@@ -10,12 +10,14 @@ metadata:
   layer:
   - backend
   enforcement: recommended
-  depends_on: []
+  depends_on:
   consumed_by:
-  - backend-api
-  - data-access
+  - api-first-spec
   - api-integration
   - app-bootstrap
+  - backend-api
+  - data-access
+  - error-handling
   agent_roles:
   - design-agent
   - delivery-agent

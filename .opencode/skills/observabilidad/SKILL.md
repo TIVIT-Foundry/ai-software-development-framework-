@@ -12,11 +12,18 @@ metadata:
   layer:
   - infrastructure
   enforcement: mandatory
-  depends_on: []
+  depends_on:
   consumed_by:
   - agent-backend
   - agent-fullstack
   - agent-qa
+  - costos-llm
+  - incident-response
+  - kafka
+  - langchain
+  - langfuse
+  - opentelemetry
+  - prometheus-grafana
   agent_roles:
   - delivery-agent
   - control-agent

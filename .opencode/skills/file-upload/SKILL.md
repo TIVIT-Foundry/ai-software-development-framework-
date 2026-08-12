@@ -12,8 +12,9 @@ metadata:
   - backend-api
   - security
   consumed_by:
-  - react
   - angular
+  - react
+  - unit-testing
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency

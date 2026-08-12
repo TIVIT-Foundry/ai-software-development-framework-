@@ -10,10 +10,11 @@ metadata:
   layer:
   - backend
   enforcement: recommended
-  depends_on: []
+  depends_on:
   consumed_by:
-  - app-bootstrap
   - agent-backend
+  - app-bootstrap
+  - kubernetes
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency

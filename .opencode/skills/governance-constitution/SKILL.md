@@ -9,8 +9,13 @@ metadata:
     - governance
   enforcement: mandatory
   depends_on:
+  - framework-governance
     - framework-governance
   consumed_by:
+  - documentation
+  - framework-architecture
+  - framework-security
+  - sdd-onboard
     - framework-architecture
     - framework-security
   agent_roles:

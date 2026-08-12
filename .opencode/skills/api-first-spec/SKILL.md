@@ -15,11 +15,16 @@ metadata:
   - hu-template
   - shared-libs
   consumed_by:
+  - api-catalog
+  - api-contracts
   - api-first-backend
   - api-first-frontend
   - api-first-testing
-  - tasks
+  - bun-backend
   - converge
+  - database-modeling
+  - sdd-onboard
+  - tasks
   agent_roles:
   - design-agent
   - orchestrator-agent

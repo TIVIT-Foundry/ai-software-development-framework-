@@ -16,6 +16,7 @@ metadata:
   consumed_by:
   - agent-backend
   - agent-fullstack
+  - api-first-testing
   agent_roles:
   - design-agent
   - delivery-agent

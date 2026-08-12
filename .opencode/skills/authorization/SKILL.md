@@ -15,9 +15,11 @@ metadata:
   - authentication
   - security
   consumed_by:
-  - backend-api
-  - react
   - angular
+  - api-gateway
+  - backend-api
+  - keycloak
+  - react
   agent_roles:
   - design-agent
   - control-agent

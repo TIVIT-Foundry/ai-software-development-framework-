@@ -12,10 +12,11 @@ metadata:
   - process
   enforcement: recommended
   depends_on:
-  - react-doctor
   - angular-doctor
+  - react-doctor
   consumed_by:
   - pull-request
+  - review-adversarial
   agent_roles:
   - control-agent
   - delivery-agent

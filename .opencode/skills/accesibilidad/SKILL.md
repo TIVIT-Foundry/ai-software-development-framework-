@@ -11,10 +11,11 @@ metadata:
   - frontend
   enforcement: mandatory
   depends_on:
-  - react
   - angular
   - design-system
+  - react
   consumed_by:
+  - a11y-testing
   - agent-frontend
   - agent-fullstack
   - agent-qa

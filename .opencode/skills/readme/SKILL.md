@@ -19,6 +19,7 @@ metadata:
   - project-bootstrap
   - repo-structure
   consumed_by:
+  - documentation
   - pull-request
   agent_roles:
   - design-agent

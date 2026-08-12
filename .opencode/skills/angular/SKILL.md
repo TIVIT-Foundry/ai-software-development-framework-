@@ -9,9 +9,23 @@ metadata:
     - frontend
   enforcement: recommended
   depends_on:
+  - design-system
+  - typescript
     - typescript
     - design-system
   consumed_by:
+  - accesibilidad
+  - agent-frontend
+  - agent-fullstack
+  - angular-doctor
+  - angular-services
+  - angular-upgrade
+  - api-first-frontend
+  - feature-flags
+  - i18n
+  - microfrontend
+  - mobile-pwa
+  - unit-testing
     - api-first-frontend
     - agent-frontend
     - agent-fullstack

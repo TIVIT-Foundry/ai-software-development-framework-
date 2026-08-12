@@ -11,12 +11,13 @@ metadata:
   layer:
   - frontend
   enforcement: recommended
-  depends_on: []
+  depends_on:
   consumed_by:
-  - react
-  - angular
+  - accesibilidad
   - agent-frontend
   - agent-fullstack
+  - angular
+  - react
   agent_roles:
   - design-agent
   validation_profile: skill-contract

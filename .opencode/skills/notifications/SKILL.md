@@ -14,8 +14,9 @@ metadata:
   depends_on:
   - backend-api
   consumed_by:
-  - agent-fullstack
   - agent-backend
+  - agent-fullstack
+  - mobile-pwa
   agent_roles:
   - design-agent
   - delivery-agent

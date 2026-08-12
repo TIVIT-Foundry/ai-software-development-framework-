@@ -10,10 +10,11 @@ metadata:
   - backend
   - frontend
   enforcement: recommended
-  depends_on: []
+  depends_on:
   consumed_by:
-  - project-bootstrap
   - project-architecture
+  - project-bootstrap
+  - readme
   agent_roles:
   - orchestrator-agent
   - delivery-agent

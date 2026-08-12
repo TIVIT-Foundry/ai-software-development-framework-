@@ -20,10 +20,12 @@ metadata:
   - implementation
   enforcement: mandatory
   depends_on:
-  - framework-scaffold-implementation
   - framework-pack-design
+  - framework-scaffold-implementation
   consumed_by:
   - framework-operations-evolution
+  - review-adversarial
+  - uat-acceptance
   agent_roles:
   - delivery-agent
   - control-agent

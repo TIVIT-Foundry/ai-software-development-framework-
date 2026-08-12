@@ -17,8 +17,9 @@ metadata:
   depends_on:
   - framework-scaffold-implementation
   consumed_by:
-  - repo-structure
   - project-architecture
+  - readme
+  - repo-structure
   agent_roles:
   - design-agent
   - delivery-agent

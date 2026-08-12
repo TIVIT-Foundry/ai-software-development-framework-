@@ -9,9 +9,16 @@ metadata:
     - frontend
   enforcement: recommended
   depends_on:
+  - angular
+  - typescript
     - angular
     - typescript
   consumed_by:
+  - agent-frontend
+  - agent-fullstack
+  - api-first-frontend
+  - export-excel
+  - integration-testing
     - api-first-frontend
     - agent-frontend
     - agent-fullstack

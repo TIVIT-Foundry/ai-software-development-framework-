@@ -18,10 +18,11 @@ metadata:
   depends_on:
   - backend-api
   consumed_by:
-  - api-first-spec
   - api-catalog
-  - typescript
+  - api-first-spec
   - api-first-testing
+  - api-versioning
+  - typescript
   agent_roles:
   - design-agent
   - delivery-agent

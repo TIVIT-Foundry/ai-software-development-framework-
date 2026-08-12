@@ -22,6 +22,7 @@ metadata:
   depends_on:
   - framework-architecture
   consumed_by:
+  - costos-llm
   - framework-platform
   - framework-scaffold-implementation
   agent_roles:

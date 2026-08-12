@@ -9,9 +9,14 @@ metadata:
     - backend
   enforcement: mandatory
   depends_on:
+  - costos-llm
+  - observabilidad
     - costos-llm
     - observabilidad
   consumed_by:
+  - agent-backend
+  - agent-fullstack
+  - pgvector
     - agent-backend
     - agent-fullstack
   agent_roles:

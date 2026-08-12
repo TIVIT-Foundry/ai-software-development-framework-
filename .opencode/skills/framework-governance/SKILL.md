@@ -19,13 +19,15 @@ metadata:
   layer:
   - governance
   enforcement: mandatory
-  depends_on: []
+  depends_on:
   consumed_by:
   - framework-architecture
-  - framework-security
   - framework-data-memory-compliance
-  - framework-platform
+  - framework-discovery
   - framework-pack-design
+  - framework-platform
+  - framework-security
+  - governance-constitution
   agent_roles:
   - control-agent
   - orchestrator-agent

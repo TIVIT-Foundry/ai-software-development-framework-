@@ -14,9 +14,10 @@ metadata:
   depends_on:
   - hu-template
   consumed_by:
-  - tasks
   - converge
   - framework-conception
+  - sdd-onboard
+  - tasks
   agent_roles:
   - design-agent
   validation_profile: documentation
