@@ -372,7 +372,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./scripts/init-db:/docker-entrypoint-initdb.d:ro
+      - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro  # copiar de .opencode/scripts/init-db.sh
     networks:
       - app-network
     restart: unless-stopped

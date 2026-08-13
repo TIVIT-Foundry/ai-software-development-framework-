@@ -141,7 +141,6 @@ Cada proyecto debe tener un `CHANGELOG.md` en su directorio raíz, siguiendo el 
 
 ### Database
 - [Migration] Alembic `versions/2_3_1_add_profile_table.py` — nueva tabla `Profile` y FK a `Users`
-- [Seed] `scripts/seed_profile_defaults.py` — perfiles por defecto para usuarios existentes
 
 ### Tests
 - [Unit] `use-user-profile.test.ts` — 8 tests nuevos (cobertura 85% → 92%)

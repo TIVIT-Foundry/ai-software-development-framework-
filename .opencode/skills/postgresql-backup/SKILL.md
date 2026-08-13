@@ -51,7 +51,7 @@ Activate when:
 
 | Artifact | Path | Description |
 |----------|------|-------------|
-| Backup script | `ops/scripts/backup-postgres.sh` | Scheduled backup |
+| Backup script | `pg_dump` (runbook de esta skill) | Scheduled backup |
 | Restore runbook | `docs/operations/runbooks/postgres-restore.md` | Recovery steps |
 | Terraform/Pulumi | `infra/modules/rds/backup.tf` | Automated backups |
 | Verification job | CI cron job | Restore test |

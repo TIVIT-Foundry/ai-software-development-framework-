@@ -250,7 +250,7 @@ jobs:
       
       - name: Validate ADR format
         run: |
-          python scripts/validate-adrs.py docs/adr/
+          python .opencode/scripts/validate-adrs.py docs/adr/
       
       - name: Check API docs match OpenAPI
         run: |

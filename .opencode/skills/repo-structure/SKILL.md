@@ -677,7 +677,7 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 - Las apps dependen de libs mediante workspace protocol: `"@{app}/shared": "workspace:*"` en `package.json`.
 - Se usa **Biome** (`biome.json`) como formatter + linter unificado (reemplaza ESLint + Prettier) por velocidad nativa de Bun.
 - `tests/` usa el test runner nativo de Bun (`bun test`) con archivos `*.test.ts` co-locados o en carpeta dedicada.
-- `migrations/` contiene migraciones TypeScript ejecutadas con `bun run scripts/migrate.ts`.
+- `migrations/` contiene migraciones TypeScript ejecutadas con el runner de migraciones del proyecto (`bun run migrations`).
 - Los nombres de paquete usan `@{project-code}/{name}` (scoped npm packages) para namespacing.
 - `tsconfig.base.json` define `paths` aliases y `compilerOptions` compartidos (strict mode, `moduleResolution: bundler`).
 - `src/` layout estándar; el entry point es `src/index.ts` que re-exports la API pública.
@@ -809,7 +809,7 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 
 **Observaciones:**
 - **Tres stacks coexisten**: React (`apps/web`), Bun/TypeScript (`apps/api`), Python/FastAPI (`apps/ai-orchestrator`).
-- **OpenAPI spec** en `packages/openapi-spec/` es el contrato compartido (source of truth); `scripts/generate-sdk.sh` genera el SDK TypeScript consumido por React.
+- **OpenAPI spec** en `packages/openapi-spec/` es el contrato compartido (source of truth); el SDK TypeScript consumido por React se genera desde ese contrato (generador del proyecto).
 - **CI separado por stack**: workflows independientes (`ci-backend.yml`, `ci-frontend.yml`, `ci-ai.yml`) para paralelismo y caches diferenciados.
 - **Makefile** orquesta comandos跨-stack: `make dev` levanta los 3 servicios, `make test` corre tests de los 3 stacks, `make lint` aplica Biome (TS) + ruff/mypy (Python).
 - **nx.json** coordina affected builds y caching considerando dependencias entre apps y libs de distintos stacks.
@@ -950,7 +950,7 @@ Cada stack tecnológico tiene convenciones de estructura de directorios bien def
 
 **Observaciones:**
 - **Tres stacks coexisten**: Angular (`apps/web`), Bun/TypeScript (`apps/api`), Python/FastAPI (`apps/ai-orchestrator`).
-- **OpenAPI spec** en `packages/openapi-spec/` es el contrato compartido (source of truth); `scripts/generate-sdk.sh` genera el SDK TypeScript consumido por Angular.
+- **OpenAPI spec** en `packages/openapi-spec/` es el contrato compartido (source of truth); el SDK TypeScript consumido por Angular se genera desde ese contrato (generador del proyecto).
 - **CI separado por stack**: workflows independientes (`ci-backend.yml`, `ci-frontend.yml`, `ci-ai.yml`) para paralelismo y caches diferenciados.
 - **Makefile** orquesta comandos跨-stack: `make dev` levanta los 3 servicios, `make test` corre tests de los 3 stacks, `make lint` aplica Biome (TS) + ruff/mypy (Python).
 - **nx.json** coordina affected builds y caching considerando dependencias entre apps y libs de distintos stacks.

@@ -198,7 +198,7 @@ resource "aws_db_instance" "dr" {
 
 ```bash
 #!/bin/bash
-# scripts/rollback-deployment.sh
+# Ejemplo de rollback ECS: crear scripts/rollback-deployment.sh en el proyecto
 
 ENVIRONMENT=${1:-production}
 PREVIOUS_VERSION=${2:-"previous"}

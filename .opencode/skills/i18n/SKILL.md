@@ -706,7 +706,7 @@ Las traducciones iniciales se generan con un LLM y luego se refinan con revisió
 }
 ```
 
-**Script de traducción asistida (`scripts/i18n-translate.ts`)**:
+**Script de traducción asistida (ejemplo embebido — crear `scripts/i18n-translate.ts` en el proyecto)**:
 
 ```typescript
 import { writeFileSync, readFileSync } from 'fs';
@@ -760,7 +760,7 @@ main();
 4. Las traducciones aprobadas se commitean al repositorio.
 5. El CI valida que todas las claves de `en/common.json` existen en los otros locales (sin claves faltantes).
 
-**Validación en CI (`scripts/i18n-validate.ts`)**:
+**Validación en CI (ejemplo embebido — crear `scripts/i18n-validate.ts` en el proyecto)**:
 
 ```typescript
 import { readFileSync } from 'fs';

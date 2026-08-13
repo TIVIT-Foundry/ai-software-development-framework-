@@ -212,7 +212,7 @@ log_retention    = 30
 
 ```bash
 #!/bin/bash
-# scripts/drift-detect.sh
+# Ejemplo: drift-detect.sh (el framework incluye uno real en .opencode/scripts/)
 
 ENVIRONMENT=${1:-staging}
 cd "environments/$ENVIRONMENT"
@@ -320,7 +320,7 @@ module "database" {
 
 ```bash
 #!/bin/bash
-# scripts/emergency-rollback.sh
+# Ejemplo: emergency-rollback.sh (el framework incluye uno real en .opencode/scripts/)
 
 ENVIRONMENT=${1:-production}
 PREVIOUS_STATE=${2:-"terraform.tfstate.backup"}

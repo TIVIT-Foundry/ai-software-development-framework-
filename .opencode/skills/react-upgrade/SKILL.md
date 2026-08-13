@@ -50,7 +50,7 @@ Activate when:
 | Artifact | Path | Description |
 |----------|------|-------------|
 | Upgrade plan | `docs/operations/react-upgrade-{version}.md` | Steps and risks |
-| Migration script | `scripts/migrate-to-hooks.ts` | Codemod if needed |
+| Migration script | Codemod del proyecto (ver pasos de esta skill) | Codemod if needed |
 | Test report | CI output | Regression results |
 
 ## Example: upgrade commands

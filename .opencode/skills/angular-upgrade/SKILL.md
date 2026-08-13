@@ -50,7 +50,7 @@ Activate when:
 | Artifact | Path | Description |
 |----------|------|-------------|
 | Upgrade plan | `docs/operations/angular-upgrade-{version}.md` | Steps and risks |
-| Migration script | `scripts/migrate-to-standalone.ts` | Codemod if needed |
+| Migration script | Codemod (`ng generate @angular/core:standalone`) — crear en el proyecto si aplica | Codemod if needed |
 | Test report | CI output | Regression results |
 
 ## Example: ng update

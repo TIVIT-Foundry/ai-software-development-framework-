@@ -243,7 +243,7 @@ rg -B 2 -A 2 "import.*$SERVICE_ID|from.*$SERVICE_ID" src/ \
 
 ```bash
 #!/usr/bin/env bash
-# scripts/generate-api-catalog.sh
+# Ejemplo de orquestador: crear scripts/generate-api-catalog.sh en el proyecto
 set -euo pipefail
 
 OUT="docs/api-catalog.md"
@@ -345,7 +345,7 @@ En el `README.md` raíz, agregar una entrada a la sección "Documentación":
 
 1. **Crear el endpoint** siguiendo `api-first-spec` y `backend-api`.
 2. **Agregar la fila** al catálogo en `docs/modules/{module}/api-catalog.md` con todas las columnas.
-3. **Regenerar el índice maestro** ejecutando `scripts/generate-catalog-index.sh` si aplica.
+3. **Regenerar el índice maestro** con el orquestador de ejemplo (bloque e) si aplica.
 4. **Validar en CI** que la fila exista (ver bloque siguiente y `framework-qa-validation`).
 5. **Commitear ambos cambios** en el mismo PR (endpoint + catálogo).
 
@@ -353,7 +353,7 @@ En el `README.md` raíz, agregar una entrada a la sección "Documentación":
 
 ```bash
 #!/bin/bash
-# scripts/validate-api-catalog.sh — corre en el pipeline
+# Ejemplo de validación CI: crear scripts/validate-api-catalog.sh en el proyecto
 set -euo pipefail
 
 ENDPOINTS=$(rg -t py "@router\.(get|post|put|delete|patch)\b" src/ -c 2>/dev/null \
