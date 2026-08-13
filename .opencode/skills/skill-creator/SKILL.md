@@ -60,6 +60,16 @@ A skill encapsulates a **reusable pattern** that an AI agent can follow when a s
 
 **Key Rule:** Keep SKILL.md under 200 lines of instructional content. Heavy content (templates, long examples, scripts) goes to `assets/`.
 
+### Tiers de tamaño (skills existentes y nuevas)
+
+| Tier | Tamaño | Regla |
+|------|--------|-------|
+| **Estándar** | menos de 200 líneas | Objetivo por defecto para skills nuevas |
+| **Profunda** | 200-800 líneas | Aceptable cuando el dominio lo exige (ej. testing por stack); mover ejemplos largos a `assets/` |
+| **Reference pack** | más de 800 líneas | **Excepcional**: requiere **tabla de contenidos (TOC) al inicio** (después del frontmatter) para lectura selectiva del agente — validado por `check-content-quality` (WARN) |
+
+Regla práctica: si una skill supera 800 líneas, primero intentar mover ejemplos completos a `assets/`; si el contenido instructivo sigue siendo masivo, dividir en sub-skills o declararla reference pack con TOC.
+
 ## Creating a new skill — task-based workflow
 
 ### Task 1: Identify if a skill is needed
@@ -255,7 +265,7 @@ bash .opencode/validators/run-all.sh
 - Duplicate content that exists in other skills — use `depends_on` instead.
 - Write lengthy explanations when a table or list suffices.
 - Include complete inline templates longer than 30 lines (put in `assets/`).
-- Exceed 200 lines of instructional content (applies to SKILL.md body only).
+- Exceed 200 lines of instructional content (applies to SKILL.md body only) — y si superas 800, el TOC inicial es obligatorio.
 - Use markdown that won't render well in terminal (e.g., complex HTML tables).
 - Reference files that don't exist (every link must resolve).
 
