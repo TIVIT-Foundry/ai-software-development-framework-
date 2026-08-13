@@ -24,6 +24,26 @@ metadata:
 mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Critical Rules
+- Notification Types
+- Notification Database Schema
+- Notification Status Machine
+- Event-Driven Delivery (Preferred)
+- Template Pattern
+- In-App Notification (Frontend — React)
+- In-App Notification (Frontend — Angular)
+- Provider Options
+- Retry Policy
+- Delivery Tracking
+- Notificaciones push modernas e integración con real-time
+  - 1. Firebase Cloud Messaging (FCM)
+  - 2. Apple Push Notification Service (APNs)
+  - 3. Notificaciones WebSocket (integración con skill real-time)
+  - 4. Gestión de preferencias de notificación por usuario
+  - 5. Gestión de templates de email
+
 ## Critical Rules
 | Rule | Type | Rationale |
 |------|------|-----------|

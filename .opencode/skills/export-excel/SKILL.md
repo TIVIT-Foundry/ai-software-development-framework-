@@ -26,6 +26,33 @@ metadata:
 mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Critical Rules
+- Pattern Overview
+- Database Layer (PostgreSQL Function)
+- Backend Handler (Python + openpyxl)
+- Python Alternative (openpyxl)
+- Frontend Hooks (React + @tanstack/react-query)
+- Frontend Component (React + Ant Design)
+- Frontend Service (Angular + @ngneat/query)
+- Frontend Component (Angular + Ant Design)
+- Patrón completo export-excel multi-stack
+  - Base de datos
+  - Backend handler
+  - API endpoint
+  - Frontend service
+- Exportaciones grandes (streaming)
+  - Cuándo usar streaming vs in-memory
+  - Patrón: escribir a temp file → stream response
+  - Patrón background job (request → job → download URL)
+  - Progreso via WebSocket
+- Formato condicional
+  - Selección dinámica de columnas
+  - Column mapping (server-side column name → display name)
+  - i18n para column headers en Excel
+  - Multi-language support en el archivo exportado
+
 ## Critical Rules
 | Rule | Type | Rationale |
 |------|------|-----------|

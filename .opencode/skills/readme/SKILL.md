@@ -28,6 +28,124 @@ metadata:
   mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Propósito
+- Objetivo
+- Relación con otras skills
+- Qué debe hacer el agente cuando esta skill está activa
+- Entradas esperadas
+- Alcance de la fase
+- Principios que siempre debe respetar
+- Qué decide esta skill y qué delega
+- Qué debe definir el diseño
+- Estado del proyecto
+- Stack tecnológico
+- Prerrequisitos
+- Instalación y arranque local
+- Variables de entorno
+- Referencia de endpoints
+- Estructura del proyecto
+- Testing
+- Arquitectura → link a docs
+- Changelog → link a CHANGELOG.md
+- Licencia
+- Estado del proyecto
+- Stack tecnológico
+- Prerrequisitos
+- Instalación y arranque local
+- Variables de entorno
+- Rutas y pantallas
+- Estructura del proyecto
+- Testing
+- Arquitectura → link a docs
+- Changelog → link a CHANGELOG.md
+- Licencia
+- Estado del proyecto
+- Instalación como dependencia
+- Uso
+- API Reference
+- Estructura del proyecto
+- Testing
+- Publicación (PyPI)
+- Changelog → link a CHANGELOG.md
+- Licencia
+- Estado del proyecto
+- Stack de infraestructura
+- Prerrequisitos
+- Estructura del proyecto
+- Comandos principales (plan, apply, destroy)
+- Variables y tfvars
+- Entornos (dev, staging, prod)
+- Changelog → link a CHANGELOG.md
+- Licencia
+- Estado del proyecto
+- Capacidades del pack
+- Agentes incluidos
+- Herramientas MCP
+- Configuración por tenant
+- Instalación
+- Uso
+- Métricas y límites
+- Changelog → link a CHANGELOG.md
+- Licencia
+- Instalación y arranque local
+- Instalación como dependencia
+- Uso
+- Instalación y arranque local
+- Preguntas guía
+- Salidas esperadas
+- Criterios de calidad
+- Comportamiento esperado del agente
+- Plantilla de respuesta recomendada
+- Stack tecnológico
+- Prerrequisitos
+- Instalación y arranque local
+- Variables de entorno
+- Referencia de endpoints
+- Estructura del proyecto
+- Testing
+- Enlaces
+- Licencia
+- Ejemplos de uso
+- Stack tecnológico
+- Prerrequisitos
+- Instalación y arranque local
+- Variables de entorno
+- Referencia de endpoints
+- Estructura del proyecto
+- Testing
+- Enlaces
+- Licencia
+- Stack tecnológico
+- Instalación como dependencia
+- Uso
+- API Reference
+- Estructura del proyecto
+- Testing
+- Publicación
+- Enlaces
+- Licencia
+- Stack tecnológico
+- Prerrequisitos
+- Instalación y arranque local
+- Variables de entorno
+- Referencia de endpoints
+- Estructura del proyecto
+- Testing
+- Enlaces
+- Licencia
+- Stack tecnológico
+- Prerrequisitos
+- Instalación y arranque local
+- Variables de entorno
+- Rutas y pantallas
+- Estructura del proyecto
+- Testing
+- Enlaces
+- Licencia
+- Checklist final de la skill
+
 ## Propósito
 
 Esta skill define la estructura, contenido y mantenimiento de archivos README para cada módulo del framework agéntico. Un README bien escrito es la **puerta de entrada** de cualquier desarrollador al proyecto: reduce el tiempo de onboarding, evita preguntas repetitivas y establece el contrato de uso del módulo.

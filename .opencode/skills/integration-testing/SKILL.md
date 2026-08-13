@@ -24,6 +24,43 @@ metadata:
   mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Propósito
+- Objetivo
+- Relación con otras skills
+- Qué debe hacer el agente cuando esta skill está activa
+- Entradas esperadas
+- Alcance de la fase
+- Principios que siempre debe respetar
+- Qué decide esta skill y qué delega
+- Qué debe definir el diseño
+  - 1. TestContainers para BD de prueba (Python + PostgreSQL + pgvector)
+  - 2. Integration test de endpoint (Python + httpx + pytest)
+  - 3. Integration test de hook React (renderHook + Mock Service Worker)
+  - 4. Integration test de componente React con datos reales (React Testing Library + MSW)
+  - 5. Integration test de servicio Angular (TestBed + HttpClientTestingModule)
+  - 6. Integration test de componente Angular con providers reales
+  - 7. Integration test de backend Bun (Vitest + testcontainers)
+  - 8. Tests de operaciones pgvector (similarity search, embeddings)
+  - 9. Contract tests entre servicios
+  - 10. Test isolation por tenant
+  - 11. Parallel execution strategy
+- Preguntas guía
+  - 1. Sobre infraestructura de tests
+  - 2. Sobre contracts
+  - 3. Sobre isolation
+  - 4. Sobre setup/teardown
+  - 5. Sobre pgvector
+- Salidas esperadas de esta skill
+  - A. Infraestructura de tests
+  - B. Integration tests por feature
+  - C. Parallel execution strategy
+  - D. Consumidores de esta skill
+- Criterios de calidad
+- Comportamiento esperado del agente
+- Checklist final de la skill
+
 # integration-testing
 
 ## Propósito

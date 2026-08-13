@@ -30,6 +30,28 @@ metadata:
 mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Critical Rules
+- Relation to other skills
+- When to use this skill
+- Authentication Patterns
+- Standard Auth Flow (JWT)
+- Keycloak as Identity Provider (Recommended)
+  - Configuración Keycloak
+  - Keycloak + FastAPI Integration
+  - Token Refresh con Keycloak
+- Microservice Identity Propagation
+- Python FastAPI JWT (PyJWT + passlib)
+- Identity Header Pattern (Internal APIs)
+- Auth Endpoints to Exclude from Validation
+- OpenAPI Security Schemes
+- Patrones modernos de autenticación
+  - 1. Passkeys / WebAuthn
+  - 2. JWKS Endpoints
+  - 3. BFF Pattern (Backend-For-Frontend)
+  - 4. Token Management Patterns
+
 ## Critical Rules
 | Rule | Type | Rationale |
 |------|------|-----------|

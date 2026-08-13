@@ -23,6 +23,25 @@ metadata:
   mcp_usage: governed
 ---
 
+## Tabla de contenidos
+
+- Critical Rules
+- Playwright MCP Workflow (MANDATORY when MCP available)
+- File Structure
+- Page Object Model Pattern
+- Selector Priority
+- Test Tag Categories
+- Test Structure
+- playwright.config.ts
+- Auth Fixture (JWT/OAuth2 — React fetch client)
+- Auth Fixture (JWT/OAuth2 — Angular HttpClient)
+- Patrones avanzados de Playwright
+  - 1. API Testing con APIRequestContext
+  - 2. Trace Viewer y Debugging
+  - 3. Ejecución en Paralelo y Sharding
+  - 4. Visual Regression Testing (Comparación de Screenshots)
+  - 5. Integración Docker para E2E
+
 ## Critical Rules
 | Rule | Type | Rationale |
 |------|------|-----------|

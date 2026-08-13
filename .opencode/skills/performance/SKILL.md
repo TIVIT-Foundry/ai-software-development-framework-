@@ -25,6 +25,27 @@ metadata:
 mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Critical Rules
+- Pagination API Response
+- Frontend Pagination (React + @tanstack/react-query)
+- Frontend Pagination (Angular Signals + HttpClient)
+- Query Optimization (PostgreSQL)
+- Caching Strategy
+- Caching Implementation
+- Frontend Caching (React)
+- Frontend Caching (Angular)
+- Large Data Handling
+- Database Indexing (PostgreSQL)
+- pgvector Optimization
+- Response Compression
+- CDN Caching Headers
+- React Performance Patterns
+- Angular Performance Patterns
+- Core Web Vitals
+- SLOs, Latency Targets & Throughput Benchmarks
+
 ## Critical Rules
 | Rule | Type | Rationale |
 |------|------|-----------|

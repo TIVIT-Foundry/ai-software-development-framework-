@@ -23,6 +23,41 @@ metadata:
   mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Propósito
+- Objetivo
+- Relación con otras skills
+- Qué debe hacer el agente cuando esta skill está activa
+- Entradas esperadas
+- Alcance de la fase
+- Principios que siempre debe respetar
+- Qué decide esta skill y qué delega
+- Qué debe definir el diseño
+  - 1. Python Backend (pytest)
+  - 2. React Frontend (Vitest + React Testing Library)
+  - 3. Angular Frontend (TestBed / Jasmine / Karma)
+  - 4. Bun TypeScript Backend (Vitest preferido)
+  - 5. Mocks vs Fakes vs Stubs
+  - 6. Test naming convention
+  - 7. Cobertura por capa
+  - 8. Tests deterministas
+- Preguntas guía
+  - 1. Sobre framework
+  - 2. Sobre cobertura
+  - 3. Sobre mocks
+  - 4. Sobre naming
+  - 5. Sobre TDD
+- Salidas esperadas de esta skill
+  - A. Proyecto de tests configurado
+  - B. Fakes compartidos
+  - C. Tests por feature
+  - D. Configuración de CI
+  - E. Consumidores de esta skill
+- Criterios de calidad
+- Comportamiento esperado del agente
+- Checklist final de la skill
+
 # unit-testing
 
 ## Propósito

@@ -31,6 +31,55 @@ metadata:
 mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Stack de referencia de esta skill
+- Critical Rules
+- Relation to other skills
+- When to use this skill
+- 1. SQL Injection Prevention
+- 2. Input Validation
+  - Bun — Zod validation middleware
+  - Python FastAPI — Pydantic
+- 3. XSS Prevention
+  - React — Sanitización automática + DOMPurify
+  - CSP en apps React (Vite)
+  - Angular — Sanitización automática + DomSanitizer
+  - Angular CSP Configuration
+  - Bun — CSP middleware
+- 4. React Security Patterns
+  - Route Guards — Protección de rutas
+  - Fetch Wrapper — JWT injection y refresh
+- 5. Angular Security Patterns
+  - Route Guards — Protección de rutas
+  - HTTP Interceptor — JWT injection y refresh
+- 6. Keycloak / OAuth2 Patterns
+  - Token management y refresh
+  - Role-based access — Store centralizado
+  - Token introspection (Bun backend)
+- 7. Bun Security Patterns
+  - Middleware de seguridad (helmet-equivalent)
+  - Input validation con Zod en Bun
+  - Command Injection Prevention (Bun)
+- 8. CORS Configuration
+  - Bun — CORS middleware
+  - Python FastAPI
+- 9. Rate Limiting
+  - Bun — Rate limiter con store en memoria
+  - Python FastAPI
+- 10. OWASP Top 10 — Mitigaciones por stack
+  - A1: Broken Access Control
+  - A3: Injection
+  - A5: Security Misconfiguration
+  - A6: Sensitive Data Exposure
+  - A7: Cross-Site Scripting (XSS)
+- 11. Security Headers Checklist
+- 12. Secrets Management
+  - Bun — Variables de entorno
+- 13. Source Code Repository Security
+- 14. Audit Logging
+- Verificación
+
 ## Stack de referencia de esta skill
 
 | Capa | Tecnologías |

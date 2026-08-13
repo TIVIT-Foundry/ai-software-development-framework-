@@ -27,6 +27,42 @@ metadata:
 mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Workflow
+- TypeScript Type Mapping
+- Service IDs (in models/constants.ts)
+- Query Hook Pattern (React + @tanstack/react-query)
+- Mutation Hook Pattern
+- Operation Hook Naming Convention
+- Query Service Pattern (Angular + @ngneat/query)
+- Mutation Service Pattern
+- Operation Service Naming Convention
+- File Structure
+- Generation Order
+- Critical Checklist
+- Workflow completo: De spec a componente React funcional
+  - Inputs
+  - Step 1 — Generar TypeScript types
+  - Step 2 — Crear API client
+  - Step 3 — Crear hooks de @tanstack/react-query
+  - Step 4 — Componente base (UsersList)
+  - Step 5 — Form component (UsersForm)
+  - Step 6 — i18n integration
+- Workflow completo: De spec a componente Angular funcional
+  - Inputs
+  - Step 1 — Generar TypeScript types
+  - Step 2 — Crear API client
+  - Step 3 — Crear servicios de @ngneat/query
+  - Step 4 — Componente base (UsersListComponent)
+  - Step 5 — Form component (UsersFormComponent)
+  - Step 6 — i18n integration
+- Service IDs y constantes
+  - Patrón
+  - Ubicación de las constantes
+  - Importación en hooks y componentes
+  - Relación entre Service IDs y route paths
+
 ## Workflow
 OpenAPI Spec → Parse → Generate Types → Generate API Client → Generate Query/Mutation Hooks → Generate Components → Generate Page
 

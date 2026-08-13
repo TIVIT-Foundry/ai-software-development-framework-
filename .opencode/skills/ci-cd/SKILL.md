@@ -24,6 +24,41 @@ metadata:
   mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Propósito
+- Objetivo
+- Relación con otras skills
+- Preflight del repositorio (obligatorio antes de diseñar el pipeline)
+- Gates automatizados por stack (dónde vive cada gate)
+- Qué debe hacer el agente
+- Alcance
+- Principios
+- Technical Design
+  - GitHub Actions — Full pipeline
+  - Secrets management
+  - Rollback strategy
+- Preguntas guía
+- Salidas esperadas
+- Criterios de calidad
+- Comportamiento esperado del agente
+- Plantilla de respuesta
+- Ejemplos
+  - Ejemplo 1 — Rollback por revert de tag
+  - Ejemplo 2 — Deployment gate con GitHub Actions
+- Checklist
+- Pipelines multi-stack
+  - 1. GitHub Actions — Workflows reutilizables (workflowcall)
+  - 2. Frontend — React Build (Vite + pnpm)
+  - 3. Frontend — Angular Build (pnpm)
+  - 4. Docker — Multi-stage build + push
+  - 5. Security scanning — Trivy, npm audit/Snyk, SonarQube
+  - 6. SBOM generation — syft + grype
+  - 7. Python FastAPI pipeline
+  - 8. Bun (TypeScript backend) pipeline
+  - 9. GitLab CI — Pipeline completo
+  - Patrones comunes entre stacks
+
 ## Propósito
 
 Diseñar pipelines CI/CD repetibles, seguros y auditable: ejecución por etapas, promoción entre entornos, manejo de secretos, versionado de artefactos, deployment gates y rollback automático.

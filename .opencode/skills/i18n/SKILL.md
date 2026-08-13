@@ -22,6 +22,49 @@ metadata:
   mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Propósito
+- Objetivo
+- Relación con otras skills
+- Qué debe hacer el agente cuando esta skill está activa
+- Entradas esperadas
+- Alcance de la fase
+- Principios que siempre debe respetar
+- Qué decide esta skill y qué delega
+- Qué debe definir el diseño
+  - 1. Librería y configuración
+  - 1b. Librería y configuración (Angular — @ngx-translate/core)
+  - 2. Estructura de locales
+  - 3. Convención de naming de claves
+  - 4. Tipo TypeScript para claves
+  - 5. Uso en componentes
+  - 5b. Uso en componentes (Angular)
+  - 6. Pluralización e interpolación
+  - 7. Soporte RTL
+  - 8. Formateo de fechas, números y monedas
+  - 9. Componente de cambio de idioma
+  - 9b. Componente de cambio de idioma (Angular)
+  - 10. Lazy loading por ruta
+  - 10b. Lazy loading por ruta (Angular)
+- Preguntas guía
+  - 1. Sobre librería
+  - 2. Sobre estructura
+  - 3. Sobre RTL
+  - 4. Sobre formateo
+  - 5. Sobre testing
+- Salidas esperadas de esta skill
+  - A. Configuración de i18n
+  - B. Estructura de locales
+  - C. Tipo TypeScript para claves
+  - D. Componentes de i18n
+  - E. Consumidores de esta skill
+- Criterios de calidad
+- Comportamiento esperado del agente
+- Checklist final de la skill
+- Flujo de traducción asistida por IA
+- Integración de tokens RTL con design-system
+
 # i18n
 
 ## Propósito

@@ -22,6 +22,35 @@ metadata:
 mcp_usage: none
 ---
 
+## Tabla de contenidos
+
+- Critical Rules
+- Project Type Suffixes
+- Naming Convention
+- Monorepo Naming
+- Confirmation Required
+- Multi-Repo vs Monorepo
+- Estructura de repos por stack
+  - Python monorepo
+  - React monorepo
+  - Angular monorepo
+  - Bun (TypeScript) monorepo
+  - Monorepo multi-stack (Bun backend + React frontend + Python AI/ML)
+  - Monorepo multi-stack (Bun backend + Angular frontend + Python AI/ML)
+- Convenciones de nomenclatura
+  - Reglas de branch naming
+  - Reglas de commit message
+  - Mapeo repositorio → proyecto interno
+- Codificación de repos (código de repositorio)
+  - Sistema de codificación
+  - Formato del código
+  - Ejemplos
+  - Gestión del ciclo de vida
+  - Registro maestro de repositorios
+  - Integración con git tags
+  - Referencias cruzadas
+  - Herramienta de asignación de códigos
+
 ## Critical Rules
 | Rule | Type | Rationale |
 |------|------|-----------|

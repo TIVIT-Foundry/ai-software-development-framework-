@@ -21,6 +21,50 @@ metadata:
   mcp_usage: governed
 ---
 
+## Tabla de contenidos
+
+- Purpose
+- Backend Workflow
+- Sequence Diagram
+- How to Use
+- Quality Gates
+- Rollback Scenarios
+- Common Mistakes
+- Quality Gates
+- Flujo de ejecución detallado
+  - Nivel 17 — database-modeling
+  - Nivel 18 — database-sp
+  - Nivel 19 — database-migrations
+  - Nivel 20 — database-seeding
+  - Nivel 21 — data-access
+  - Nivel 22 — backend-api
+  - Nivel 23 — api-integration
+  - Nivel 24 — api-versioning
+  - Nivel 25 — api-resilience
+  - Nivel 26 — openapi-docs
+- Prompt templates por nivel
+  - Nivel 17 — database-modeling
+  - Nivel 18 — database-sp
+  - Nivel 19 — database-migrations
+  - Nivel 20 — database-seeding
+  - Nivel 21 — data-access
+  - Nivel 22 — backend-api
+  - Nivel 23 — api-integration
+  - Nivel 24 — api-versioning
+  - Nivel 25 — api-resilience
+  - Nivel 26 — openapi-docs
+- Verificaciones entre niveles
+  - database-modeling → database-sp
+  - database-sp → database-migrations
+  - database-migrations → database-seeding
+  - database-seeding → data-access
+  - data-access → backend-api
+  - backend-api → api-integration
+  - api-integration → api-versioning
+  - api-versioning → api-resilience
+  - api-resilience → openapi-docs
+  - Validación transversal (todos los niveles)
+
 ## Purpose
 This meta-skill activates all backend skills in the correct sequence for backend feature development.
 Load each skill in order before generating artifacts.

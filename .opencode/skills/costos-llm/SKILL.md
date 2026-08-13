@@ -30,6 +30,36 @@ metadata:
   mcp_usage: optional
 ---
 
+## Tabla de contenidos
+
+- Propósito
+- Objetivo
+- Relación con otras skills
+- Stack de referencia
+- Qué debe hacer el agente
+- Alcance
+- Principios
+- Technical Design
+  - 1. Langfuse — Tracking centralizado de costos y observabilidad
+  - 2. LangChain/LangGraph — Callback para tracking automático
+  - 3. Semantic cache con PostgreSQL + pgvector
+  - 4. Token tracking — middleware pattern (Python/FastAPI)
+  - 5. Model tiering matrix
+  - 6. Prompt compression
+  - 7. Budget alerts
+  - 8. Cost DB schema y reporting
+  - 9. Langfuse — Dashboard de observabilidad LLM
+- Preguntas guía
+- Salidas esperadas
+- Criterios de calidad
+- Comportamiento esperado del agente
+- Plantilla de respuesta
+- Ejemplos
+  - Ejemplo 1 — Semantic cache savings con pgvector
+  - Ejemplo 2 — Model tiering savings
+  - Ejemplo 3 — Langfuse observability
+- Checklist
+
 ## Propósito
 
 Diseñar la estrategia de gestión de costos de modelos LLM en aplicaciones agénticas Python/FastAPI con LangChain/LangGraph: atribución por tenant y feature, caching semántico con PostgreSQL + pgvector, tiering de modelos, compresión de prompts, alertas presupuestarias y observabilidad centralizada con Langfuse.
