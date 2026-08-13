@@ -23,8 +23,9 @@ except json.JSONDecodeError as e:
 
 # Load opencode.json
 if not opencode_file.exists():
-    print(f"FAIL: opencode.json not found", file=sys.stderr)
-    sys.exit(1)
+    # Un proyecto puede no haber configurado MCPs aun: no es un fallo del framework.
+    print("WARN: opencode.json not found in project root — MCP config check skipped")
+    sys.exit(0)
 try:
     oc_data = json.loads(opencode_file.read_text(encoding="utf-8"))
 except json.JSONDecodeError as e:
