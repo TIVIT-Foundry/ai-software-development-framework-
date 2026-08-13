@@ -6,7 +6,7 @@
 
 ## Visión general
 
-El Framework Agéntico es un conjunto de **113 skills** y **4 agentes** que se integran con **OpenCode** (CLI de IA). No es una aplicación que ejecutas — es un sistema de conocimiento que OpenCode carga para trabajar de forma estructurada, siguiendo patrones de diseño, arquitectura, seguridad y testing alineados al stack de TIVIT.
+El Framework Agéntico es un conjunto de **114 skills** y **4 agentes** que se integran con **OpenCode** (CLI de IA). No es una aplicación que ejecutas — es un sistema de conocimiento que OpenCode carga para trabajar de forma estructurada, siguiendo patrones de diseño, arquitectura, seguridad y testing alineados al stack de TIVIT.
 
 ---
 
@@ -42,7 +42,7 @@ mi-proyecto/
 ├── AGENTS.md              ← OpenCode carga esto al iniciar
 ├── opencode.json          ← Configuración de OpenCode
 ├── .opencode/
-│   ├── skills/            ← 113 skills organizadas por dominio
+│   ├── skills/            ← 114 skills organizadas por dominio
 │   ├── agents/            ← 4 agentes especializados
 │   ├── framework/         ← Documentos de gobierno
 │   ├── validators/        ← Scripts de validación (PowerShell)
@@ -65,7 +65,7 @@ mi-proyecto/
 opencode
 ```
 
-OpenCode carga `AGENTS.md` y detecta las 113 skills + 4 agentes. Ya estás listo.
+OpenCode carga `AGENTS.md` y detecta las 114 skills + 4 agentes. Ya estás listo.
 
 ### 3.2 Flujo típico — Crear un módulo nuevo
 

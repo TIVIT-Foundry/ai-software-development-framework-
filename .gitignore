@@ -188,3 +188,7 @@ CLAUDE.md
 # Internal feedback / meeting transcripts
 # ============================================
 feedback/
+
+# Playwright MCP / pruebas de dashboard
+.playwright-mcp/
+progress-dashboard.png

@@ -106,7 +106,7 @@ Define los agentes del framework, sus roles, permisos, límites de autonomía y 
 | **Rol** | Materializar diseño en implementación y operación |
 | **Owner skills** | framework-platform, framework-scaffold-implementation, framework-operations-evolution |
 | **Consulta skills** | framework-core-design, framework-pack-design, framework-security, framework-qa-validation |
-| **Stack skills** | project-architecture, error-handling, database-audit, database-sp, database-migrations, database-seeding, data-migration, shared-libs, api-integration, api-gateway, api-versioning, api-resilience, typescript, pull-request, oauth2-jwt, i18n, feature-flags, file-upload, real-time, notifications, infrastructure-as-code, terraform, kubernetes, disaster-recovery, ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, langfuse, langchain, kafka, bun-backend, redis, pgvector |
+| **Stack skills** | project-architecture, error-handling, database-audit, database-sp, database-migrations, database-seeding, data-migration, shared-libs, api-integration, api-gateway, api-versioning, api-resilience, typescript, pull-request, oauth2-jwt, i18n, feature-flags, file-upload, real-time, notifications, infrastructure-as-code, terraform, kubernetes, disaster-recovery, ci-cd, github-actions, gitlab-ci, observabilidad, prometheus-grafana, opentelemetry, langfuse, langchain, kafka, bun-backend, redis, pgvector, progress-artifact |
 | **Bash** | allow |
 | **Edit** | allow |
 | **Task** | allow |

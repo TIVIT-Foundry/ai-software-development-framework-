@@ -10,7 +10,7 @@ Lo que ya está construido y operando:
 
 | Área | Estado |
 |------|--------|
-| Catálogo de skills | 113 skills organizadas por dominio (framework, backend, frontend, database, testing, API/spec, seguridad, operaciones, IA/LLM, proceso, arquitectura) |
+| Catálogo de skills | 114 skills organizadas por dominio (framework, backend, frontend, database, testing, API/spec, seguridad, operaciones, IA/LLM, proceso, arquitectura) |
 | Agentes | 4 agentes con responsabilidades y permisos separados: orchestrator (coordina), design (artefactos), control (gobernanza/QA), delivery (implementa) |
 | Stack dual backend | Python 3.12/FastAPI o Bun/TypeScript, elegible por proyecto vía `--backend` |
 | Stack dual frontend | React 18+ (Vite, o Next.js para SSR/SEO) o Angular 17+, elegible por proyecto vía `--frontend` |
