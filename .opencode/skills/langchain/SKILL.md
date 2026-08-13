@@ -20,7 +20,7 @@ metadata:
     - agent-backend
     - agent-fullstack
   agent_roles:
-    - delivery-agent
+  - delivery-agent
   validation_profile: architecture
   mcp_usage: context7
 ---

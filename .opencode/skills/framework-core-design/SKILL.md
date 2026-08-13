@@ -24,8 +24,9 @@ metadata:
   consumed_by:
   - framework-scaffold-implementation
   agent_roles:
-  - design-agent
   - control-agent
+  - delivery-agent
+  - design-agent
   validation_profile: architecture-consistency, skill-contract
   mcp_usage: governed
 ---

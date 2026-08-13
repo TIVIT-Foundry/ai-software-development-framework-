@@ -130,7 +130,7 @@ metadata:
 | `enforcement` | Yes | Enum | `mandatory`: cannot be skipped. `recommended`: should run but can be waived. `optional`: project team decides |
 | `depends_on` | Yes | Array | Skill IDs required before this one. Empty `[]` if none |
 | `consumed_by` | Yes | Array | Skill IDs that depend on this one. Empty `[]` if none |
-| `agent_roles` | Yes | Array | Agent IDs that can or should invoke this skill |
+| `agent_roles` | Yes | Array | Agentes que invocan/usan la skill. **Semántica**: agente del routing (SKILL-ROUTING, si la skill tiene nivel Nxx) UNION agentes que la listan en AGENT-MODEL (owner/consulta/stack). Al crear/editar una skill, actualizar también esas dos fuentes; el validador `check-agent-roles` exige el agente del routing |
 | `validation_profile` | Yes | String | Links to a validation profile in `VALIDATION-PROFILES.md` |
 | `mcp_usage` | Yes | String/Array | `none` or list of MCP tool IDs |
 

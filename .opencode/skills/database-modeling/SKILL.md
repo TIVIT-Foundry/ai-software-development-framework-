@@ -29,8 +29,7 @@ metadata:
     - database-seeding
     - database-migrations
   agent_roles:
-    - design-agent
-    - delivery-agent
+  - delivery-agent
   validation_profile: architecture-consistency
   mcp_usage: none
 ---

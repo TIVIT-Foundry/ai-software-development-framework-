@@ -26,6 +26,7 @@ metadata:
   - framework-scaffold-implementation
   agent_roles:
   - control-agent
+  - delivery-agent
   - design-agent
   validation_profile: security-review
   mcp_usage: governed

@@ -13,7 +13,7 @@ metadata:
   consumed_by:
     - project-bootstrap
   agent_roles:
-    - delivery-agent
+  - delivery-agent
   validation_profile: architecture
   mcp_usage: context7
 ---

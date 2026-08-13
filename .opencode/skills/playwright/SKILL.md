@@ -17,6 +17,7 @@ metadata:
   - agent-qa
   - real-time
   agent_roles:
+  - control-agent
   - delivery-agent
   validation_profile: skill-contract
   mcp_usage: governed

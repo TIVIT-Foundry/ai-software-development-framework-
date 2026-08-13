@@ -30,6 +30,7 @@ metadata:
   - governance-constitution
   agent_roles:
   - control-agent
+  - design-agent
   - orchestrator-agent
   validation_profile: governance-review
   mcp_usage: none

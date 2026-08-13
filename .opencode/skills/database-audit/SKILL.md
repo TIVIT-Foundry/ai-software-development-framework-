@@ -17,8 +17,9 @@ metadata:
   - database-modeling
   - database-sp
   agent_roles:
-  - design-agent
   - control-agent
+  - delivery-agent
+  - design-agent
   validation_profile: architecture-consistency
 mcp_usage: none
 ---

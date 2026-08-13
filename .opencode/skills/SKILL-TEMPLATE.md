@@ -25,6 +25,12 @@ metadata:
   agent_roles:                                # ❌ Array de agentes que pueden invocarlo
     - delivery-agent                          #   orchestrator-agent | design-agent
     - design-agent                            #   control-agent | delivery-agent
+                                              #
+                                              # SEMÁNTICA (validada por check-agent-roles):
+                                              # = agente del routing (SKILL-ROUTING, si la skill
+                                              #   tiene nivel Nxx) UNION agentes que la listan en
+                                              #   AGENT-MODEL (owner/consulta/stack). No editar a
+                                              #   mano sin actualizar esas dos fuentes.
   validation_profile: documentation           # ❌ documentation | skill-contract |
                                               #   architecture | security | null
   mcp_usage: none                             # ❌ none | context7 | playwright |

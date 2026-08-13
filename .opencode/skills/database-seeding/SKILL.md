@@ -16,6 +16,7 @@ metadata:
   - unit-testing
   agent_roles:
   - delivery-agent
+  - design-agent
   validation_profile: skill-contract
   mcp_usage: none
 ---

@@ -16,7 +16,7 @@ metadata:
     - docker-local
     - ci-cd
   agent_roles:
-    - delivery-agent
+  - delivery-agent
   validation_profile: architecture
   mcp_usage: context7
 ---

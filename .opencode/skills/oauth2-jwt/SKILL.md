@@ -16,8 +16,7 @@ metadata:
     - keycloak
     - authorization
   agent_roles:
-    - control-agent
-    - delivery-agent
+  - delivery-agent
   validation_profile: security
   mcp_usage: context7
 ---

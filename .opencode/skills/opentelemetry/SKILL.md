@@ -15,7 +15,7 @@ metadata:
     - prometheus-grafana
     - incident-response
   agent_roles:
-    - delivery-agent
+  - delivery-agent
   validation_profile: architecture
   mcp_usage: context7
 ---

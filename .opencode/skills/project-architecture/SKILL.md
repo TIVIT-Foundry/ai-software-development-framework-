@@ -25,6 +25,7 @@ metadata:
   - react
   - redis
   agent_roles:
+  - delivery-agent
   - design-agent
   - orchestrator-agent
   validation_profile: architecture-consistency

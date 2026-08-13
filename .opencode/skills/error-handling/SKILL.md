@@ -21,8 +21,9 @@ metadata:
   - graphql
   - kafka
   agent_roles:
-  - design-agent
   - control-agent
+  - delivery-agent
+  - design-agent
   validation_profile: security-review
 mcp_usage: none
 ---
