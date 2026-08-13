@@ -42,7 +42,8 @@ STATUS_META = {
 def read_json(p: Path):
     if p.exists():
         try:
-            return json.loads(p.read_text(encoding="utf-8"))
+            # utf-8-sig tolera el BOM que PowerShell anade al escribir JSON
+            return json.loads(p.read_text(encoding="utf-8-sig"))
         except Exception:
             return {}
     return {}
@@ -53,6 +54,8 @@ api_dir = PROJECT / "docs" / "api-first"
 modules = []
 if api_dir.exists():
     for spec in sorted(api_dir.glob("*.md")):
+        if spec.name.lower() == "readme.md":
+            continue  # el indice de la carpeta no es un modulo
         text = spec.read_text(encoding="utf-8", errors="replace")
         title = spec.stem.replace("-", " ").title()
         m = re.search(r"^#\s+(.+)$", text, re.MULTILINE)
