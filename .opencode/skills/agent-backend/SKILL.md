@@ -177,7 +177,7 @@ Este meta-skill ejecuta 10 niveles backend en secuencia estricta. Cada nivel con
 - [ ] SPs Update verifican existencia del registro antes de actualizar
 - [ ] SPs Delete (lógico) actualizan RecordStatus sin borrar físicamente
 - [ ] Manejo de errores con EXCEPTION y código de error estandarizado
-- [ ] Naming consistente: usp_{Esquema}_{Entidad}_{Accion}
+- [ ] Naming consistente: {schema}.{accion}_{entidad} (ver database-modeling)
 - [ ] Parámetros con el mismo nombre y tipo que la columna correspondiente
 
 **Tiempo estimado**: 60-120 minutos por módulo de 3-5 entidades.
@@ -443,32 +443,32 @@ Basado en el modelo de datos del módulo {modulo}, crea los stored procedures pa
 
 Para cada tabla, genera:
 
-1. usp_{schema}_{Entidad}_List — Listado paginado con filtros
+1. {schema}.list_{entity} — Listado paginado con filtros
     - Parámetros: p_page_number INT, p_page_size INT, p_sort_column VARCHAR, p_sort_direction VARCHAR, p_{filtro1} TYPE, p_{filtro2} TYPE
    - OFFSET/FETCH pagination
    - Ordenamiento dinámico seguro (whitelist de columnas)
    - RETURN SELECT con TotalCount
 
-2. usp_{schema}_{Entidad}_Get — Obtener por ID
+2. {schema}.get_{entity} — Obtener por ID
     - Parámetro: p_id TYPE
    - RETURN SELECT con todas las columnas
 
-3. usp_{schema}_{Entidad}_Create — Crear registro
+3. {schema}.create_{entity} — Crear registro
    - Parámetros para todas las columnas NO auto-generadas
     - RETURNING id
    - Validar unicidad si aplica
 
-4. usp_{schema}_{Entidad}_Update — Actualizar registro
+4. {schema}.update_{entity} — Actualizar registro
    - Parámetros para todas las columnas editables
    - Verificar existencia antes de actualizar (IF NOT EXISTS RETURN error)
    - Validar unicidad si aplica
 
-5. usp_{schema}_{Entidad}_Delete — Eliminar registro
+5. {schema}.delete_{entity} — Eliminar registro
    - Si soft delete: UPDATE RecordStatus = 'I', updated_at, updated_by
    - Si físico: DELETE con verificación de existencia
    - RETURN éxito/fracaso con código de error
 
-6. usp_{schema}_{Entidad}_Search — Búsqueda (solo si aplica)
+6. {schema}.search_{entity} — Búsqueda (solo si aplica)
     - Parámetro p_search_term VARCHAR
    - Búsqueda con LIKE o Full-Text Search
 
@@ -547,27 +547,27 @@ Si se requieren fixtures de prueba, crearlos en archivo aparte: Seed_{modulo}_Te
 
 **Prompt template**:
 ```
-Basado en los stored procedures del módulo {modulo}, crea los handlers de acceso a datos.
+Basado en las funciones del módulo {modulo}, crea los handlers de acceso a datos.
 
-Para cada SP del módulo, crea un método en el handler {Entidad}Handler:
+Para cada función del módulo, crea un método async en el handler de {entidad}:
 
-1. ListAsync(ListRequest request) → llama a usp_{schema}_{Entidad}_List
-   - Parámetros: PageNumber, PageSize, SortColumn, SortDirection, filtros
-   - Retorno: PaginatedResult<{Entidad}Dto>
+1. async def list_{entidad}(request) → llama a {schema}.list_{entity}
+   - Parámetros: page, page_size, sort_column, sort_direction, filtros
+   - Retorno: PaginatedResult (Data + Pagination)
 
-2. GetAsync(int id) → llama a usp_{schema}_{Entidad}_Get
-   - Parámetros: Id
-   - Retorno: {Entidad}Dto o null
+2. async def get_{entidad}({entidad}_id: int) → llama a {schema}.get_{entity}
+   - Parámetros: id
+   - Retorno: {Entidad}Dto o None
 
-3. CreateAsync(Create{Entidad}Request request) → llama a usp_{schema}_{Entidad}_Create
+3. async def create_{entidad}(request) → llama a {schema}.create_{entity}
    - Parámetros: mapeados del request
    - Retorno: int (Id creado)
 
-4. UpdateAsync(int id, Update{Entidad}Request request) → llama a usp_{schema}_{Entidad}_Update
+4. async def update_{entidad}({entidad}_id: int, request) → llama a {schema}.update_{entity}
    - Verificar existencia antes de actualizar
    - Retorno: bool
 
-5. DeleteAsync(int id) → llama a usp_{schema}_{Entidad}_Delete
+5. async def delete_{entidad}({entidad}_id: int) → llama a {schema}.delete_{entity}
    - Retorno: bool
 
 Requisitos:

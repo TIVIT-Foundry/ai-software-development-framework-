@@ -81,12 +81,12 @@ The catalog should contain a table with columns:
 
 | DB Object | API Endpoint | Service ID | Frontend Screen | Route |
 |-----------|--------------|------------|-----------------|-------|
-| `sp_users_list` | `GET /api/users` | `users-service` | UsersList | `/users` |
-| `sp_users_get` | `GET /api/users/{id}` | `users-service` | UserDetail | `/users/:id` |
-| `sp_users_create` | `POST /api/users` | `users-service` | UserForm | `/users/new` |
-| `sp_users_update` | `PUT /api/users/{id}` | `users-service` | UserForm | `/users/:id/edit` |
-| `sp_users_delete` | `DELETE /api/users/{id}` | `users-service` | UsersList | `/users` |
-| `sp_users_search` | `GET /api/users/search` | `users-service` | UserSearch | `/users?q=` |
+| `core.list_users` | `GET /api/users` | `users-service` | UsersList | `/users` |
+| `core.get_users` | `GET /api/users/{id}` | `users-service` | UserDetail | `/users/:id` |
+| `core.create_users` | `POST /api/users` | `users-service` | UserForm | `/users/new` |
+| `core.update_users` | `PUT /api/users/{id}` | `users-service` | UserForm | `/users/:id/edit` |
+| `core.delete_users` | `DELETE /api/users/{id}` | `users-service` | UsersList | `/users` |
+| `core.search_users` | `GET /api/users/search` | `users-service` | UserSearch | `/users?q=` |
 ```
 
 ## Formato de archivo
@@ -109,7 +109,7 @@ endpoints_count: 6
 | Input | Origen típico | Ejemplo concreto |
 |-------|---------------|------------------|
 | `api-first-spec` outputs | `docs/api-specs/{module}.md` | `docs/api-specs/users.md` con ERD, endpoints, DTOs |
-| Database schema | `database/schema.sql` o `src/migrations/` | `sp_users_list`, `sp_users_get`, `sp_users_create` |
+| Database schema | `database/schema.sql` o `src/migrations/` | `core.list_users`, `core.get_users`, `core.create_users` |
 | Frontend routes | `src/app/app.routes.ts`, `src/router/` o `pages/` | `{ path: 'users', loadComponent: () => import('./pages/users-list/users-list.component').then(m => m.UsersListComponent) }` |
 | Service ID mapping | `src/services/{module}/service-id.ts` | `export const USERS_SERVICE_ID = 'users-service'` |
 
@@ -120,7 +120,7 @@ El mapeo sigue **4 pasos encadenados** que convierten datos de base en una vista
 ```
 [Step 1] Por cada SP/Query de la base
    └─> Buscar el handler que lo invoca
-       └─> rg "sp_users_list" src/  →  users.py (handler)
+       └─> rg "core.list_users" src/  →  users.py (handler)
            └─> Output: SP → Handler
 
 [Step 2] Por cada Handler encontrado
@@ -150,12 +150,12 @@ El catálogo siempre debe llevar la columna `Auth` para que el equipo de segurid
 
 | DB Object | API Endpoint | Service ID | Frontend Screen | Route | Auth |
 |-----------|--------------|------------|-----------------|-------|------|
-| `sp_users_list` | `GET /api/users` | `users-service` | UsersList | `/users` | JWT |
-| `sp_users_get` | `GET /api/users/{id}` | `users-service` | UserDetail | `/users/:id` | JWT |
-| `sp_users_create` | `POST /api/users` | `users-service` | UserForm | `/users/new` | JWT+Admin |
-| `sp_users_update` | `PUT /api/users/{id}` | `users-service` | UserForm | `/users/:id/edit` | JWT+Admin |
-| `sp_users_delete` | `DELETE /api/users/{id}` | `users-service` | UsersList | `/users` | JWT+Admin |
-| `sp_users_search` | `GET /api/users/search` | `users-service` | UserSearch | `/users?q=` | JWT |
+| `core.list_users` | `GET /api/users` | `users-service` | UsersList | `/users` | JWT |
+| `core.get_users` | `GET /api/users/{id}` | `users-service` | UserDetail | `/users/:id` | JWT |
+| `core.create_users` | `POST /api/users` | `users-service` | UserForm | `/users/new` | JWT+Admin |
+| `core.update_users` | `PUT /api/users/{id}` | `users-service` | UserForm | `/users/:id/edit` | JWT+Admin |
+| `core.delete_users` | `DELETE /api/users/{id}` | `users-service` | UsersList | `/users` | JWT+Admin |
+| `core.search_users` | `GET /api/users/search` | `users-service` | UserSearch | `/users?q=` | JWT |
 ```
 
 ### 4. Multi-module catalog
@@ -283,33 +283,33 @@ Catálogo realista que muestra cómo lucen tres módulos completos (Users, Roles
 
 | DB Object | API Endpoint | Service ID | Frontend Screen | Route | Auth |
 |-----------|--------------|------------|-----------------|-------|------|
-| `sp_users_list` | `GET /api/users` | `users-service` | UsersList | `/users` | JWT |
-| `sp_users_get` | `GET /api/users/{id}` | `users-service` | UserDetail | `/users/:id` | JWT |
-| `sp_users_create` | `POST /api/users` | `users-service` | UserForm | `/users/new` | JWT+Admin |
-| `sp_users_update` | `PUT /api/users/{id}` | `users-service` | UserForm | `/users/:id/edit` | JWT+Admin |
-| `sp_users_delete` | `DELETE /api/users/{id}` | `users-service` | UsersList | `/users` | JWT+Admin |
-| `sp_users_search` | `GET /api/users/search` | `users-service` | UserSearch | `/users?q=` | JWT |
-| `sp_users_export` | `GET /api/users/export` | `users-service` | UsersList | `/users` | JWT+Admin |
+| `core.list_users` | `GET /api/users` | `users-service` | UsersList | `/users` | JWT |
+| `core.get_users` | `GET /api/users/{id}` | `users-service` | UserDetail | `/users/:id` | JWT |
+| `core.create_users` | `POST /api/users` | `users-service` | UserForm | `/users/new` | JWT+Admin |
+| `core.update_users` | `PUT /api/users/{id}` | `users-service` | UserForm | `/users/:id/edit` | JWT+Admin |
+| `core.delete_users` | `DELETE /api/users/{id}` | `users-service` | UsersList | `/users` | JWT+Admin |
+| `core.search_users` | `GET /api/users/search` | `users-service` | UserSearch | `/users?q=` | JWT |
+| `core.export_users` | `GET /api/users/export` | `users-service` | UsersList | `/users` | JWT+Admin |
 
 ## Módulo: Roles
 
 | DB Object | API Endpoint | Service ID | Frontend Screen | Route | Auth |
 |-----------|--------------|------------|-----------------|-------|------|
-| `sp_roles_list` | `GET /api/roles` | `roles-service` | RolesList | `/roles` | JWT+Admin |
-| `sp_roles_get` | `GET /api/roles/{id}` | `roles-service` | RoleDetail | `/roles/:id` | JWT+Admin |
-| `sp_roles_create` | `POST /api/roles` | `roles-service` | RoleForm | `/roles/new` | JWT+Admin |
-| `sp_roles_update` | `PUT /api/roles/{id}` | `roles-service` | RoleForm | `/roles/:id/edit` | JWT+Admin |
-| `sp_roles_delete` | `DELETE /api/roles/{id}` | `roles-service` | RolesList | `/roles` | JWT+Admin |
-| `sp_roles_assign_permissions` | `POST /api/roles/{id}/permissions` | `roles-service` | RolePermissions | `/roles/:id/permissions` | JWT+Admin |
+| `core.list_roles` | `GET /api/roles` | `roles-service` | RolesList | `/roles` | JWT+Admin |
+| `core.get_roles` | `GET /api/roles/{id}` | `roles-service` | RoleDetail | `/roles/:id` | JWT+Admin |
+| `core.create_roles` | `POST /api/roles` | `roles-service` | RoleForm | `/roles/new` | JWT+Admin |
+| `core.update_roles` | `PUT /api/roles/{id}` | `roles-service` | RoleForm | `/roles/:id/edit` | JWT+Admin |
+| `core.delete_roles` | `DELETE /api/roles/{id}` | `roles-service` | RolesList | `/roles` | JWT+Admin |
+| `core.assign_role_permissions` | `POST /api/roles/{id}/permissions` | `roles-service` | RolePermissions | `/roles/:id/permissions` | JWT+Admin |
 
 ## Módulo: Auth
 
 | DB Object | API Endpoint | Service ID | Frontend Screen | Route | Auth |
 |-----------|--------------|------------|-----------------|-------|------|
-| `sp_auth_login` | `POST /api/auth/login` | `auth-service` | LoginPage | `/login` | Public |
-| `sp_auth_logout` | `POST /api/auth/logout` | `auth-service` | — | — | JWT |
-| `sp_auth_refresh` | `POST /api/auth/refresh` | `auth-service` | — | — | JWT+Refresh |
-| `sp_auth_me` | `GET /api/auth/me` | `auth-service` | UserMenu | `/` | JWT |
+| `auth.login_user` | `POST /api/auth/login` | `auth-service` | LoginPage | `/login` | Public |
+| `auth.logout_user` | `POST /api/auth/logout` | `auth-service` | — | — | JWT |
+| `auth.refresh_token` | `POST /api/auth/refresh` | `auth-service` | — | — | JWT+Refresh |
+| `auth.get_me` | `GET /api/auth/me` | `auth-service` | UserMenu | `/` | JWT |
 ```
 
 Notas:
