@@ -10,24 +10,17 @@ metadata:
     - database
   enforcement: mandatory
   depends_on:
-  - api-first-spec
     - api-first-spec
   consumed_by:
-  - data-access
-  - database-audit
-  - database-migrations
-  - database-security
-  - database-seeding
-  - database-sp
-  - performance
-  - pgvector
-  - postgresql-backup
-    - database-audit
-    - database-security
-    - database-sp
     - data-access
-    - database-seeding
+    - database-audit
     - database-migrations
+    - database-security
+    - database-seeding
+    - database-sp
+    - performance
+    - pgvector
+    - postgresql-backup
   agent_roles:
   - delivery-agent
   validation_profile: architecture-consistency

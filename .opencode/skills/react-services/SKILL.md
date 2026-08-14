@@ -9,19 +9,14 @@ metadata:
     - frontend
   enforcement: mandatory
   depends_on:
-  - react
-  - typescript
     - react
     - typescript
   consumed_by:
-  - agent-frontend
-  - agent-fullstack
-  - api-first-frontend
-  - export-excel
-  - integration-testing
-    - api-first-frontend
     - agent-frontend
     - agent-fullstack
+    - api-first-frontend
+    - export-excel
+    - integration-testing
   agent_roles:
   - delivery-agent
   validation_profile: architecture

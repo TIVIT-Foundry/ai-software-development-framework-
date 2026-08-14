@@ -9,26 +9,21 @@ metadata:
     - frontend
   enforcement: mandatory
   depends_on:
-  - design-system
-  - typescript
-    - typescript
     - design-system
+    - typescript
   consumed_by:
-  - accesibilidad
-  - agent-frontend
-  - agent-fullstack
-  - api-first-frontend
-  - feature-flags
-  - i18n
-  - microfrontend
-  - mobile-pwa
-  - react-doctor
-  - react-services
-  - react-upgrade
-  - unit-testing
-    - api-first-frontend
+    - accesibilidad
     - agent-frontend
     - agent-fullstack
+    - api-first-frontend
+    - feature-flags
+    - i18n
+    - microfrontend
+    - mobile-pwa
+    - react-doctor
+    - react-services
+    - react-upgrade
+    - unit-testing
   agent_roles:
   - delivery-agent
   validation_profile: architecture

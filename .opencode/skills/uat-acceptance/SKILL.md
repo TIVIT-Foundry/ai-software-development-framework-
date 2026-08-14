@@ -9,13 +9,10 @@ metadata:
     - business
   enforcement: recommended
   depends_on:
-  - framework-qa-validation
-  - hu-template
     - framework-qa-validation
     - hu-template
   consumed_by:
-  - acceptance-test-automation
-  - agent-qa
+    - acceptance-test-automation
     - agent-qa
   agent_roles:
     - control-agent

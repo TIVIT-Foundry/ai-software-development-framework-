@@ -5,6 +5,8 @@
 **Autor:** Manuel Aliaga — TIVIT Foundry
 **Supersede:** [ADR-001](ADR-001-angular.md)
 
+> **Matizado por ADR-005** (Angular reincorporado como frontend alternativo). Ver ADR-005 para el estado vigente.
+
 ## Contexto
 
 TIVIT Foundry estandarizó Angular como frontend en ADR-001. La dirección del laboratorio pidió reemplazar Angular por React como stack frontend estándar del framework, manteniendo el mismo nivel de rigor: skills completas con patrones concretos (no solo "usa React"), scaffold generator actualizado, y gobierno consistente en toda la documentación.

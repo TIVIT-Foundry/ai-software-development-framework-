@@ -14,7 +14,7 @@ Lo que ya está construido y operando:
 | Agentes | 4 agentes con responsabilidades y permisos separados: orchestrator (coordina), design (artefactos), control (gobernanza/QA), delivery (implementa) |
 | Stack dual backend | Python 3.12/FastAPI o Bun/TypeScript, elegible por proyecto vía `--backend` |
 | Stack dual frontend | React 18+ (Vite, o Next.js para SSR/SEO) o Angular 17+, elegible por proyecto vía `--frontend` |
-| Validadores estructurales | 14 validadores automáticos (`run-all.ps1`) que auditan contrato de skills, secretos hardcodeados (incluye URLs), dependencias circulares, consistencia de stack, y más |
+| Validadores estructurales | 15 validadores automáticos (`run-all.ps1`) que auditan contrato de skills, secretos hardcodeados (incluye URLs), dependencias circulares, consistencia de stack, y más |
 | Intake de requerimientos | Template estructurado ("Documento Cero") que convierte input funcional ambiguo o inexistente del cliente en una línea base confirmada, con historial de cambios auditable |
 | Onboarding de clientes/proyectos | Checklist que determina madurez de documentación, greenfield vs. brownfield (incluye flujo de reanálisis para stacks legados), accesos y nivel de infraestructura antes de comprometer alcance |
 | QA funcional automatizada | Ejecución de criterios de aceptación confirmados contra la implementación real — cubre tanto flujos web/API estándar como fixtures de dominio no estándar (audio, documentos, imágenes), con evidencia estructurada pass/fail/ambiguo por criterio |

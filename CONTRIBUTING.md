@@ -43,7 +43,7 @@
 .opencode\validators\run-all.ps1
 ```
 
-Todo cambio debe dejar los 14 validadores en verde.
+Todo cambio debe dejar los 15 validadores en verde.
 
 ## Propiedad intelectual
 

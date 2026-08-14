@@ -47,6 +47,16 @@ if (-not $Source) {
 $Source = (Resolve-Path $Source).Path
 $ProjectDir = (Resolve-Path $ProjectDir).Path
 
+# -- Guard anti self-sync -----------------------------------------------------
+# Nunca ejecutar sobre el repo fuente del framework. El default de ProjectDir
+# (ubicacion del script) es exactamente ese caso: el Remove-Item del sync
+# destruiria el .opencode/ del repo fuente.
+if ((Resolve-Path $Source).Path -eq (Resolve-Path $ProjectDir).Path) {
+    Write-Host "ERROR: Source y ProjectDir son el mismo directorio (self-sync detectado)." -ForegroundColor Red
+    Write-Host "Este script sincroniza el framework HACIA un proyecto. Ejecutarlo sobre el repo fuente destruiria su .opencode/." -ForegroundColor Red
+    exit 1
+}
+
 $fwSource = Join-Path $Source ".opencode"
 $fwProject = Join-Path $ProjectDir ".opencode"
 
@@ -132,6 +142,17 @@ $copied += (Get-ChildItem $srcSkills -Directory | Measure-Object).Count
 foreach ($rootFile in @("mcp-metadata.json", ".gitignore", "AGENT-ONBOARDING.md")) {
     $srcFile = Join-Path $fwSource $rootFile
     if (Test-Path $srcFile) {
+        if ($rootFile -eq ".gitignore") {
+            $giDst = Join-Path $fwProject $rootFile
+            if ((Test-Path $giDst) -and -not $bootstrap) {
+                $srcGI = [System.IO.File]::ReadAllText($srcFile)
+                $dstGI = [System.IO.File]::ReadAllText($giDst)
+                if ($srcGI -ne $dstGI) {
+                    Write-Host "  ATENCION: el .gitignore del proyecto difiere del framework y sera sobrescrito." -ForegroundColor Yellow
+                    Write-Host "  Si tenia personalizaciones locales, restaurarlas desde el backup ($backupDir)." -ForegroundColor Yellow
+                }
+            }
+        }
         Copy-Item -Path $srcFile -Destination (Join-Path $fwProject $rootFile) -Force
         Write-Host "  sync .opencode/$rootFile"
     }
@@ -143,6 +164,19 @@ foreach ($rootFile in @("AGENTS.md", "VERSIONS.md")) {
         Copy-Item -Path $srcFile -Destination (Join-Path $ProjectDir $rootFile) -Force
         Write-Host "  sync $rootFile"
     }
+}
+
+# -- Limpieza post-copia: nunca sincronizar entornos virtuales ni caches -------
+# El .venv del source trae rutas absolutas del autor (venv roto en el destino);
+# el del proyecto se borraba con el sync. Se excluyen siempre ambos lados.
+Get-ChildItem -Path $fwProject -Directory -Recurse -Force |
+    Where-Object { $_.Name -in @('.venv', '__pycache__') } |
+    ForEach-Object {
+        Remove-Item -LiteralPath $_.FullName -Recurse -Force
+        Write-Host "  (excluido $($_.FullName.Replace($ProjectDir, '.')))" -ForegroundColor DarkGray
+    }
+if (-not (Test-Path (Join-Path $fwProject "validators\.venv"))) {
+    Write-Host "  (entornos virtuales y caches no se sincronizan; para validators locales: correr .opencode\validators\setup-venv.ps1)" -ForegroundColor DarkGray
 }
 
 # .env.example: MERGE — la seccion del framework va ENCIMA y el contenido
