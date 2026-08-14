@@ -1,7 +1,7 @@
 # SKILL-ROUTING.md — Tabla de Routing de Skills
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 1.4.0
+**Versión:** 1.5.0
 **Última actualización:** 14 de agosto de 2026
 
 ---
@@ -36,12 +36,24 @@ Este documento define qué skill(s) se activan según el tipo de cambio solicita
 | **Incidente en producción** | incident-response → observabilidad → disaster-recovery | ci-cd | delivery |
 | **UAT / Aceptación** | uat-acceptance → framework-qa-validation | hu-template | control |
 | **Documentación de producto** | documentation → readme | governance-constitution, api-catalog, openapi-docs | design / delivery |
-| **Testing y calidad** | unit-testing → integration-testing → playwright → security-testing | code-review, load-testing, a11y-testing, acceptance-test-automation | control |
+| **Testing y calidad** | unit-testing → integration-testing → playwright → security-testing | code-review, load-testing, a11y-testing, acceptance-test-automation, react-doctor, angular-doctor, review-adversarial | control |
 | **Operación y despliegue** | ci-cd → observabilidad → disaster-recovery | framework-operations-evolution, prometheus-grafana, opentelemetry | delivery |
 | **Infraestructura cloud** | framework-platform → infrastructure-as-code → terraform → kubernetes | docker-local, github-actions, gitlab-ci | delivery |
 | **Bun backend** | bun-backend → api-contracts | shared-libs, error-handling | delivery |
 | **Vector / RAG** | pgvector → langchain | database-modeling, costos-llm | delivery |
 | **Auth con JWT** | oauth2-jwt → authentication → authorization | security-testing | control |
+| **Frontend avanzado (PWA/microfrontend/upgrades)** | mobile-pwa, microfrontend, feature-flags | react-upgrade, angular-upgrade | delivery |
+| **Exportación / archivos / migración de datos** | export-excel, file-upload, data-migration | notifications | delivery |
+| **Caché y sesiones distribuidas** | redis | performance, costos-llm | delivery |
+| **API GraphQL / Gateway** | graphql, api-gateway | api-versioning, api-resilience | delivery |
+| **Test API desde spec** | api-first-testing | playwright, api-contracts | control |
+| **Operación PostgreSQL** | postgresql-backup | observabilidad, disaster-recovery | delivery |
+| **Observabilidad LLM** | langfuse | observabilidad, costos-llm | delivery |
+| **Prototipado UX** | html-prototype | design-system, hu-template | design |
+| **Memoria persistente de agentes** | memory-protocol | langchain, pgvector, costos-llm | delivery |
+| **Proceso interno del framework** | skill-creator, framework-extensions, progress-artifact | sdd-onboard, documentation | design / delivery |
+
+Las meta-skills `agent-backend`, `agent-frontend`, `agent-fullstack` y `agent-qa` se activan SOLO a pedido explícito del usuario (regla 3 de AGENTS.md), nunca automáticamente.
 
 ---
 

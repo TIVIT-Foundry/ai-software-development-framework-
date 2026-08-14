@@ -27,9 +27,9 @@ Los documentos de `.opencode/framework/` tienen versionado propio (independiente
 | Documento | Versión | Última actualización |
 |-----------|---------|----------------------|
 | SKILLS-MANIFEST.md | 2.3.0 | 2026-08-14 |
-| AGENT-MODEL.md | 2.1.0 | 2026-08-03 |
+| AGENT-MODEL.md | 2.2.0 | 2026-08-14 |
 | SKILL-EXECUTION-PROTOCOL.md | 2.0.0 | 2026-07-17 |
-| SKILL-ROUTING.md | 1.4.0 | 2026-08-14 |
+| SKILL-ROUTING.md | 1.5.0 | 2026-08-14 |
 
 Regla: al cambiar un documento de gobierno, incrementar su versión propia **y** anotar aquí la fila correspondiente (la versión del framework solo sube cuando cambia el catálogo o el contrato entre capas).
 

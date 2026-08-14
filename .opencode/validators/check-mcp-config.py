@@ -2,6 +2,7 @@
 """check-mcp-config.py — Verify mcp-metadata.json and opencode.json MCP consistency."""
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 OPENCODE_DIR = Path(__file__).resolve().parent.parent
@@ -70,17 +71,36 @@ if isinstance(fs_cmd, list):
         if arg in ("examples", "docs"):
             warnings.append(f"filesystem MCP references '{arg}/' which may not exist")
 
-# Check 5: enabled flag + governance dates for every MCP
+# Check 5: enabled flag + governance dates for every MCP.
+# Fechas vacías advierten SIEMPRE (habilitado o no): un servidor sin
+# authorized_date/review_date es deuda de gobernanza pendiente de completar.
 enabled_count = 0
 for name, cfg in oc_mcp.items():
     enabled = cfg.get("enabled", True)
     if enabled:
         enabled_count += 1
     meta = mcp_servers.get(name, {})
-    if enabled and meta.get("authorized_date") in (None, ""):
-        warnings.append(f"MCP '{name}' is enabled but mcp-metadata has no authorized_date")
-    if enabled and meta.get("review_date") in (None, ""):
-        warnings.append(f"MCP '{name}' is enabled but mcp-metadata has no review_date")
+    if meta.get("authorized_date") in (None, ""):
+        warnings.append(
+            f"MCP '{name}' has no authorized_date in mcp-metadata.json"
+            f" — sin autorizar, pendiente de completar"
+        )
+    if meta.get("review_date") in (None, ""):
+        warnings.append(
+            f"MCP '{name}' has no review_date in mcp-metadata.json"
+            f" — sin fecha de revisión, pendiente de completar"
+        )
+
+# Check 6: expired review_date for every MCP in metadata.
+# Las fechas ISO-8601 (YYYY-MM-DD) comparan correctamente como strings.
+today = date.today().isoformat()
+for name, meta in mcp_servers.items():
+    review_date = meta.get("review_date")
+    if review_date and review_date < today:
+        warnings.append(
+            f"MCP '{name}' has review_date {review_date} in the past (today {today})"
+            f" — governance review overdue"
+        )
 
 if errors:
     for e in errors:

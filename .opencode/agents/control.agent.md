@@ -58,6 +58,22 @@ Carga el SKILL.md correspondiente antes de producir artefactos de cada área:
 | acceptance-test-automation | primario | [SKILL.md](../skills/acceptance-test-automation/SKILL.md) |
 | react-doctor | secundario | [SKILL.md](../skills/react-doctor/SKILL.md) |
 | angular-doctor | secundario | [SKILL.md](../skills/angular-doctor/SKILL.md) |
+| a11y-testing | secundario | [SKILL.md](../skills/a11y-testing/SKILL.md) |
+| accesibilidad | secundario | [SKILL.md](../skills/accesibilidad/SKILL.md) |
+| agent-qa | secundario | [SKILL.md](../skills/agent-qa/SKILL.md) |
+| api-first-testing | secundario | [SKILL.md](../skills/api-first-testing/SKILL.md) |
+| costos-llm | secundario | [SKILL.md](../skills/costos-llm/SKILL.md) |
+| database-audit | secundario | [SKILL.md](../skills/database-audit/SKILL.md) |
+| database-security | secundario | [SKILL.md](../skills/database-security/SKILL.md) |
+| error-handling | secundario | [SKILL.md](../skills/error-handling/SKILL.md) |
+| framework-operations-evolution | secundario | [SKILL.md](../skills/framework-operations-evolution/SKILL.md) |
+| governance-constitution | secundario | [SKILL.md](../skills/governance-constitution/SKILL.md) |
+| observabilidad | secundario | [SKILL.md](../skills/observabilidad/SKILL.md) |
+| performance | secundario | [SKILL.md](../skills/performance/SKILL.md) |
+| review-adversarial | secundario | [SKILL.md](../skills/review-adversarial/SKILL.md) |
+| uat-acceptance | secundario | [SKILL.md](../skills/uat-acceptance/SKILL.md) |
+
+> **Ownership:** la asignación skill→agente se resuelve por `agent_roles` en SKILLS-MANIFEST.md (fuente única). Esta tabla es referencia orientativa y debe reflejar esa metadata.
 
 ## Protocolo de ejecución
 

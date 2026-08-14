@@ -1,8 +1,10 @@
 # AGENT-MODEL.md — Modelo de Agentes del Framework
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 2.1.0
-**Última actualización:** 3 de agosto de 2026
+**Versión:** 2.2.0
+**Última actualización:** 14 de agosto de 2026
+
+> **Ownership de skills:** la asignación skill→agente se resuelve SIEMPRE por `agent_roles` en SKILLS-MANIFEST.md (fuente única de verdad). Los stacks listados en los agent files son referencia orientativa y deben reflejar esa metadata — validar con `check-agent-roles.py`.
 
 ---
 

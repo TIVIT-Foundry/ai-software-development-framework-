@@ -52,6 +52,50 @@ Consulta estas skills para verificar restricciones, sin producir sus artefactos:
 | data-migration | secundario | [SKILL.md](../skills/data-migration/SKILL.md) |
 | feature-spec | primario | [SKILL.md](../skills/feature-spec/SKILL.md) |
 | tasks | primario | [SKILL.md](../skills/tasks/SKILL.md) |
+| agent-backend | secundario | [SKILL.md](../skills/agent-backend/SKILL.md) |
+| agent-frontend | secundario | [SKILL.md](../skills/agent-frontend/SKILL.md) |
+| agent-fullstack | secundario | [SKILL.md](../skills/agent-fullstack/SKILL.md) |
+| api-catalog | secundario | [SKILL.md](../skills/api-catalog/SKILL.md) |
+| api-contracts | secundario | [SKILL.md](../skills/api-contracts/SKILL.md) |
+| api-first-backend | secundario | [SKILL.md](../skills/api-first-backend/SKILL.md) |
+| api-first-frontend | secundario | [SKILL.md](../skills/api-first-frontend/SKILL.md) |
+| api-first-spec | secundario | [SKILL.md](../skills/api-first-spec/SKILL.md) |
+| api-gateway | secundario | [SKILL.md](../skills/api-gateway/SKILL.md) |
+| api-integration | secundario | [SKILL.md](../skills/api-integration/SKILL.md) |
+| authentication | secundario | [SKILL.md](../skills/authentication/SKILL.md) |
+| authorization | secundario | [SKILL.md](../skills/authorization/SKILL.md) |
+| backend-api | secundario | [SKILL.md](../skills/backend-api/SKILL.md) |
+| client-readiness-checklist | secundario | [SKILL.md](../skills/client-readiness-checklist/SKILL.md) |
+| costos-llm | secundario | [SKILL.md](../skills/costos-llm/SKILL.md) |
+| data-access | secundario | [SKILL.md](../skills/data-access/SKILL.md) |
+| database-audit | secundario | [SKILL.md](../skills/database-audit/SKILL.md) |
+| database-security | secundario | [SKILL.md](../skills/database-security/SKILL.md) |
+| database-sp | secundario | [SKILL.md](../skills/database-sp/SKILL.md) |
+| design-system | secundario | [SKILL.md](../skills/design-system/SKILL.md) |
+| documentation | secundario | [SKILL.md](../skills/documentation/SKILL.md) |
+| error-handling | secundario | [SKILL.md](../skills/error-handling/SKILL.md) |
+| export-excel | secundario | [SKILL.md](../skills/export-excel/SKILL.md) |
+| framework-extensions | secundario | [SKILL.md](../skills/framework-extensions/SKILL.md) |
+| framework-scaffold-implementation | secundario | [SKILL.md](../skills/framework-scaffold-implementation/SKILL.md) |
+| governance-constitution | secundario | [SKILL.md](../skills/governance-constitution/SKILL.md) |
+| graphql | secundario | [SKILL.md](../skills/graphql/SKILL.md) |
+| html-prototype | secundario | [SKILL.md](../skills/html-prototype/SKILL.md) |
+| hu-template | secundario | [SKILL.md](../skills/hu-template/SKILL.md) |
+| microfrontend | secundario | [SKILL.md](../skills/microfrontend/SKILL.md) |
+| notifications | secundario | [SKILL.md](../skills/notifications/SKILL.md) |
+| openapi-docs | secundario | [SKILL.md](../skills/openapi-docs/SKILL.md) |
+| performance | secundario | [SKILL.md](../skills/performance/SKILL.md) |
+| project-architecture | secundario | [SKILL.md](../skills/project-architecture/SKILL.md) |
+| project-bootstrap | secundario | [SKILL.md](../skills/project-bootstrap/SKILL.md) |
+| readme | secundario | [SKILL.md](../skills/readme/SKILL.md) |
+| requirements-intake | secundario | [SKILL.md](../skills/requirements-intake/SKILL.md) |
+| sdd-onboard | secundario | [SKILL.md](../skills/sdd-onboard/SKILL.md) |
+| security | secundario | [SKILL.md](../skills/security/SKILL.md) |
+| shared-libs | secundario | [SKILL.md](../skills/shared-libs/SKILL.md) |
+| skill-creator | secundario | [SKILL.md](../skills/skill-creator/SKILL.md) |
+| typescript | secundario | [SKILL.md](../skills/typescript/SKILL.md) |
+
+> **Ownership:** la asignación skill→agente se resuelve por `agent_roles` en SKILLS-MANIFEST.md (fuente única). Esta tabla es referencia orientativa y debe reflejar esa metadata.
 
 ## Protocolo de ejecución
 

@@ -71,6 +71,61 @@ Carga el SKILL.md correspondiente antes de producir artefactos de cada área:
 | api-resilience | secundario | [SKILL.md](../skills/api-resilience/SKILL.md) |
 | unit-testing | primario | [SKILL.md](../skills/unit-testing/SKILL.md) |
 | integration-testing | primario | [SKILL.md](../skills/integration-testing/SKILL.md) |
+| a11y-testing | secundario | [SKILL.md](../skills/a11y-testing/SKILL.md) |
+| acceptance-test-automation | secundario | [SKILL.md](../skills/acceptance-test-automation/SKILL.md) |
+| accesibilidad | secundario | [SKILL.md](../skills/accesibilidad/SKILL.md) |
+| agent-backend | secundario | [SKILL.md](../skills/agent-backend/SKILL.md) |
+| agent-frontend | secundario | [SKILL.md](../skills/agent-frontend/SKILL.md) |
+| agent-fullstack | secundario | [SKILL.md](../skills/agent-fullstack/SKILL.md) |
+| agent-qa | secundario | [SKILL.md](../skills/agent-qa/SKILL.md) |
+| angular | secundario | [SKILL.md](../skills/angular/SKILL.md) |
+| angular-doctor | secundario | [SKILL.md](../skills/angular-doctor/SKILL.md) |
+| angular-services | secundario | [SKILL.md](../skills/angular-services/SKILL.md) |
+| angular-upgrade | secundario | [SKILL.md](../skills/angular-upgrade/SKILL.md) |
+| api-catalog | secundario | [SKILL.md](../skills/api-catalog/SKILL.md) |
+| api-contracts | secundario | [SKILL.md](../skills/api-contracts/SKILL.md) |
+| api-first-backend | secundario | [SKILL.md](../skills/api-first-backend/SKILL.md) |
+| api-first-frontend | secundario | [SKILL.md](../skills/api-first-frontend/SKILL.md) |
+| api-gateway | secundario | [SKILL.md](../skills/api-gateway/SKILL.md) |
+| api-integration | secundario | [SKILL.md](../skills/api-integration/SKILL.md) |
+| app-bootstrap | secundario | [SKILL.md](../skills/app-bootstrap/SKILL.md) |
+| backend-api | secundario | [SKILL.md](../skills/backend-api/SKILL.md) |
+| code-review | secundario | [SKILL.md](../skills/code-review/SKILL.md) |
+| data-access | secundario | [SKILL.md](../skills/data-access/SKILL.md) |
+| database-audit | secundario | [SKILL.md](../skills/database-audit/SKILL.md) |
+| database-modeling | secundario | [SKILL.md](../skills/database-modeling/SKILL.md) |
+| database-sp | secundario | [SKILL.md](../skills/database-sp/SKILL.md) |
+| docker-local | secundario | [SKILL.md](../skills/docker-local/SKILL.md) |
+| documentation | secundario | [SKILL.md](../skills/documentation/SKILL.md) |
+| error-handling | secundario | [SKILL.md](../skills/error-handling/SKILL.md) |
+| export-excel | secundario | [SKILL.md](../skills/export-excel/SKILL.md) |
+| framework-extensions | secundario | [SKILL.md](../skills/framework-extensions/SKILL.md) |
+| graphql | secundario | [SKILL.md](../skills/graphql/SKILL.md) |
+| incident-response | secundario | [SKILL.md](../skills/incident-response/SKILL.md) |
+| memory-protocol | secundario | [SKILL.md](../skills/memory-protocol/SKILL.md) |
+| microfrontend | secundario | [SKILL.md](../skills/microfrontend/SKILL.md) |
+| mobile-pwa | secundario | [SKILL.md](../skills/mobile-pwa/SKILL.md) |
+| notifications | secundario | [SKILL.md](../skills/notifications/SKILL.md) |
+| oauth2-jwt | secundario | [SKILL.md](../skills/oauth2-jwt/SKILL.md) |
+| openapi-docs | secundario | [SKILL.md](../skills/openapi-docs/SKILL.md) |
+| playwright | secundario | [SKILL.md](../skills/playwright/SKILL.md) |
+| postgresql-backup | secundario | [SKILL.md](../skills/postgresql-backup/SKILL.md) |
+| progress-artifact | secundario | [SKILL.md](../skills/progress-artifact/SKILL.md) |
+| project-architecture | secundario | [SKILL.md](../skills/project-architecture/SKILL.md) |
+| project-bootstrap | secundario | [SKILL.md](../skills/project-bootstrap/SKILL.md) |
+| pull-request | secundario | [SKILL.md](../skills/pull-request/SKILL.md) |
+| react | secundario | [SKILL.md](../skills/react/SKILL.md) |
+| react-doctor | secundario | [SKILL.md](../skills/react-doctor/SKILL.md) |
+| react-services | secundario | [SKILL.md](../skills/react-services/SKILL.md) |
+| react-upgrade | secundario | [SKILL.md](../skills/react-upgrade/SKILL.md) |
+| readme | secundario | [SKILL.md](../skills/readme/SKILL.md) |
+| repo-structure | secundario | [SKILL.md](../skills/repo-structure/SKILL.md) |
+| security-testing | secundario | [SKILL.md](../skills/security-testing/SKILL.md) |
+| shared-libs | secundario | [SKILL.md](../skills/shared-libs/SKILL.md) |
+| tasks | secundario | [SKILL.md](../skills/tasks/SKILL.md) |
+| typescript | secundario | [SKILL.md](../skills/typescript/SKILL.md) |
+
+> **Ownership:** la asignación skill→agente se resuelve por `agent_roles` en SKILLS-MANIFEST.md (fuente única). Esta tabla es referencia orientativa y debe reflejar esa metadata.
 
 ## Protocolo de ejecución
 
