@@ -52,7 +52,7 @@ def current_roles(fm):
 
 # --- Source 1: routing levels ---
 routing_src = {}
-routing_text = ROUTING.read_text(encoding="utf-8")
+routing_text = ROUTING.read_text(encoding="utf-8-sig")
 for m in re.finditer(r"\bN\d{1,2}:\s*([\w/-]+)\s*→\s*(\w+)", routing_text):
     entry, agent = m.group(1), norm(m.group(2))
     for alt in entry.split("/"):
@@ -62,7 +62,7 @@ for m in re.finditer(r"\bN\d{1,2}:\s*([\w/-]+)\s*→\s*(\w+)", routing_text):
 
 # --- Source 2: AGENT-MODEL ---
 model_src = {}
-model_text = AGENT_MODEL.read_text(encoding="utf-8")
+model_text = AGENT_MODEL.read_text(encoding="utf-8-sig")
 current_agent = None
 for line in model_text.splitlines():
     m_agent = re.match(r"^###\s+(\w+)\s*\(", line)
@@ -86,7 +86,7 @@ for d in sorted(SKILLS_DIR.iterdir()):
     f = d / "SKILL.md"
     if not f.exists():
         continue
-    fm = parse_frontmatter(f.read_text(encoding="utf-8"))
+    fm = parse_frontmatter(f.read_text(encoding="utf-8-sig"))
     if fm is None:
         continue
     skills[d.name] = current_roles(fm)

@@ -52,11 +52,15 @@ for name in mcp_servers:
     if name not in oc_mcp:
         warnings.append(f"MCP '{name}' in mcp-metadata.json but not in opencode.json")
 
-# Check 3: No PLACEHOLDER commands
+# Check 3: No PLACEHOLDER commands — solo para MCPs HABILITADOS.
+# Un MCP deshabilitado puede tener un comando placeholder pendiente de
+# configuracion (config local del proyecto) sin romper el pipeline.
 for name, cfg in oc_mcp.items():
+    if not cfg.get("enabled", True):
+        continue
     cmd = cfg.get("command", [])
     if isinstance(cmd, list) and any("PLACEHOLDER" in str(c) for c in cmd):
-        errors.append(f"MCP '{name}' has PLACEHOLDER command")
+        errors.append(f"MCP '{name}' is enabled but has PLACEHOLDER command")
 
 # Check 4: filesystem MCP should not reference deleted dirs
 fs_cfg = oc_mcp.get("filesystem", {})

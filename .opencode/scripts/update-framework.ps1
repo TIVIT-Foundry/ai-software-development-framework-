@@ -4,23 +4,30 @@
 # (ProjectDir), con backup previo y validacion post-copia (validators 15).
 #
 # Lo que SINCRONIZA (se sobrescribe en el proyecto):
-#   .opencode/framework/*   .opencode/skills/*   .opencode/validators/*
-#   .opencode/agents/*      .opencode/scaffold/* .opencode/scripts/*
-#   .opencode/docs/*        AGENTS.md            .env.example
+#   .opencode/framework/*   .opencode/validators/*   .opencode/agents/*
+#   .opencode/scaffold/*    .opencode/scripts/*      .opencode/docs/*
+#   .opencode/skills/*      (MERGE: las skills del framework se actualizan;
+#                            las skills LOCALES del proyecto se conservan)
+#   .opencode/mcp-metadata.json  .opencode/AGENT-ONBOARDING.md  .gitignore
+#   AGENTS.md   VERSIONS.md
 #
 # Lo que PRESERVA (no se toca):
-#   .workflow/  docs/ del proyecto  .env  opencode.json (config local del proyecto)
+#   .workflow/  docs/ del proyecto  .env  .env.example (si existe)
+#   opencode.json (config local; solo se inyecta la instruccion de onboarding)
 #
 # Uso:
 #   powershell -File update-framework.ps1 -Source "C:\ruta\ai-software-development-framework-"
 #   powershell -File update-framework.ps1 -Source "..." -ProjectDir "C:\ruta\proyecto" -IncludeConfig
+#   powershell -File update-framework.ps1 -Source "..." -ProjectDir "..." -PreserveLocalSkills
 #
 #   -IncludeConfig: copia opencode.json de la fuente SOLO si el proyecto no tiene uno.
+#   -PreserveLocalSkills: ante colision de nombres, gana la skill local del proyecto.
 
 param(
     [string]$Source = "",
     [string]$ProjectDir = "",
-    [switch]$IncludeConfig
+    [switch]$IncludeConfig,
+    [switch]$PreserveLocalSkills
 )
 
 $ErrorActionPreference = "Stop"
@@ -83,7 +90,7 @@ if ($bootstrap) {
 }
 
 # -- Sincronizar artefactos del framework -------------------------------------
-$artifacts = @("framework", "skills", "validators", "agents", "scaffold", "scripts", "docs")
+$artifacts = @("framework", "validators", "agents", "scaffold", "scripts", "docs")
 $copied = 0
 foreach ($art in $artifacts) {
     $srcArt = Join-Path $fwSource $art
@@ -95,6 +102,30 @@ foreach ($art in $artifacts) {
     Write-Host "  sync .opencode/$art"
 }
 
+# -- Skills: MERGE (nunca borrar skills locales del proyecto) -----------------
+# Las skills del framework se copian/sobrescriben; las locales del proyecto
+# (no presentes en el repo) se conservan. Con -PreserveLocalSkills, ante una
+# colision de nombres gana la skill local (no se sobrescribe).
+$srcSkills = Join-Path $fwSource "skills"
+$dstSkills = Join-Path $fwProject "skills"
+New-Item -ItemType Directory -Path $dstSkills -Force | Out-Null
+$keptLocal = @()
+foreach ($skillDir in Get-ChildItem $srcSkills -Directory) {
+    $dst = Join-Path $dstSkills $skillDir.Name
+    if ((Test-Path $dst) -and $PreserveLocalSkills) {
+        $keptLocal += $skillDir.Name
+        Write-Host "  skill local preservada (colision): $($skillDir.Name)" -ForegroundColor Yellow
+        continue
+    }
+    if (Test-Path $dst) { Remove-Item -LiteralPath $dst -Recurse -Force }
+    Copy-Item -Path $skillDir.FullName -Destination $dst -Recurse -Force
+}
+$localOnly = @(Get-ChildItem $dstSkills -Directory | Where-Object { -not (Test-Path (Join-Path $srcSkills $_.Name)) })
+if ($localOnly.Count -gt 0) {
+    Write-Host "  skills locales del proyecto conservadas: $($localOnly.Name -join ', ')" -ForegroundColor Yellow
+}
+$copied += (Get-ChildItem $srcSkills -Directory | Measure-Object).Count
+
 foreach ($rootFile in @("mcp-metadata.json", ".gitignore", "AGENT-ONBOARDING.md")) {
     $srcFile = Join-Path $fwSource $rootFile
     if (Test-Path $srcFile) {
@@ -103,12 +134,23 @@ foreach ($rootFile in @("mcp-metadata.json", ".gitignore", "AGENT-ONBOARDING.md"
     }
 }
 
-foreach ($rootFile in @("AGENTS.md", ".env.example", "VERSIONS.md")) {
+foreach ($rootFile in @("AGENTS.md", "VERSIONS.md")) {
     $srcFile = Join-Path $Source $rootFile
     if (Test-Path $srcFile) {
         Copy-Item -Path $srcFile -Destination (Join-Path $ProjectDir $rootFile) -Force
         Write-Host "  sync $rootFile"
     }
+}
+
+# .env.example: NUNCA sobrescribir la plantilla local del proyecto (tiene las
+# vars del negocio: DB, JWT, SMTP, integraciones...). Solo se crea si no existe.
+$envExampleDst = Join-Path $ProjectDir ".env.example"
+$envExampleSrc = Join-Path $Source ".env.example"
+if ((Test-Path $envExampleDst) -and -not $bootstrap) {
+    Write-Host "  .env.example local PRESERVADO (vars del proyecto). Revisar que las vars MCP del framework esten presentes." -ForegroundColor Yellow
+} elseif (Test-Path $envExampleSrc) {
+    Copy-Item -Path $envExampleSrc -Destination $envExampleDst -Force
+    Write-Host "  sync .env.example (no existia)"
 }
 
 if ($IncludeConfig -or $bootstrap) {

@@ -73,7 +73,7 @@ for skill_dir in sorted(SKILLS_DIR.iterdir()):
     skill_file = skill_dir / "SKILL.md"
     if not skill_file.exists():
         continue
-    content = skill_file.read_text(encoding="utf-8")
+    content = skill_file.read_text(encoding="utf-8-sig")
     fm = parse_frontmatter(content)
     if fm is None:
         continue
