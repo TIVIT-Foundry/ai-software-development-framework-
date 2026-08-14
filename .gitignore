@@ -192,3 +192,4 @@ feedback/
 # Playwright MCP / pruebas de dashboard
 .playwright-mcp/
 progress-dashboard.png
+cu01-dashboard*.png
