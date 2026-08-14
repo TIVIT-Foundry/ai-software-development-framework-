@@ -4,7 +4,7 @@ description: 'CI/CD pipeline design: GitHub Actions + GitLab CI, stages (lint �
   → build → deploy), Bun/Python/React stacks, environment strategy, secrets management,
   artifact versioning, deployment gates, rollback. Trigger: When designing or configuring
   CI/CD pipelines.'
-version: 1.2
+version: 1.3
 metadata:
   phase:
   - operations
@@ -618,7 +618,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@master
+      # PIN: reemplazar <sha> por el commit SHA de un tag semver (regla 3 de github-actions)
+      - uses: aquasecurity/trivy-action@<sha>
         with:
           image-ref: ghcr.io/myorg/myapp:latest
           format: table
@@ -631,7 +632,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm audit --audit-level=high
       # Alternativa con Snyk:
-      # - uses: snyk/actions/node@master
+      # - uses: snyk/actions/node@<sha>  # PIN: commit SHA de un tag semver (regla 3 de github-actions)
       #   env:
       #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -661,13 +662,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Generate SBOM with syft
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@<sha>  # PIN: commit SHA de un tag semver (regla 3 de github-actions)
         with:
           image: ghcr.io/myorg/myapp:latest
           format: spdx-json
           output-file: sbom.spdx.json
       - name: Scan SBOM with grype
-        uses: anchore/scan-action@v5
+        uses: anchore/scan-action@<sha>  # PIN: commit SHA de un tag semver (regla 3 de github-actions)
         with:
           image: ghcr.io/myorg/myapp:latest
           fail-build: true

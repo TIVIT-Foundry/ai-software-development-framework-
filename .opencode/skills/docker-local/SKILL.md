@@ -3,7 +3,7 @@ name: docker-local
 description: 'Docker local development setup for Python/FastAPI + Bun backend: compose configuration,
   multi-stage builds, service networking, Kafka, Redis, PostgreSQL, OTel. Trigger: When setting
   up Docker for local development or containerizing services.'
-version: 1.3
+version: 1.4
 metadata:
   phase:
   - construction
@@ -700,7 +700,7 @@ trivy image --exit-code 1 --severity CRITICAL myapp-api:latest
 
 # Trivy en CI (GitHub Actions)
 # - name: Scan Docker image
-#   uses: aquasecurity/trivy-action@master
+#   uses: aquasecurity/trivy-action@<sha>  # PIN: commit SHA de un tag semver (regla github-actions)
 #   with:
 #     image-ref: 'myapp-api:latest'
 #     format: 'sarif'
@@ -745,7 +745,7 @@ env/
 | No-new-privileges | Python | `security_opt` en compose |
 | Pin versiones | Python | Evitar `:latest` en producción |
 | Scan images | Python | Trivy en CI + Docker Scout local |
-| Minimum layers | Python | Multi-stage,合并 RUN commands |
+| Minimum layers | Python | Multi-stage, merge RUN commands |
 | SBOM generado | Python | `docker sbom` o Trivy SBOM |
 | Sin secrets en build | Python | Usar build args con valores por defecto seguros |
 | Distroless cuando sea posible | Python | Menor superficie de ataque |

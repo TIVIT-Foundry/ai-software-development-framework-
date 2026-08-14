@@ -1,7 +1,7 @@
 ---
 name: bun-backend
 description: 'Backend general con Bun (TypeScript): estructura de proyecto, routing, validación, DI, tests y operación. Trigger: When implementing a Bun/TypeScript backend service, API module, or vertical slice.'
-version: 1.0
+version: 1.1
 metadata:
   phase:
     - construction
@@ -47,7 +47,7 @@ Do not use when:
 
 ## Critical Rules
 
-1. Use **Bun 1.1+** as runtime and package manager (`bun.lockb`).
+1. Use **Bun 1.1+** as runtime and package manager (`bun.lockb`; Bun 1.2+ usa `bun.lock`).
 2. Follow **Vertical Slice** architecture: `features/{module}/{route,service,schema,test}.ts`.
 3. Use **Zod** for input validation and type inference.
 4. Use **Elysia** or **Hono** as HTTP framework; document the choice in the module README.

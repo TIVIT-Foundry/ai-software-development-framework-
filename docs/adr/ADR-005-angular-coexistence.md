@@ -32,7 +32,7 @@ Se restaura **Angular** como stack frontend de primera clase, coexistiendo con R
 
 ## Consecuencias
 
-- El catálogo de skills crece de 105 a 108 (se recuperan `angular`, `angular-services`, `angular-upgrade`).
+- El catálogo de skills crece de 103 a 108 (se recuperan `angular`, `angular-services`, `angular-upgrade`).
 - `enforcement` de las skills Angular se fija en `recommended` (no `mandatory`) — React sigue siendo el default cuando el proyecto no especifica frontend; Angular es una elección explícita.
 - Cualquier skill con `depends_on`/`consumed_by` apuntando a `react`/`react-services` gana la entrada paralela `angular`/`angular-services` donde aplica.
 - ADR-001 se marca como "Vigente en paralelo con ADR-004" en vez de "Superseded" — su contenido histórico no se reescribe.

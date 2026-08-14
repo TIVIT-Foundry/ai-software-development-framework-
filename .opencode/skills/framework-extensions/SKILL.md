@@ -1,7 +1,7 @@
 ---
 name: framework-extensions
 description: 'Sistema de extensiones del framework: arquitectura de plugins, schema del manifest, hooks, pila de prioridades, gestión de catálogo. Trigger: Cuando se crean extensiones del framework, se construyen plugins o se extienden capacidades con contribuciones de la comunidad.'
-version: 1.1
+version: 1.2
 metadata:
   when_to_use:
   - Cuando se necesita crear una extensión o plugin del framework.
@@ -22,29 +22,29 @@ metadata:
   mcp_usage: none
 ---
 
-## Purpose
+## Propósito
 
-Define the extension system for the framework. Extensions are installable plugins that add capabilities (commands, skills, templates, hooks) without modifying the core. Modeled after the Spec Kit extension system, this skill enables a plugin ecosystem where community and team contributions extend the framework's reach while maintaining the core's integrity.
+Define el sistema de extensiones del framework. Las extensiones son plugins instalables que añaden capacidades (comandos, skills, templates, hooks) sin modificar el core. Inspirado en el sistema de extensiones de Spec Kit, esta skill habilita un ecosistema de plugins donde las contribuciones de la comunidad y del equipo extienden el alcance del framework mientras se mantiene la integridad del core.
 
-## When to use this skill
+## Cuándo usar esta skill
 
-Activate this skill when:
+Activa esta skill cuando:
 
-- Creating a new extension for the framework
-- Installing or configuring extensions
-- Building a plugin ecosystem around the framework
-- Contributing community extensions
-- Managing extension catalogs (discovery, installation, updates)
+- Al crear una nueva extensión del framework
+- Al instalar o configurar extensiones
+- Al construir un ecosistema de plugins alrededor del framework
+- Al contribuir extensiones de la comunidad
+- Al gestionar catálogos de extensiones (discovery, instalación, actualizaciones)
 
-**Do not** activate when:
+**No** la actives cuando:
 
-- Modifying core framework skills (those are skills, not extensions)
-- Creating a single reusable component (that's a shared library)
-- Configuring CI/CD (use `ci-cd`)
+- Al modificar skills del core del framework (esas son skills, no extensiones)
+- Al crear un componente reutilizable único (eso es una shared library)
+- Al configurar CI/CD (usa `ci-cd`)
 
-## Extension Manifest Schema
+## Schema del Manifest de extensiones
 
-Every extension defines an `extension.yml`:
+Cada extensión define un `extension.yml`:
 
 ```yaml
 schema_version: "1.0"
@@ -101,7 +101,7 @@ sd_phases:
   - operations
 ```
 
-## Extension Architecture
+## Arquitectura de extensiones
 
 ```
 framework-extensions/
@@ -117,9 +117,9 @@ framework-extensions/
 └── ...
 ```
 
-## Priority Stack
+## Pila de prioridades
 
-Extensions resolve with priority:
+Las extensiones se resuelven con esta prioridad:
 
 ```
 1. Project-Local Overrides (project/.extensions/)
@@ -157,7 +157,7 @@ class ExtensionStack:
         return commands
 ```
 
-## Hook System
+## Sistema de hooks
 
 ```python
 from enum import Enum
@@ -215,7 +215,7 @@ class HookManager:
         return results
 ```
 
-## Catalog System
+## Sistema de catálogo
 
 ```json
 {
@@ -247,7 +247,7 @@ class HookManager:
 }
 ```
 
-## CLI Commands for Extension Management
+## Comandos CLI para la gestión de extensiones
 
 ```python
 # Install an extension
@@ -272,7 +272,7 @@ specify extension search "git"
 specify extension validate ./my-extension
 ```
 
-## Creating an Extension
+## Crear una extensión
 
 ```bash
 # Scaffold a new extension
@@ -289,7 +289,7 @@ my-first-extension/
 └── README.md
 ```
 
-**Example command template (`commands/hello.md`):**
+**Ejemplo de plantilla de comando (`commands/hello.md`):**
 ```markdown
 ---
 description: "Greet the user with a friendly message"
@@ -315,30 +315,30 @@ Activate when the user wants a greeting.
 - Name must be <100 characters
 ```
 
-## When NOT to Create an Extension
+## Cuándo NO crear una extensión
 
-| Situation | Should be an extension? | Alternative |
+| Situación | ¿Debe ser una extensión? | Alternativa |
 |-----------|------------------------|-------------|
-| One team needs it | No | Project-local override |
-| Core framework functionality | No | Contribute to core or create a skill |
-| Purely configuration | No | Preset |
-| Single command, no hooks | No | Just create the command in project |
-| Multi-team, reusable, with hooks | YES | Extension |
+| Solo un equipo la necesita | No | Override local del proyecto |
+| Funcionalidad del core del framework | No | Contribuir al core o crear una skill |
+| Configuración pura | No | Preset |
+| Comando único, sin hooks | No | Crear el comando directamente en el proyecto |
+| Multi-equipo, reutilizable, con hooks | SÍ | Extensión |
 
-## Decision table
+## Tabla de decisiones
 
-| Situation | Wrong response | Expected response |
+| Situación | Respuesta incorrecta | Respuesta esperada |
 |-----------|---------------|-------------------|
-| Need a custom deploy step | Modify core | Create an extension with hooks |
-| Extension conflicts with core | Let it break | Priority stack resolves automatically |
-| Community extension is risky | Install anyway | Check policy (discovery-only vs install-allowed) |
-| Need to chain extensions | Install them individually | Use workflow to orchestrate extension hooks |
+| Se necesita un paso de deploy personalizado | Modificar el core | Crear una extensión con hooks |
+| La extensión entra en conflicto con el core | Dejar que se rompa | La pila de prioridades resuelve automáticamente |
+| Una extensión de la comunidad es riesgosa | Instalarla igual | Revisar la política (discovery-only vs install-allowed) |
+| Se necesitan encadenar extensiones | Instalarlas individualmente | Usar el workflow para orquestar los hooks de las extensiones |
 
-## Verification checklist
+## Checklist de verificación
 
-- [ ] Extension manifest valid (`extension.yml` schema)
-- [ ] Hook handlers have timeout protection
-- [ ] Catalog entries have correct policy tags
-- [ ] Priority stack resolves correctly (project > preset > installed > builtin)
-- [ ] Extensions don't modify core framework files
-- [ ] Community catalog maintained and reviewed
+- [ ] Manifest de la extensión válido (schema de `extension.yml`)
+- [ ] Los handlers de hooks tienen protección por timeout
+- [ ] Las entradas del catálogo tienen los policy tags correctos
+- [ ] La pila de prioridades resuelve correctamente (project > preset > installed > builtin)
+- [ ] Las extensiones no modifican archivos del core del framework
+- [ ] El catálogo de la comunidad se mantiene y se revisa

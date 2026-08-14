@@ -1,7 +1,7 @@
 ---
 name: github-actions
 description: 'CI/CD pipelines with GitHub Actions: workflows, reusable actions, environments, secrets, gates, and matrix builds. Trigger: When implementing or maintaining CI/CD on GitHub Actions.'
-version: 1.1
+version: 1.2
 metadata:
   phase:
     - operations
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run lint
       - run: bun test
