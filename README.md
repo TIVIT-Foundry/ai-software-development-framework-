@@ -170,6 +170,20 @@ El primer módulo es Gestión de Tareas:
 
 ---
 
+## Para agentes AI
+
+El framework está diseñado para que los agentes AI **se autoconfiguren al llegar** a un proyecto:
+
+1. **Carga automática**: `opencode.json` inyecta `.opencode/AGENT-ONBOARDING.md` en cada sesión — el agente arranca con un checklist de verificación (versión del framework, integridad con validators, dónde quedó el trabajo).
+2. **Orientación**: `.workflow/state.json` (resume_hint) + `docs/artifacts/progress.html` (dashboard visual de módulos/fases) + `.workflow/framework-notes.md` (errores conocidos).
+3. **Routing**: `.opencode/framework/SKILL-ROUTING.md` decide qué skill activar según el tipo de cambio y la fase N0-N49.
+4. **Auto-update**: si el proyecto tiene una versión del framework desactualizada, el agente ofrece `update-framework.ps1` (backup + sync + validators) antes de trabajar.
+5. **Auto-reporte**: al cerrar fase/bundle, el agente regenera el dashboard de progreso (skill `progress-artifact`).
+
+Los agentes que no carguen el onboarding automáticamente deben leer `.opencode/AGENT-ONBOARDING.md` por ruta directa al iniciar la sesión.
+
+---
+
 ## Seguridad
 
 - Prevención de SQL Injection — Queries parametrizadas

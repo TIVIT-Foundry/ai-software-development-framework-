@@ -86,7 +86,7 @@ foreach ($art in $artifacts) {
     Write-Host "  sync .opencode/$art"
 }
 
-foreach ($rootFile in @("mcp-metadata.json", ".gitignore")) {
+foreach ($rootFile in @("mcp-metadata.json", ".gitignore", "AGENT-ONBOARDING.md")) {
     $srcFile = Join-Path $fwSource $rootFile
     if (Test-Path $srcFile) {
         Copy-Item -Path $srcFile -Destination (Join-Path $fwProject $rootFile) -Force
@@ -115,6 +115,26 @@ if ($IncludeConfig) {
     }
 } else {
     Write-Host "  opencode.json NO se toco (usa -IncludeConfig para sincronizarlo)" -ForegroundColor DarkGray
+}
+
+# -- Inyeccion de la instruccion de onboarding en opencode.json del proyecto --
+# (solo si el proyecto tiene uno; preserva el resto de su config)
+$ocProj = Join-Path $ProjectDir "opencode.json"
+if (Test-Path $ocProj) {
+    try {
+        $cfg = Get-Content $ocProj -Raw | ConvertFrom-Json
+        $instr = @($cfg.instructions)
+        if ($instr -notcontains ".opencode/AGENT-ONBOARDING.md") {
+            $cfg.instructions = @($instr + ".opencode/AGENT-ONBOARDING.md")
+            $json = $cfg | ConvertTo-Json -Depth 12
+            [System.IO.File]::WriteAllText($ocProj, $json, (New-Object System.Text.UTF8Encoding($false)))
+            Write-Host "  opencode.json: instruccion AGENT-ONBOARDING.md inyectada (autoconfiguracion)" -ForegroundColor Green
+        } else {
+            Write-Host "  opencode.json: ya tiene AGENT-ONBOARDING.md" -ForegroundColor DarkGray
+        }
+    } catch {
+        Write-Host "  opencode.json: no se pudo inyectar la instruccion (JSON invalido?) - revisar manualmente" -ForegroundColor Yellow
+    }
 }
 
 # -- Validacion post-copia ----------------------------------------------------
