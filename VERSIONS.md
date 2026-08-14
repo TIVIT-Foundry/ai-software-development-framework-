@@ -9,6 +9,7 @@
 
 | Versión | Fecha | Skills | Notas |
 |---------|-------|--------|-------|
+| 4.3.1 | 2026-08-13 | 114 | Fix check-mcp-config: MCPs propios del proyecto sin metadata pasan a WARN (no FAIL) — proyectos con MCPs personalizados (p. ej. automation-safe) ya no rompen el pipeline post-sync; tolerancia a BOM UTF-8 en JSON de config (PowerShell) |
 | 4.3.0 | 2026-08-13 | 114 | Dashboard de progreso (`progress-artifact`): artifact HTML autocontenido con módulos de negocio, fases N0-N49 y panel "dónde quedó la IA" — para dev, IA y supervisores |
 | 4.2.0 | 2026-08-13 | 113 | Hardening tras auditoría: generador SQL/codegen reparado (comas, dollar-quoting, RETURNING, id SERIAL), migración python-jose→PyJWT, contrato de respuestas unificado (envelope + 2xx+success:false), validators reforzados (15 checks: YAML estricto, exit codes, agent-roles, nivel N0-N49), reconciliación depends_on→consumed_by (0 drift) y agent_roles, scripts de framework (validate-adrs, validate-service-ids, drift-detect, emergency-rollback, init-db), TOCs en reference packs, preflight de repo y gates por stack en ci-cd, HITL de owner en governance |
 | 4.1.0 | 2026-08-03 | 113 | Cierre de gaps: intake de requerimientos (`requirements-intake`, Documento Cero), checklist de onboarding de clientes/proyectos (`client-readiness-checklist`), QA funcional automatizada (`acceptance-test-automation`) |

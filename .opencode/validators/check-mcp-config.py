@@ -16,7 +16,8 @@ if not mcp_file.exists():
     print(f"FAIL: mcp-metadata.json not found", file=sys.stderr)
     sys.exit(1)
 try:
-    mcp_data = json.loads(mcp_file.read_text(encoding="utf-8"))
+    # utf-8-sig tolera el BOM que PowerShell agrega al escribir JSON
+    mcp_data = json.loads(mcp_file.read_text(encoding="utf-8-sig"))
 except json.JSONDecodeError as e:
     print(f"FAIL: Invalid JSON in mcp-metadata.json: {e}", file=sys.stderr)
     sys.exit(1)
@@ -27,7 +28,7 @@ if not opencode_file.exists():
     print("WARN: opencode.json not found in project root — MCP config check skipped")
     sys.exit(0)
 try:
-    oc_data = json.loads(opencode_file.read_text(encoding="utf-8"))
+    oc_data = json.loads(opencode_file.read_text(encoding="utf-8-sig"))
 except json.JSONDecodeError as e:
     print(f"FAIL: Invalid JSON in opencode.json: {e}", file=sys.stderr)
     sys.exit(1)
@@ -35,10 +36,16 @@ except json.JSONDecodeError as e:
 mcp_servers = mcp_data.get("mcpServers", {})
 oc_mcp = oc_data.get("mcp", {})
 
-# Check 1: Every MCP in opencode.json must have metadata
+# Check 1: Every MCP in opencode.json should have metadata.
+# WARN, not FAIL: los proyectos pueden tener MCPs propios legitimos sin
+# documentar aun (p. ej. automation-safe reservado) — es deuda de
+# gobernanza del proyecto, no un fallo de integridad del framework.
 for name in oc_mcp:
     if name not in mcp_servers:
-        errors.append(f"MCP '{name}' in opencode.json has no metadata in mcp-metadata.json")
+        warnings.append(
+            f"MCP '{name}' in opencode.json has no metadata in mcp-metadata.json "
+            f"— documentarlo en mcp-metadata.json o quitarlo del opencode.json"
+        )
 
 # Check 2: Every MCP in metadata should be in opencode.json
 for name in mcp_servers:
