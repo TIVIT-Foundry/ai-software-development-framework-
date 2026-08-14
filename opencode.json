@@ -73,7 +73,7 @@
         "-y",
         "@modelcontextprotocol/server-postgres"
       ],
-      "enabled": true,
+      "enabled": false,
       "environment": {
         "POSTGRES_CONNECTION_STRING": "{env:POSTGRES_CONNECTION_STRING}"
       }

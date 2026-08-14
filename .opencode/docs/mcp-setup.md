@@ -11,8 +11,8 @@ Guía de configuración de los MCP servers del framework. Referenciada desde `.e
 | docker | activo | — |
 | package-registry | activo | — |
 | filesystem | activo | — |
-| github | activo | `GITHUB_PERSONAL_ACCESS_TOKEN` |
-| postgres | activo | `POSTGRES_CONNECTION_STRING` |
+| github | activo (remote + OAuth) | — (login OAuth en browser, sin token) |
+| postgres | desactivado por defecto — cada proyecto lo habilita con su propia conexión | `POSTGRES_CONNECTION_STRING` |
 | notion | desactivado (opcional) | `NOTION_TOKEN` |
 | gcloud | desactivado (opcional) | `GOOGLE_APPLICATION_CREDENTIALS` |
 | observability | desactivado (opcional) | `GOOGLE_APPLICATION_CREDENTIALS` |
@@ -44,3 +44,10 @@ Cada MCP declarado en `opencode.json` debe tener su entrada en `.opencode/mcp-me
 (purpose, risk_tier, authorized_by, authorized_date, review_date, allowed_agents).
 `check-mcp-config.py` valida la consistencia y advierte si un MCP activo no tiene fechas de
 autorización/revisión.
+
+## GitHub (remote + OAuth)
+
+El servidor usa el endpoint remoto oficial https://api.githubcopilot.com/mcp/ con login OAuth
+en browser (sin PAT). Primer login con `opencode mcp auth github`. Verificar con
+`opencode mcp list` / `opencode mcp debug github`. Los toolsets activos se restringen vía
+header `X-MCP-Toolsets` en `opencode.json`.

@@ -65,12 +65,12 @@
     "github": {
       "type": "external-api",
       "risk_tier": "medium",
-      "purpose": "API de GitHub para PRs, issues, search y gestión de repos",
+      "purpose": "API de GitHub (repos, issues, PRs, actions, search) via servidor remoto oficial con OAuth (token en memoria, sin PAT)",
       "authorized_by": "control-agent",
       "authorized_date": "2026-05-30",
       "scope": ["global"],
       "allowed_agents": ["orchestrator-agent", "control-agent", "delivery-agent"],
-      "secrets_managed_by": "env",
+      "secrets_managed_by": "oauth",
       "audit_enabled": true,
       "review_date": "2026-11-30"
     },

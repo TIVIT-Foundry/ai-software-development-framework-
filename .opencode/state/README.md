@@ -19,3 +19,7 @@ Almacena el estado de sesión del framework para reanudar ejecuciones interrumpi
 ```
 
 Este directorio no contiene artefactos de diseño ni documentación, solo estado transitorio.
+
+Nota: el estado canónico de sesión para proyectos adoptantes vive en `.workflow/state.json`
+(creado por `update-framework.ps1` al sincronizar). Este directorio conserva `progress.json`
+como estado transitorio/legacy.
