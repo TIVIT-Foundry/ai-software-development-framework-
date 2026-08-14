@@ -10,7 +10,7 @@
 - **Organización**: TIVIT (empresa brasileña de tecnología)
 - **Autor**: Manuel Aliaga — Ingeniero de IA, TIVIT Foundry
 - **Clasificación**: Proyecto privado interno — Uso exclusivo TIVIT
-- **Última actualización**: 3 de agosto de 2026
+- **Última actualización**: 14 de agosto de 2026
 
 ## Confidencialidad
 
@@ -61,8 +61,12 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 |---------|-------------|
 | `.opencode/skills/` | 114 skills organizadas por dominio |
 | `.opencode/agents/` | 4 agentes especializados |
-| `.opencode/validators/` | Scripts PowerShell de validación |
+| `.opencode/framework/` | Documentos de gobierno (MANIFEST, ROUTING, PROTOCOL, AGENT-MODEL) |
+| `.opencode/validators/` | 15 scripts Python de validación + runner PowerShell |
+| `.opencode/scripts/` | Scripts operacionales (update-framework, generate-progress, drift-detect, etc.) |
 | `.opencode/scaffold/` | Generador de código desde specs |
+| `.workflow/` | Estado de sesión (`state.json`), versión del framework, notas |
+| `docs/` | Constitución, governance, ADRs, artefactos de diseño, dashboard de progreso |
 | `opencode.json` | Configuración principal de OpenCode |
 | `AGENTS.md` | Instrucciones base del framework |
 

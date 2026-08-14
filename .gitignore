@@ -172,11 +172,12 @@ docker-compose.override.yml
 # ============================================
 .copilot/
 .ai-cache/
+.claude/
 
 # ============================================
 # TIVIT Specific (agregar según necesidad)
 # ============================================
-# Agregar aquí archivos específicos de TIVIT que no deben versionarse
+.antigravity/
 
 # ============================================
 # OpenCode (cache y archivos temporales)

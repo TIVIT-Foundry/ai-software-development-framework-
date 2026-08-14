@@ -1,8 +1,8 @@
 # SKILL-EXECUTION-PROTOCOL.md — Protocolo de Ejecución de Skills
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 2.0.0
-**Última actualización:** 17 de julio de 2026
+**Versión:** 2.0.1
+**Última actualización:** 14 de agosto de 2026
 
 ---
 
@@ -158,21 +158,23 @@ Skills independientes pueden ejecutarse en paralelo:
 
 ```
                     ┌─────────────────┐
-                    │   N17: spec     │
+                    │   N16: spec     │
+                    │ (api-first-spec)│
                     └────────┬────────┘
                              │
               ┌──────────────┼──────────────┐
               ▼              ▼              ▼
         ┌──────────┐  ┌──────────┐  ┌──────────┐
-        │ database │  │backend   │  │ security │
-        │ modeling │  │  api     │  │ testing  │
-        │  (N18)   │  │  (N19)   │  │  (N24)   │
+        │api-first │  │ database │  │  data    │
+        │ backend  │  │ modeling │  │ access   │
+        │  (N17)   │  │  (N18)   │  │  (N20)   │
         └────┬─────┘  └────┬─────┘  └────┬─────┘
              │              │              │
              └──────────────┼──────────────┘
                             ▼
                     ┌─────────────────┐
-                    │  N25: integrate │
+                    │N29: integrate   │
+                    │(api-integration)│
                     └─────────────────┘
 ```
 

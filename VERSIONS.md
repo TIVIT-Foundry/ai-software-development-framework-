@@ -9,6 +9,7 @@
 
 | Versión | Fecha | Skills | Notas |
 |---------|-------|--------|-------|
+| 4.3.5 | 2026-08-14 | 114 | Auditoría de integridad: archivos de estado faltantes materializados (.workflow/state.json, framework-notes.md, progress-state.json, progress.html generado), diagrama Fan-Out del protocolo corregido (IDs N19/N24/N25 → N17/N18/N20/N29 alineados a SKILL-ROUTING), 3 scripts bash convertidos a PowerShell (drift-detect, emergency-rollback, init-db), .gitignore endurecido (.antigravity/, .claude/), SKILL-EXECUTION-PROTOCOL bumped a 2.0.1 |
 | 4.3.4 | 2026-08-14 | 114 | Cierre de hallazgos de auditoría: ownership skill→agente con metadata como fuente única (AGENT-MODEL 2.2.0), routing completo para 29 skills sin ruta (SKILL-ROUTING 1.5.0), constitución y governance materializadas (docs/constitution.md, docs/governance.md, docs/artifacts/), gobernanza MCP con risk tiers y fechas de revisión validadas, naming DB unificado (`schema.{verb}_{entity}`), errores de código en 8 skills (Pydantic v2, PostgreSQL, Angular), frontmatter reparado, scripts endurecidos (guard self-sync, service-ids sin falsos positivos, SKILL-ALIASES, validators con labels informativos) |
 | 4.3.3 | 2026-08-14 | 114 | Routing reparado: ciclo architecture↔pack-design roto (pack-design es salida de N7, no entrada de N5), framework-platform y framework-operations-evolution anclados al cierre de Fase B/H sin renumerar (precedente acceptance-test-automation); frontmatter de 8 skills reparado (listas depends_on/consumed_by plegadas por indentación rota); update-framework.ps1 endurecido (guard anti self-sync, exclusión venv/cache, warning .gitignore); permisos opencode.json acotados (git destructivo a ask, external_directory sensibles a deny — fix de last-match-wins); control-agent con bash ask y alineado a AGENT-MODEL (no aprueba excepciones, solo recomienda); delivery como ejecutor de unit/integration-testing; docs sincronizados (15 validadores, 6 MCPs, ADR-004 matizado); .env.example sin PAT (OAuth remoto) |
 | 4.3.2 | 2026-08-13 | 114 | Sync seguro para proyectos existentes: MERGE de skills (locales del proyecto conservadas, flag `-PreserveLocalSkills` para colisiones), `.env.example` del proyecto ya NO se sobrescribe, PLACEHOLDER commands solo fallan en MCPs habilitados, huérfanas solo aplica a skills del manifest (locales = WARN), validators toleran BOM UTF-8 (editors Windows) |
@@ -29,7 +30,7 @@ Los documentos de `.opencode/framework/` tienen versionado propio (independiente
 |-----------|---------|----------------------|
 | SKILLS-MANIFEST.md | 2.3.0 | 2026-08-14 |
 | AGENT-MODEL.md | 2.2.0 | 2026-08-14 |
-| SKILL-EXECUTION-PROTOCOL.md | 2.0.0 | 2026-07-17 |
+| SKILL-EXECUTION-PROTOCOL.md | 2.0.1 | 2026-08-14 |
 | SKILL-ROUTING.md | 1.5.0 | 2026-08-14 |
 
 Regla: al cambiar un documento de gobierno, incrementar su versión propia **y** anotar aquí la fila correspondiente (la versión del framework solo sube cuando cambia el catálogo o el contrato entre capas).

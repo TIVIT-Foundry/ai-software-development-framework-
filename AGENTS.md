@@ -3,7 +3,7 @@
 **Proyecto**: TIVIT Foundry — Laboratorio Interno de IA
 **Organización**: TIVIT (Latin America Technology)
 **Autor**: Manuel Aliaga — Ingeniero de IA, TIVIT Foundry
-**Última actualización**: 3 de agosto de 2026
+**Última actualización**: 14 de agosto de 2026
 
 Este workspace contiene el **Framework Agéntico de TIVIT Foundry**: 114 skills, 4 agentes, 10 MCPs configurados (6 activos: context7, playwright, docker, package-registry, filesystem, github) para diseñar, implementar y operar aplicaciones con agentes AI.
 
