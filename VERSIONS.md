@@ -1,7 +1,7 @@
 # VERSIONS.md — Matriz de compatibilidad de TIVIT Foundry
 
 **Proyecto:** TIVIT Foundry — Framework Agéntico  
-**Última actualización:** 3 de agosto de 2026
+**Última actualización:** 14 de agosto de 2026
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Versión | Fecha | Skills | Notas |
 |---------|-------|--------|-------|
+| 4.3.3 | 2026-08-14 | 114 | Routing reparado: ciclo architecture↔pack-design roto (pack-design es salida de N7, no entrada de N5), framework-platform y framework-operations-evolution anclados al cierre de Fase B/H sin renumerar (precedente acceptance-test-automation); frontmatter de 8 skills reparado (listas depends_on/consumed_by plegadas por indentación rota); update-framework.ps1 endurecido (guard anti self-sync, exclusión venv/cache, warning .gitignore); permisos opencode.json acotados (git destructivo a ask, external_directory sensibles a deny — fix de last-match-wins); control-agent con bash ask y alineado a AGENT-MODEL (no aprueba excepciones, solo recomienda); delivery como ejecutor de unit/integration-testing; docs sincronizados (15 validadores, 6 MCPs, ADR-004 matizado); .env.example sin PAT (OAuth remoto) |
 | 4.3.2 | 2026-08-13 | 114 | Sync seguro para proyectos existentes: MERGE de skills (locales del proyecto conservadas, flag `-PreserveLocalSkills` para colisiones), `.env.example` del proyecto ya NO se sobrescribe, PLACEHOLDER commands solo fallan en MCPs habilitados, huérfanas solo aplica a skills del manifest (locales = WARN), validators toleran BOM UTF-8 (editors Windows) |
 | 4.3.1 | 2026-08-13 | 114 | Fix check-mcp-config: MCPs propios del proyecto sin metadata pasan a WARN (no FAIL) — proyectos con MCPs personalizados (p. ej. automation-safe) ya no rompen el pipeline post-sync; tolerancia a BOM UTF-8 en JSON de config (PowerShell) |
 | 4.3.0 | 2026-08-13 | 114 | Dashboard de progreso (`progress-artifact`): artifact HTML autocontenido con módulos de negocio, fases N0-N49 y panel "dónde quedó la IA" — para dev, IA y supervisores |
@@ -25,10 +26,10 @@ Los documentos de `.opencode/framework/` tienen versionado propio (independiente
 
 | Documento | Versión | Última actualización |
 |-----------|---------|----------------------|
-| SKILLS-MANIFEST.md | 2.2.0 | 2026-08-03 |
+| SKILLS-MANIFEST.md | 2.3.0 | 2026-08-14 |
 | AGENT-MODEL.md | 2.1.0 | 2026-08-03 |
 | SKILL-EXECUTION-PROTOCOL.md | 2.0.0 | 2026-07-17 |
-| SKILL-ROUTING.md | 1.3.0 | 2026-08-03 |
+| SKILL-ROUTING.md | 1.4.0 | 2026-08-14 |
 
 Regla: al cambiar un documento de gobierno, incrementar su versión propia **y** anotar aquí la fila correspondiente (la versión del framework solo sube cuando cambia el catálogo o el contrato entre capas).
 

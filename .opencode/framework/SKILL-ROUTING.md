@@ -1,8 +1,8 @@
 # SKILL-ROUTING.md — Tabla de Routing de Skills
 
 **TIVIT Foundry — Framework Agéntico**
-**Versión:** 1.3.0
-**Última actualización:** 3 de agosto de 2026
+**Versión:** 1.4.0
+**Última actualización:** 14 de agosto de 2026
 
 ---
 
@@ -68,6 +68,8 @@ N7: framework-pack-design               → design
 N8: framework-data-memory-compliance    → control
 N9: framework-security                  → control
 ```
+
+`framework-platform` corre al cierre de Fase B, tras N9, **sin nivel propio** (precedente: `acceptance-test-automation`): es prerequisito de N10 y su artefacto de diseño de plataforma se verifica antes de scaffold.
 
 ### Fase C — Scaffold (N10-N15)
 
@@ -140,6 +142,8 @@ N47: infrastructure-as-code      → delivery
 N48: disaster-recovery           → delivery
 N49: pull-request                → delivery
 ```
+
+`framework-operations-evolution` corre al cierre de Fase H, tras N49, **sin nivel propio**: cierra el ciclo operación-evolución (SLOs, incidentes, versionado, deprecación).
 
 ---
 

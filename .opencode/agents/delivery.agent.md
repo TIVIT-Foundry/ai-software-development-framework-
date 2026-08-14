@@ -69,6 +69,8 @@ Carga el SKILL.md correspondiente antes de producir artefactos de cada área:
 | pgvector | primario | [SKILL.md](../skills/pgvector/SKILL.md) |
 | api-versioning | secundario | [SKILL.md](../skills/api-versioning/SKILL.md) |
 | api-resilience | secundario | [SKILL.md](../skills/api-resilience/SKILL.md) |
+| unit-testing | primario | [SKILL.md](../skills/unit-testing/SKILL.md) |
+| integration-testing | primario | [SKILL.md](../skills/integration-testing/SKILL.md) |
 
 ## Protocolo de ejecución
 

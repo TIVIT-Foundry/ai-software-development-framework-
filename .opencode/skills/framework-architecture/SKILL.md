@@ -23,7 +23,6 @@ metadata:
   depends_on:
   - framework-conception
   - framework-governance
-  - framework-pack-design
   consumed_by:
   - framework-core-design
   - framework-data-memory-compliance

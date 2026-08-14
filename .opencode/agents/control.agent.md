@@ -4,14 +4,14 @@ description: >
   Use para garantizar la integridad del framework: governance, seguridad, compliance y validación.
   Activar cuando: verificar que una propuesta respeta el blueprint, revisar controles de seguridad,
   diseñar RBAC o guardrails, validar compliance y aislamiento por tenant, definir criterios de
-  aceptación y go/no-go, aprobar o documentar excepciones al framework.
+  aceptación y go/no-go, recomendar y documentar excepciones al framework (la aprobación final la decide el usuario u orchestrator).
 mode: subagent
 permission:
   read: allow
   glob: allow
   grep: allow
   edit: allow
-  bash: deny
+  bash: ask
   task: allow
 ---
 

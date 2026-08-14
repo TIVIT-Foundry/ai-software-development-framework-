@@ -117,19 +117,37 @@
   },
   "permission": {
     "edit": {
+      "*": "allow",
+      "opencode.json": "ask",
+      ".env.example": "ask",
+      ".opencode/mcp-metadata.json": "ask",
       ".opencode/framework/**": "ask",
-      ".opencode/agents/**": "ask",
-      "*": "allow"
+      ".opencode/agents/**": "ask"
     },
     "bash": {
-      "git *": "allow",
+      "git *": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git ls-files*": "allow",
+      "git rev-parse*": "allow",
+      "git branch*": "allow",
+      "git remote*": "allow",
+      "git show*": "allow",
+      "git fetch*": "allow",
+      "git add*": "allow",
+      "git commit*": "allow",
       "rm *": "ask",
       "*": "ask"
     },
     "external_directory": {
+      "*": "allow",
       "~/.config/opencode/**": "deny",
-      "**/node_modules/**": "deny",
-      "*": "allow"
+      "~/.ssh/**": "deny",
+      "~/.aws/**": "deny",
+      "~/.gnupg/**": "deny",
+      "**/secrets/**": "deny",
+      "**/node_modules/**": "deny"
     }
   }
 }
