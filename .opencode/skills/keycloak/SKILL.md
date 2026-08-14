@@ -76,9 +76,11 @@ Activate this skill when:
 ### FastAPI Keycloak Configuration
 
 ```python
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class KeycloakSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env")
+
     KEYCLOAK_URL: str = "http://localhost:8080"
     KEYCLOAK_REALM: str = "my-app"
     KEYCLOAK_CLIENT_ID: str = "fastapi-backend"
@@ -91,9 +93,6 @@ class KeycloakSettings(BaseSettings):
     @property
     def issuer(self) -> str:
         return f"{self.KEYCLOAK_URL}/realms/{self.KEYCLOAK_REALM}"
-    
-    class Config:
-        env_file = ".env"
 
 settings = KeycloakSettings()
 ```
@@ -324,15 +323,16 @@ export async function keycloakFetch(input: RequestInfo, init: RequestInit = {}):
 ### Angular HTTP Interceptor
 
 ```typescript
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
   HttpEvent,
   HttpInterceptorFn,
-  HttpErrorResponse
+  HttpErrorResponse,
+  HttpClient
 } from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject, from } from 'rxjs';
+import { Observable, throwError, BehaviorSubject, from, firstValueFrom } from 'rxjs';
 import { switchMap, catchError, filter, take } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })

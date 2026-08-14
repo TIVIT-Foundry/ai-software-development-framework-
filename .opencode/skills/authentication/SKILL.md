@@ -224,10 +224,10 @@ Keycloak maneja refresh tokens con rotación por defecto. El backend puede deleg
 
 **Patrón BFF con Keycloak (recomendado):**
 ```python
-from fastapi import Response
+from fastapi import Request, Response
 
 @app.post("/auth/refresh")
-async def refresh_token(response: Response):
+async def refresh_token(request: Request, response: Response):
     """Refresh via Keycloak. El refresh token se envía como cookie httpOnly."""
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
@@ -823,17 +823,20 @@ export class AuthService {
 **Registro del interceptor y guards (app.config.ts):**
 ```typescript
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withRouteInitialization } from '@angular/router';
+import { provideRouter, withEnabledBlockingInitialNavigation } from '@angular/router';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { authGuard } from './guards/auth.guard';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(withInterceptors([authInterceptor])),
-    provideRouter([
-      { path: 'dashboard', canActivate: [authGuard], loadComponent: ... },
-      { path: 'login', loadComponent: ... },
-    ]),
+    provideRouter(
+      [
+        { path: 'dashboard', canActivate: [authGuard], loadComponent: ... },
+        { path: 'login', loadComponent: ... },
+      ],
+      withEnabledBlockingInitialNavigation()
+    ),
   ],
 };
 ```

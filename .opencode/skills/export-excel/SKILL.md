@@ -70,24 +70,23 @@ Export Endpoint → Frontend (service + component download trigger → button)
 
 ## Database Layer (PostgreSQL Function)
 ```sql
--- Add @ParamIIsExport BIT = 0 to existing list SP
+-- Add p_is_export BOOLEAN = FALSE to the existing list function
 -- Export block goes BEFORE pagination:
 ---------------------------------------------------------------
 -- STEP: EXPORT (before pagination)
 ---------------------------------------------------------------
-IF @ParamIIsExport = 1
-BEGIN
+IF p_is_export THEN
     SELECT
-        e.EntityId,
-        e.Name,
-        e.Amount,
-        e.RecordCreationDate
+        e.{entity}_id,
+        e.name,
+        e.amount,
+        e.record_creation_date
         FROM {schema}.{entity} e
-    WHERE e.RecordStatus = 'A'
+    WHERE e.record_status = 'A'
     -- apply same filters as list
-    ORDER BY e.RecordCreationDate DESC;
+    ORDER BY e.record_creation_date DESC;
     RETURN;
-END
+END IF;
 -- Then the normal paginated block follows
 ```
 
@@ -432,87 +431,69 @@ El flag `IsExport` se añade al SP/query de listado existente. El bloque de expo
 #### PostgreSQL — Function con columnas dinámicas
 
 ```sql
--- Schema.sp_{Entity}_List
--- @ParamIIsExport BIT = 0
--- @ParamIDynamicColumns TEXT = NULL  -- columnas separadas por coma
-CREATE PROCEDURE [{Schema}].[sp_{Entity}_List]
-    @ParamIUserId          INT,
-    @ParamISearchTerm      VARCHAR(100) = NULL,
-    @ParamIFilterStatus    VARCHAR(20)  = NULL,
-    @ParamIPage            INT           = 1,
-    @ParamIPageSize        INT           = 10,
-    @ParamISortColumn      VARCHAR(50)   = 'RecordCreationDate',
-    @ParamISortDirection   VARCHAR(4)    = 'DESC',
-    @ParamIIsExport        BIT           = 0,
-    @ParamIDynamicColumns  TEXT = NULL
-AS
-BEGIN
-    -- PostgreSQL: no SET NOCOUNT needed
-
-    DECLARE @Sql   TEXT;
-    DECLARE @Where TEXT = 'WHERE e.RecordStatus = ''A''';
-    DECLARE @Params TEXT = N'
-        @UserId INT,
-        @SearchTerm VARCHAR(100),
-        @FilterStatus VARCHAR(20)
+-- {schema}.{entity}_list_export
+-- p_is_export BOOLEAN = FALSE
+-- p_dynamic_columns TEXT = NULL  -- columnas separadas por coma
+CREATE OR REPLACE FUNCTION {schema}.{entity}_list_export(
+    p_user_id          INT,
+    p_search_term      VARCHAR(100)  DEFAULT NULL,
+    p_filter_status    VARCHAR(20)   DEFAULT NULL,
+    p_page             INT           DEFAULT 1,
+    p_page_size        INT           DEFAULT 10,
+    p_sort_column      VARCHAR(50)   DEFAULT 'record_creation_date',
+    p_sort_direction   VARCHAR(4)    DEFAULT 'DESC',
+    p_is_export        BOOLEAN       DEFAULT FALSE,
+    p_dynamic_columns  TEXT          DEFAULT NULL
+)
+RETURNS SETOF record
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_sql      TEXT;
+    v_where    TEXT := 'WHERE e.record_status = ''A''';
+    v_columns  TEXT := '
+        e.{entity}_id   AS id,
+        e.name          AS nombre,
+        e.code          AS codigo,
+        e.status        AS estado,
+        e.record_creation_date AS fecha_creacion
     ';
-
-    -- Filtros dinámicos
-    IF @ParamISearchTerm IS NOT NULL
-        SET @Where = @Where + ' AND (e.Name LIKE ''%'' + @SearchTerm + ''%'' OR e.Code LIKE ''%'' + @SearchTerm + ''%'')';
-    IF @ParamIFilterStatus IS NOT NULL
-        SET @Where = @Where + ' AND e.Status = @FilterStatus';
+BEGIN
+    -- Filtros dinámicos (valores seguros vía EXECUTE ... USING)
+    IF p_search_term IS NOT NULL THEN
+        v_where := v_where || ' AND (e.name ILIKE ''%'' || $1 || ''%'' OR e.code ILIKE ''%'' || $1 || ''%'')';
+    END IF;
+    IF p_filter_status IS NOT NULL THEN
+        v_where := v_where || ' AND e.status = $2';
+    END IF;
 
     -- Columnas por defecto o dinámicas
-    DECLARE @Columns TEXT = '
-        e.{Entity}Id   AS Id,
-        e.Name         AS Nombre,
-        e.Code         AS Codigo,
-        e.Status       AS Estado,
-        e.RecordCreationDate AS FechaCreacion
-    ';
-    IF @ParamIDynamicColumns IS NOT NULL
-        SET @Columns = @ParamIDynamicColumns;
+    IF p_dynamic_columns IS NOT NULL THEN
+        v_columns := p_dynamic_columns;
+    END IF;
 
     ---------------------------------------------------------------
     -- STEP: EXPORT (before pagination)
     ---------------------------------------------------------------
-    IF @ParamIIsExport = 1
-    BEGIN
-        SET @Sql = N'
-            SELECT ' + @Columns + N'
-            FROM {schema}.{entity} e
-            ' + @Where + N'
-            ORDER BY e.' + @ParamISortColumn + ' ' + @ParamISortDirection + N';
-        ';
-        EXEC sp_executesql @Sql, @Params,
-            @UserId = @ParamIUserId,
-            @SearchTerm = @ParamISearchTerm,
-            @FilterStatus = @ParamIFilterStatus;
+    IF p_is_export THEN
+        v_sql := format(
+            'SELECT %s FROM {schema}.{entity} e %s ORDER BY e.%I %s',
+            v_columns, v_where, p_sort_column, p_sort_direction
+        );
+        RETURN QUERY EXECUTE v_sql USING p_search_term, p_filter_status;
         RETURN;
-    END
+    END IF;
 
     ---------------------------------------------------------------
     -- STEP: PAGINATED LIST
     ---------------------------------------------------------------
-    SET @Sql = N'
-        SELECT
-            ' + @Columns + N',
-            COUNT(*) OVER() AS TotalCount
-            FROM {schema}.{entity} e
-        ' + @Where + N'
-        ORDER BY e.' + @ParamISortColumn + ' ' + @ParamISortDirection + N'
-        OFFSET (@Page - 1) * @PageSize ROWS
-        FETCH NEXT @PageSize ROWS ONLY;
-    ';
-    EXEC sp_executesql @Sql,
-        N'@Page INT, @PageSize INT, @UserId INT, @SearchTerm VARCHAR(100), @FilterStatus VARCHAR(20)',
-        @Page = @ParamIPage,
-        @PageSize = @ParamIPageSize,
-        @UserId = @ParamIUserId,
-        @SearchTerm = @ParamISearchTerm,
-        @FilterStatus = @ParamIFilterStatus;
-END
+    v_sql := format(
+        'SELECT %s, COUNT(*) OVER() AS total_count FROM {schema}.{entity} e %s ORDER BY e.%I %s OFFSET ($3 - 1) * $4 ROWS FETCH NEXT $4 ROWS ONLY',
+        v_columns, v_where, p_sort_column, p_sort_direction
+    );
+    RETURN QUERY EXECUTE v_sql USING p_search_term, p_filter_status, p_page, p_page_size;
+END;
+$$;
 ```
 
 #### PostgreSQL — Función con refcursor

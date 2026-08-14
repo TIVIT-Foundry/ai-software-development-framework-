@@ -114,6 +114,8 @@ The spec is produced **before any code** is written. It aligns product (HUs), ba
 ```python
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -131,15 +133,15 @@ class UserResponse(BaseModel):
     created_at: str
 
 @router.post("/", response_model=UserResponse, status_code=201)
-def create_user(req: CreateUserRequest, db=Depends(get_db)):
-    cursor = db.cursor()
-    cursor.execute("EXEC sp_users_create @email=?, @name=?, @role_id=?",
-                   req.email, req.name, req.role_id)
-    row = cursor.fetchone()
+async def create_user(req: CreateUserRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        text("SELECT * FROM core.create_users(:p_email, :p_name, :p_role_id)"),
+        {"p_email": req.email, "p_name": req.name, "p_role_id": req.role_id},
+    )
+    row = result.mappings().first()
     if not row:
         raise HTTPException(422, detail="USER_003: Could not create user")
-    return UserResponse(id=row.id, email=row.email, name=row.name,
-                        status=row.status, created_at=row.created_at)
+    return UserResponse(**row)
 ```
 
 ## Section detail
@@ -201,7 +203,7 @@ Followed by column-level table definitions:
 | id | SERIAL | NO | — | Primary key |
 | email | VARCHAR(255) | NO | — | Login email (unique) |
 | name | VARCHAR(150) | NO | — | Display name |
-| status | TINYINT | NO | 1 | 1=Active, 2=Inactive |
+| status | SMALLINT | NO | 1 | 1=Active, 2=Inactive |
 | created_at | TIMESTAMPTZ | NO | NOW() | Creation timestamp |
 | updated_at | TIMESTAMPTZ | NO | NOW() | Last update timestamp |
 
@@ -304,7 +306,7 @@ For each endpoint, document:
 }
 ```
 
-**DB Object**: `sp_users_list` (stored procedure)
+**DB Object**: `core.list_users` (table function)
 **Rules**: Requires JWT auth. Only active users can see their own profile.
 **Error Codes**: None expected for this endpoint.
 ```
@@ -318,13 +320,13 @@ Map each endpoint to its DB object:
 
 | Endpoint | DB Object | Type | Parameters |
 |----------|-----------|------|------------|
-| GET /api/users | sp_users_list | SP | @page, @size, @search, @status, @sort_by, @order |
-| GET /api/users/{id} | sp_users_get | SP | @id |
-| POST /api/users | sp_users_create | SP | @email, @name, @role_id |
-| PUT /api/users/{id} | sp_users_update | SP | @id, @email, @name, @status |
-| DELETE /api/users/{id} | sp_users_delete | SP | @id |
-| POST /api/users/{id}/activate | sp_users_activate | SP | @id |
-| GET /api/users/search | sp_users_search | Function | @term, @limit |
+| GET /api/users | core.list_users | Function | p_page, p_size, p_search, p_status, p_sort_by, p_order |
+| GET /api/users/{id} | core.get_users | Function | p_id |
+| POST /api/users | core.create_users | Function | p_email, p_name, p_role_id |
+| PUT /api/users/{id} | core.update_users | Function | p_id, p_email, p_name, p_status |
+| DELETE /api/users/{id} | core.delete_users | Function | p_id |
+| POST /api/users/{id}/activate | core.activate_users | Function | p_id |
+| GET /api/users/search | core.search_users | Function | p_term, p_limit |
 ```
 
 ### 7. Shared DTOs
@@ -486,10 +488,10 @@ erDiagram
 
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
-| id | INT | NO | IDENTITY | PK |
+| id | SERIAL | NO | — | PK |
 | email | VARCHAR(255) | NO | — | Login email (UK) |
 | name | VARCHAR(150) | NO | — | Display name |
-| status | TINYINT | NO | 1 | 1=Active, 2=Inactive, 3=Locked |
+| status | SMALLINT | NO | 1 | 1=Active, 2=Inactive, 3=Locked |
 | created_at | TIMESTAMPTZ | NO | NOW() | Creation timestamp |
 | updated_at | TIMESTAMPTZ | NO | NOW() | Last update |
 
@@ -516,24 +518,24 @@ erDiagram
 
 | Method | Path | SP | Auth | Description |
 |--------|------|-----|------|-------------|
-| GET | /api/users | sp_users_list | JWT | Lista paginada |
-| GET | /api/users/{id} | sp_users_get | JWT | Detalle de usuario |
-| POST | /api/users | sp_users_create | JWT+Admin | Crear usuario |
-| PUT | /api/users/{id} | sp_users_update | JWT+Admin | Actualizar |
-| DELETE | /api/users/{id} | sp_users_delete | JWT+Admin | Soft delete |
-| POST | /api/users/{id}/activate | sp_users_activate | JWT+Admin | Activar usuario |
-| POST | /api/users/{id}/deactivate | sp_users_deactivate | JWT+Admin | Desactivar |
+| GET | /api/users | core.list_users | JWT | Lista paginada |
+| GET | /api/users/{id} | core.get_users | JWT | Detalle de usuario |
+| POST | /api/users | core.create_users | JWT+Admin | Crear usuario |
+| PUT | /api/users/{id} | core.update_users | JWT+Admin | Actualizar |
+| DELETE | /api/users/{id} | core.delete_users | JWT+Admin | Soft delete |
+| POST | /api/users/{id}/activate | core.activate_users | JWT+Admin | Activar usuario |
+| POST | /api/users/{id}/deactivate | core.deactivate_users | JWT+Admin | Desactivar |
 
 ## 6. Database Objects
 
 | Endpoint | DB Object | Type |
 |----------|-----------|------|
-| GET /api/users | sp_users_list | SP |
-| GET /api/users/{id} | sp_users_get | SP |
-| POST /api/users | sp_users_create | SP |
-| PUT /api/users/{id} | sp_users_update | SP |
-| DELETE /api/users/{id} | sp_users_delete | SP |
-| POST /api/users/{id}/activate | sp_users_activate | SP |
+| GET /api/users | core.list_users | Function |
+| GET /api/users/{id} | core.get_users | Function |
+| POST /api/users | core.create_users | Function |
+| PUT /api/users/{id} | core.update_users | Function |
+| DELETE /api/users/{id} | core.delete_users | Function |
+| POST /api/users/{id}/activate | core.activate_users | Function |
 
 ## 7. Shared DTOs
 

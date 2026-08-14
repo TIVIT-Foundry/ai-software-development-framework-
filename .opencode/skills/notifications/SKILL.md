@@ -68,7 +68,7 @@ mcp_usage: none
 ## Notification Database Schema
 ```sql
 CREATE TABLE Notifications.NotificationMessage (
-    notification_message_id   INT PRIMARY KEY IDENTITY,
+    notification_message_id   SERIAL PRIMARY KEY,
     user_id                  VARCHAR(128) NOT NULL,
     channel                 VARCHAR(50)  NOT NULL,  -- 'email', 'in-app', 'push'
     template_id              VARCHAR(100) NOT NULL,
@@ -318,7 +318,7 @@ Backend → FCM Admin SDK → FCM Service → Dispositivo (Android/iOS/Web)
 
 ```sql
 CREATE TABLE Notifications.DeviceToken (
-    device_token_id     INT PRIMARY KEY IDENTITY,
+    device_token_id     SERIAL PRIMARY KEY,
     user_id            VARCHAR(128) NOT NULL,
     token             VARCHAR(500) NOT NULL,
     platform          VARCHAR(20)  NOT NULL,  -- 'android', 'ios', 'web'
@@ -677,7 +677,7 @@ export function useRealtimeNotifications() {
 
 ```sql
 CREATE TABLE Notifications.NotificationPreference (
-    notification_preference_id  INT PRIMARY KEY IDENTITY,
+    notification_preference_id  SERIAL PRIMARY KEY,
     user_id                     VARCHAR(128) NOT NULL,
     category                  VARCHAR(100) NOT NULL,  -- 'orders', 'security', 'marketing'
     channel                    VARCHAR(50)  NOT NULL,  -- 'email', 'push', 'in-app', 'sms'
@@ -890,7 +890,7 @@ export function renderMjmlTemplate(
 
 ```sql
 CREATE TABLE Notifications.EmailTemplate (
-    email_template_id      INT PRIMARY KEY IDENTITY,
+    email_template_id      SERIAL PRIMARY KEY,
     template_id           VARCHAR(100) NOT NULL,
     channel              VARCHAR(50)  NOT NULL DEFAULT 'email',
     locale               VARCHAR(10)  NOT NULL DEFAULT 'es',
