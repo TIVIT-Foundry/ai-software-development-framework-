@@ -59,15 +59,11 @@
       "enabled": true
     },
     "github": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-github"
-      ],
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
       "enabled": true,
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      "headers": {
+        "X-MCP-Toolsets": "context,repos,issues,pull_requests,actions,users"
       }
     },
     "postgres": {
@@ -78,8 +74,8 @@
         "@modelcontextprotocol/server-postgres"
       ],
       "enabled": true,
-      "env": {
-        "POSTGRES_CONNECTION_STRING": "${POSTGRES_CONNECTION_STRING}"
+      "environment": {
+        "POSTGRES_CONNECTION_STRING": "{env:POSTGRES_CONNECTION_STRING}"
       }
     },
     "notion": {
@@ -90,8 +86,8 @@
         "@notionhq/notion-mcp-server"
       ],
       "enabled": false,
-      "env": {
-        "OPENAPI_MCP_HEADERS": "{\"Authorization\":\"Bearer ${NOTION_TOKEN}\",\"Notion-Version\":\"2025-09-03\"}"
+      "environment": {
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\":\"Bearer {env:NOTION_TOKEN}\",\"Notion-Version\":\"2025-09-03\"}"
       }
     },
     "gcloud": {
@@ -102,8 +98,8 @@
         "@google-cloud/gcloud-mcp"
       ],
       "enabled": false,
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}"
+      "environment": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "{env:GOOGLE_APPLICATION_CREDENTIALS}"
       }
     },
     "observability": {
@@ -114,8 +110,8 @@
         "@google-cloud/observability-mcp"
       ],
       "enabled": false,
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "${GOOGLE_APPLICATION_CREDENTIALS}"
+      "environment": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "{env:GOOGLE_APPLICATION_CREDENTIALS}"
       }
     }
   },
