@@ -159,7 +159,7 @@ async def handle_export(request: ExportRequest, db: AsyncSession) -> ExportRespo
 ## Python Alternative (openpyxl)
 ```python
 async def export_entities(params: ExportParams, db: AsyncSession):
-    rows = await db.execute(text("EXEC Schema.ListEntity @IsExport = 1 ..."))
+    rows = await db.execute(text("SELECT * FROM schema.list_entity(p_is_export := TRUE, ...)"))
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.append(["ID", "Name", "Amount"])
