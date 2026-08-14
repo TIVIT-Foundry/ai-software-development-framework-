@@ -1480,4 +1480,4 @@ El catálogo entregado por `api-first-spec` mantiene la correspondencia 1:1:
 | 1010 | POST | `/api/users/{id}/activate` | (acción inline) | `UserDetail` |
 | 1011 | POST | `/api/users/{id}/suspend` | (acción inline) | `UserDetail` |
 
-Esta tabla se valida automáticamente en CI con el script del framework `.opencode/scripts/validate-service-ids.mjs` (copiar al proyecto si aplica), que cruza `openapi.yaml` contra los archivos `constants.ts` de todos los features y falla el build si hay desalineación.
+Esta tabla se valida automáticamente en CI con el script del framework `.opencode/scripts/validate-service-ids.mjs` (copiar al proyecto si aplica), que escanea los `constants.ts`/`services.ts` de los features y falla el build si hay ids de servicio duplicados o con formato inválido (clave PascalCase + id numérico de 4+ dígitos).

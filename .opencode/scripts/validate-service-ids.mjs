@@ -30,8 +30,9 @@ function walk(dir) {
 
 function checkFile(file) {
   const text = fs.readFileSync(file, "utf-8");
-  // Matches `  GetUsers: 1001,` inside `export const ... = { ... } as const`.
-  const re = /^\s*([A-Za-z][A-Za-z0-9]*)\s*:\s*(\d+)\s*,/gm;
+  // Solo claves PascalCase con ids numericos de 4+ digitos (evita falsos
+  // positivos tipo `pageSize: 20` o `maxItems: 5` en constants.ts).
+  const re = /^\s*([A-Z][A-Za-z0-9]*)\s*:\s*(\d{4,})\s*,/gm;
   let m;
   while ((m = re.exec(text)) !== null) {
     const id = Number(m[2]);
