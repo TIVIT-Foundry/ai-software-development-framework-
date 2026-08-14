@@ -75,18 +75,40 @@ No activar cuando:
    }
    ```
    Estados válidos: `ok` | `wip` | `blocked` | `pending`. Sin este archivo, el estado se
-   deriva de `.workflow/state.json` (steps que contienen el nombre del módulo) y de
-   `tasks.md` (checkboxes).
-3. **Verificar** que el HTML se genera sin errores y que los links a specs resuelven.
-4. **Commitear** el HTML y el `progress-state.json` junto con el cierre de la fase
+   deriva automáticamente (ver heurística abajo).
+3. **Declarar módulos sin spec formal** (p. ej. auth sin `docs/api-first/auth.md`) con
+   `_extra` en el mismo JSON:
+   ```json
+   {
+     "_extra": [
+       { "slug": "auth", "title": "Autenticación (Sprint 1)", "path": "docs/sprints.md" }
+     ]
+   }
+   ```
+4. **Verificar** que el HTML se genera sin errores y que los links a specs resuelven.
+5. **Commitear** el HTML y el `progress-state.json` junto con el cierre de la fase
    (el artifact es parte del reporte, no un archivo temporal).
+
+## Heurística automática de estado (multi-nivel)
+
+El generador deriva el estado por módulo sin override, en este orden:
+
+1. **Paso actual** (`state.json.current_step`) que mencione el módulo → `wip`
+2. **Pasos fallidos** (`steps_failed`) que mencionen el módulo → `blocked`
+3. **Pasos completados** (`steps_completed`) que mencionen el módulo → `ok`
+4. Sin coincidencias → `pending`
+
+El match normaliza texto (sin acentos/case) y compara el slug del módulo **y las
+palabras del título** contra cada paso — así `SPRINT-1-auth-backend`,
+`SPRINT-2-bundle-E-ventas-backend` o `SPRINT-3-talent-census` mapean a sus módulos
+automáticamente (tokens genéricos de sprint como bundle/fix/tests se ignoran).
 
 ## Fuentes y derivación de estado
 
 | Fuente | Qué aporta | Prioridad |
 |--------|-----------|-----------|
-| `docs/artifacts/progress-state.json` | Estado manual por módulo (override) | 1 |
-| `.workflow/state.json` | steps completados/fallidos/actual | 2 |
+| `docs/artifacts/progress-state.json` | Estado manual por módulo (override) + `_extra` (módulos sin spec) | 1 |
+| `.workflow/state.json` | steps completados/fallidos/actual (heurística automática) | 2 |
 | `tasks.md` | % de tareas por módulo (checkboxes) | 3 |
 | `docs/api-first/*.md` | Lista de módulos y endpoints | 4 |
 

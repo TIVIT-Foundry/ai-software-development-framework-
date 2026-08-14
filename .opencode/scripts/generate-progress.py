@@ -64,6 +64,19 @@ if api_dir.exists():
         endpoints = len(re.findall(r"^\|\s*(?:GET|POST|PUT|DELETE|PATCH)\s*\|", text, re.MULTILINE | re.IGNORECASE))
         modules.append({"slug": spec.stem, "title": title, "path": str(spec.relative_to(PROJECT)), "endpoints": endpoints})
 
+# Modulos extra declarados en progress-state.json (sin spec formal en
+# docs/api-first/): {"_extra": [{"slug": "auth", "title": "Autenticacion", "path": "..."}]}
+override_early = read_json(PROJECT / "docs" / "artifacts" / "progress-state.json")
+known_slugs = {m["slug"] for m in modules}
+for extra in override_early.get("_extra", []):
+    if extra.get("slug") and extra["slug"] not in known_slugs:
+        modules.append({
+            "slug": extra["slug"],
+            "title": extra.get("title", extra["slug"].replace("-", " ").title()),
+            "path": extra.get("path", ""),
+            "endpoints": int(extra.get("endpoints", 0) or 0),
+        })
+
 # ── 2. Estado del workflow ───────────────────────────────────────────────────
 state = read_json(PROJECT / ".workflow" / "state.json")
 steps_done = set(state.get("steps_completed", []))
@@ -95,6 +108,36 @@ if tasks_md.exists():
 override = read_json(PROJECT / "docs" / "artifacts" / "progress-state.json")
 
 # ── 5. Estado por modulo ─────────────────────────────────────────────────────
+# Heuristica multi-nivel para mapear pasos del state.json a modulos:
+#   a. override manual (progress-state.json) — prioridad 1
+#   b. tokens de pasos tipo "SPRINT-{n}-<modulo>-..." y cualquier paso que
+#      contenga el slug o palabras del titulo (normalizadas sin acentos)
+import unicodedata
+
+_STOP = {"sprint", "sprints", "bundle", "fix", "dec", "td", "ex", "n", "e2e", "test", "tests",
+         "backend", "frontend", "calidad", "discovery", "revalidacion", "verificado", "navegador",
+         "contrato", "security", "seguridad", "missinggreenlet", "calamine", "api", "python",
+         "github", "actions", "docker", "compose", "alembic", "pytest", "eslint", "tsc", "build"}
+
+
+def norm_txt(s):
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", " ", s.lower())
+
+
+def module_tokens(mod):
+    toks = set(norm_txt(mod["slug"]).split())
+    for w in norm_txt(mod["title"]).split():
+        if len(w) >= 3 and w not in _STOP:
+            toks.add(w)
+    return toks
+
+
+def step_matches(step, toks):
+    n = norm_txt(step)
+    return any(t in n for t in toks)
+
+
 for mod in modules:
     done, total = module_tasks.get(mod["slug"], (0, 0))
     mod["tasks_done"] = done
@@ -108,18 +151,20 @@ for mod in modules:
         mod["responsable"] = ov.get("responsable", "—")
         mod["notas"] = ov.get("notas", "")
     else:
-        # Derivacion heuristica desde state.json (steps que contienen el slug)
-        hit_done = any(mod["slug"] in s for s in steps_done)
-        hit_fail = any(mod["slug"] in s for s in steps_failed)
-        hit_wip = mod["slug"] in current_step
+        toks = module_tokens(mod)
+        hit_done = any(step_matches(d, toks) for d in steps_done)
+        hit_fail = any(step_matches(f, toks) for f in steps_failed)
+        hit_wip = step_matches(current_step, toks)
         if hit_fail:
             mod["status"] = "blocked"
-        elif hit_done and not (hit_wip or hit_fail):
-            mod["status"] = "ok"
         elif hit_wip:
             mod["status"] = "wip"
+        elif hit_done:
+            mod["status"] = "ok"
+        elif total and done:
+            mod["status"] = "wip"
         else:
-            mod["status"] = "ok" if hit_done else ("wip" if total and done else "pending")
+            mod["status"] = "pending"
         mod["fecha"] = checkpoint
         mod["responsable"] = "—"
         mod["notas"] = ""
