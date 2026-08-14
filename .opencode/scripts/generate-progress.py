@@ -172,13 +172,13 @@ for mod in modules:
 # ── 6. Fases del framework (N0-N49) ──────────────────────────────────────────
 PHASES = [
     ("A — Gobierno", "N0-N4", ["requirements-intake", "framework-governance", "framework-discovery", "framework-conception", "hu-template"]),
-    ("B — Arquitectura", "N5-N9", ["framework-architecture", "framework-core-design", "framework-pack-design", "framework-data-memory-compliance", "framework-security"]),
+    ("B — Arquitectura", "N5-N9", ["framework-architecture", "framework-core-design", "framework-pack-design", "framework-data-memory-compliance", "framework-security", "framework-platform"]),
     ("C — Scaffold", "N10-N15", ["framework-scaffold-implementation", "project-architecture", "project-bootstrap", "repo-structure", "app-bootstrap", "backend-api"]),
     ("D — Especificación", "N16", ["api-first-spec"]),
     ("E — Backend", "N17-N31", ["api-first-backend", "database-modeling", "data-access", "authentication", "authorization", "error-handling", "api-integration"]),
     ("F — Frontend", "N32-N37", ["api-first-frontend", "react", "react-services", "typescript", "design-system", "i18n"]),
     ("G — Calidad", "N38-N44", ["unit-testing", "integration-testing", "playwright", "security-testing", "code-review", "accesibilidad"]),
-    ("H — Operación", "N45-N49", ["ci-cd", "observabilidad", "infrastructure-as-code", "disaster-recovery", "pull-request"]),
+    ("H — Operación", "N45-N49", ["ci-cd", "observabilidad", "infrastructure-as-code", "disaster-recovery", "pull-request", "framework-operations-evolution"]),
 ]
 
 
