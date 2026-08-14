@@ -44,9 +44,14 @@ if (-not (Test-Path (Join-Path $Source "VERSIONS.md")) -or -not (Test-Path $fwSo
     Write-Host "ERROR: '$Source' no parece el repo raiz del framework (falta VERSIONS.md/.opencode)" -ForegroundColor Red
     exit 1
 }
-if (-not (Test-Path $fwProject)) {
-    Write-Host "ERROR: '$ProjectDir' no tiene .opencode/ - es un proyecto con el framework instalado?" -ForegroundColor Red
-    exit 1
+
+# Modo BOOTSTRAP: el proyecto no tiene .opencode/ -> instalacion desde cero
+# (sin backup: no hay nada que respaldar). El mismo script sirve para
+# instalar (proyecto nuevo) y actualizar (proyecto existente).
+$bootstrap = -not (Test-Path $fwProject)
+if ($bootstrap) {
+    Write-Host "Proyecto sin .opencode/ — modo BOOTSTRAP (instalacion desde cero)" -ForegroundColor Cyan
+    New-Item -ItemType Directory -Path $fwProject -Force | Out-Null
 }
 
 # -- Versiones ----------------------------------------------------------------
@@ -70,8 +75,12 @@ if ($projVer -eq $srcVer) {
 # -- Backup -------------------------------------------------------------------
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $backupDir = Join-Path $ProjectDir ".opencode-backup-$stamp"
-Write-Host "Backup del .opencode actual en: $backupDir"
-Copy-Item -Path $fwProject -Destination $backupDir -Recurse -Force
+if ($bootstrap) {
+    $backupDir = "N/A (bootstrap)"
+} else {
+    Write-Host "Backup del .opencode actual en: $backupDir"
+    Copy-Item -Path $fwProject -Destination $backupDir -Recurse -Force
+}
 
 # -- Sincronizar artefactos del framework -------------------------------------
 $artifacts = @("framework", "skills", "validators", "agents", "scaffold", "scripts", "docs")
@@ -102,7 +111,7 @@ foreach ($rootFile in @("AGENTS.md", ".env.example", "VERSIONS.md")) {
     }
 }
 
-if ($IncludeConfig) {
+if ($IncludeConfig -or $bootstrap) {
     $ocSrc = Join-Path $Source "opencode.json"
     $ocDst = Join-Path $ProjectDir "opencode.json"
     if (Test-Path $ocSrc) {
