@@ -42,8 +42,8 @@ mcp_usage: none
 ```python
 async def get_entity(db: AsyncSession, entity_id: int) -> EntityModel:
     result = await db.execute(
-        text("EXEC Schema.GetEntity @ParamIId = :id"),
-        {"id": entity_id}
+        text("SELECT * FROM schema.get_entity(:p_id)"),
+        {"p_id": entity_id}
     )
     row = result.fetchone()
     if not row:
