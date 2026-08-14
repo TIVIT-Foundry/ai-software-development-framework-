@@ -43,7 +43,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 ## Cómo funciona (Flujo de usuario)
 
 1. **Clonas** el framework en tu proyecto (solo la carpeta `.opencode/` + `opencode.json` + `AGENTS.md`)
-2. **Abres OpenCode** en tu proyecto → detecta 113 skills + 4 agentes automáticamente
+2. **Abres OpenCode** en tu proyecto → detecta 114 skills + 4 agentes automáticamente
 3. **Pides lo que necesitas**: "Crea un módulo de usuarios con login, CRUD y roles"
 4. **El orchestrator planifica**: descompone tu solicitud en fases (gobernanza → diseño → backend → frontend → testing)
 5. **Los agentes ejecutan**: design diseña, delivery implementa, control valida
@@ -59,7 +59,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 
 | Carpeta | Descripción |
 |---------|-------------|
-| `.opencode/skills/` | 113 skills organizadas por dominio |
+| `.opencode/skills/` | 114 skills organizadas por dominio |
 | `.opencode/agents/` | 4 agentes especializados |
 | `.opencode/validators/` | Scripts PowerShell de validación |
 | `.opencode/scaffold/` | Generador de código desde specs |
@@ -150,7 +150,7 @@ El primer módulo es Gestión de Tareas:
 
 ## Skills Disponibles
 
-113 skills organizadas por dominio (las categorías no son mutuamente excluyentes):
+114 skills organizadas por dominio (las categorías no son mutuamente excluyentes):
 
 - **Framework** (12): framework-governance, framework-discovery, framework-conception, framework-architecture, framework-core-design, framework-pack-design, framework-data-memory-compliance, framework-security, framework-platform, framework-scaffold-implementation, framework-qa-validation, framework-operations-evolution
 - **Gobernanza** (3): governance-constitution, sdd-onboard, documentation

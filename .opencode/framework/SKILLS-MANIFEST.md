@@ -3,7 +3,7 @@
 **TIVIT Foundry — Framework Agéntico**
 **Versión:** 2.2.0
 **Última actualización:** 3 de agosto de 2026
-**Total de skills:** 113
+**Total de skills:** 114
 
 ---
 
@@ -214,7 +214,7 @@ Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-fi
 | skill-creator | operations | implementation | optional | Crea nuevas skills del framework |
 | memory-protocol | construction | backend | mandatory | Protocolo de memoria persistente para agentes: decisiones, bugs, sesiones, resolución de conflictos |
 
-### Otros (4 skills)
+### Otros (5 skills)
 
 | Skill | Fase | Layer | Enforcement | Descripción |
 |-------|------|-------|-------------|-------------|
@@ -222,6 +222,7 @@ Cierran el ciclo que `sdd-onboard` enseña: spec → tasks → converge. `api-fi
 | project-bootstrap | inception | scaffold | mandatory | Onboarding a proyecto nuevo |
 | repo-structure | inception | scaffold | recommended | Convenciones de repositorio |
 | performance | construction | database/backend/frontend | recommended | Paginación, caching, query optimization, manejo de datos grandes |
+| progress-artifact | operations | process | recommended | Dashboard de progreso (artifact HTML): módulos de negocio, fases N0-N49, dónde quedó la IA — para dev, IA y supervisores |
 
 ---
 
