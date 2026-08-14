@@ -5,7 +5,7 @@ description: 'Usa esta skill para diseñar la capa de seguridad y control del fr
   trazabilidad, auditoría, control de tool calling, límites de autonomía, presupuestos
   y facturación granular multi-tenant. Trigger: Cuando se necesita diseñar la capa
   de seguridad: autorización, RBAC, guardrails, secretos y auditoría multi-tenant.'
-version: 1.0
+version: 1.1
 metadata:
   when_to_use:
   - Cuando se necesita diseñar la capa 6 del framework.
@@ -24,6 +24,7 @@ metadata:
   consumed_by:
   - framework-platform
   - framework-scaffold-implementation
+  - framework-operations-evolution
   agent_roles:
   - control-agent
   - delivery-agent

@@ -134,8 +134,8 @@ def module_tokens(mod):
 
 
 def step_matches(step, toks):
-    n = norm_txt(step)
-    return any(t in n for t in toks)
+    n = set(norm_txt(step).split())
+    return bool(n & toks)
 
 
 for mod in modules:
@@ -183,11 +183,12 @@ PHASES = [
 
 
 def step_status(step_name):
-    if step_name in steps_failed or any(step_name in f for f in steps_failed):
+    toks = set(norm_txt(step_name).split())
+    if any(set(norm_txt(f).split()) & toks for f in steps_failed):
         return "blocked"
-    if step_name in steps_done or any(step_name in d for d in steps_done):
+    if any(set(norm_txt(d).split()) & toks for d in steps_done):
         return "ok"
-    if step_name in current_step or step_name in current_step:
+    if set(norm_txt(current_step).split()) & toks:
         return "wip"
     return "pending"
 
@@ -209,7 +210,7 @@ for name, levels, skills in PHASES:
     phase_rows.append((name, levels, state_label, badge, st))
 
 done_total = sum(1 for s in set(steps_done))
-pct_global = round(done_total / 50 * 100) if steps_done else 0
+pct_global = min(100, round(done_total / 50 * 100)) if steps_done else 0
 
 # ── 7. Render HTML ───────────────────────────────────────────────────────────
 def mod_card(m):

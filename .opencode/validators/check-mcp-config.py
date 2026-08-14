@@ -102,6 +102,13 @@ for name, meta in mcp_servers.items():
             f" — governance review overdue"
         )
 
+# Check 7: allowed_agents must reference real agents.
+KNOWN_AGENTS = {"orchestrator", "design", "control", "delivery"}
+for name, meta in mcp_servers.items():
+    for ag in meta.get("allowed_agents") or []:
+        if ag not in KNOWN_AGENTS:
+            warnings.append(f"MCP '{name}' allowed_agents references unknown agent '{ag}'")
+
 if errors:
     for e in errors:
         print(f"FAIL: {e}", file=sys.stderr)

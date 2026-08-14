@@ -27,18 +27,22 @@ $failed = 0
 function Run-Check {
     param(
         [string]$Name,
-        [string]$Script
+        [string]$Script,
+        [switch]$Info
     )
     $script:total++
-    # Capture all output but decide success by the exit code, not by stderr
-    # presence: a check that fails printing to stdout only must still FAIL,
-    # and a check that warns to stderr while passing must still PASS.
-    & $Py (Join-Path $ScriptDir $Script) *> $null
+    $output = & $Py (Join-Path $ScriptDir $Script) 2>&1
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "  OK $Name" -ForegroundColor Green
+        if ($Info) {
+            Write-Host "  INFO $Name (informativo)" -ForegroundColor DarkGray
+            foreach ($line in $output) { Write-Host "      $line" -ForegroundColor DarkGray }
+        } else {
+            Write-Host "  OK $Name" -ForegroundColor Green
+        }
         $script:passed++
     } else {
         Write-Host "  FAIL $Name (exit $LASTEXITCODE)" -ForegroundColor Red
+        $output | Select-Object -First 10 | ForEach-Object { Write-Host "      $_" -ForegroundColor Red }
         $script:failed++
     }
 }
@@ -48,8 +52,8 @@ Write-Host ""
 
 # Run each validator
 Run-Check "check-dependencies"           "check-dependencies.py"
-Run-Check "check-refs"                   "check-refs.py"
-Run-Check "check-secrets"                "check-secrets.py"
+Run-Check "check-refs"                   "check-refs.py" -Info
+Run-Check "check-secrets"                "check-secrets.py" -Info
 Run-Check "check-skill-contract"         "check-skill-contract.py"
 Run-Check "check-mcp-config"             "check-mcp-config.py"
 Run-Check "check-content-quality"        "check-content-quality.py"
@@ -59,7 +63,7 @@ Run-Check "check-orphan-skills"          "check-orphan-skills.py"
 Run-Check "check-level-coverage"         "check-level-coverage.py"
 Run-Check "check-consumed-by-cycles"     "check-consumed-by-cycles.py"
 Run-Check "check-agent-roles"            "check-agent-roles.py"
-Run-Check "check-version-bumps"          "check-version-bumps.py"
+Run-Check "check-version-bumps"          "check-version-bumps.py" -Info
 Run-Check "check-bundle-consistency"     "check-bundle-consistency.py"
 Run-Check "check-scaffold-stack"          "check-scaffold-stack.py"
 

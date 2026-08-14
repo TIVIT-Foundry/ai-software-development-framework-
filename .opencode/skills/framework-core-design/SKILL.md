@@ -5,7 +5,7 @@ description: 'Usa esta skill para diseñar el core agéntico reusable del framew
   el router model-agnostic, el catálogo MCP de herramientas, el manejo de estado,
   HITL, validación, fallback y trazabilidad. Trigger: Cuando se necesita definir o
   revisar el core agéntico reusable: SDK, orquestación, router, MCP y trazabilidad.'
-version: 1.0
+version: 1.1
 metadata:
   when_to_use:
   - Cuando se necesita definir o revisar la capa 3 del framework.
@@ -23,6 +23,7 @@ metadata:
   - framework-architecture
   consumed_by:
   - framework-scaffold-implementation
+  - framework-qa-validation
   agent_roles:
   - control-agent
   - delivery-agent

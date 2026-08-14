@@ -6,7 +6,7 @@ description: 'Usa esta skill para diseñar la capa de datos, memoria y cumplimie
   controles de acceso y obligaciones de compliance. Trigger: Cuando se necesita diseñar
   la capa de datos, memoria y cumplimiento: taxonomía, stores, retención, cifrado
   y controles.'
-version: 1.0
+version: 1.1
 metadata:
   when_to_use:
   - Cuando se necesita diseñar la capa 5 del framework y su relación con compliance.
@@ -25,6 +25,7 @@ metadata:
   - costos-llm
   - framework-platform
   - framework-scaffold-implementation
+  - framework-core-design
   agent_roles:
   - control-agent
   - design-agent

@@ -6,7 +6,7 @@ description: 'Usa esta skill para descubrir y delimitar un vertical de negocio a
   dominio. Trigger: Cuando se quiere iniciar el análisis de un nuevo vertical, validar
   si un dominio justifica un pack propio, o se necesita entender procesos y actores
   del negocio.'
-version: 1.0
+version: 1.1
 metadata:
   when_to_use:
   - Cuando se quiere iniciar el análisis de un nuevo vertical.
@@ -23,6 +23,8 @@ metadata:
   - framework-governance
   consumed_by:
   - framework-conception
+  - framework-pack-design
+  - framework-architecture
   agent_roles:
   - design-agent
   - orchestrator-agent

@@ -6,7 +6,7 @@ description: 'Usa esta skill para definir, aplicar y revisar las reglas maestras
   de cualquier discovery o diseño detallado. Trigger: Cuando se inicia un nuevo proyecto,
   se necesita validar si una propuesta respeta el framework, o se discuten reglas
   obligatorias vs variables.'
-version: 1.0
+version: 1.1
 metadata:
   when_to_use:
   - Cuando se inicia un nuevo proyecto o pack vertical.
@@ -19,7 +19,7 @@ metadata:
   layer:
   - governance
   enforcement: mandatory
-  depends_on:
+  depends_on: []
   consumed_by:
   - framework-architecture
   - framework-data-memory-compliance
@@ -28,6 +28,7 @@ metadata:
   - framework-platform
   - framework-security
   - governance-constitution
+  - framework-conception
   agent_roles:
   - control-agent
   - design-agent

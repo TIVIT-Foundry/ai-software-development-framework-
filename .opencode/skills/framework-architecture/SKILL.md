@@ -6,7 +6,7 @@ description: 'Usa esta skill para transformar la concepción funcional en una ar
   de modelos, memoria, seguridad e infraestructura. Trigger: Cuando ya existe una
   concepción funcional del pack y se necesita mapear la solución a las 7 capas del
   framework.'
-version: 1.0
+version: 1.1
 metadata:
   when_to_use:
   - Cuando ya existe una concepción funcional del pack y se necesita aterrizar la
@@ -28,6 +28,7 @@ metadata:
   - framework-data-memory-compliance
   - framework-security
   - framework-platform
+  - framework-scaffold-implementation
   agent_roles:
   - design-agent
   - control-agent

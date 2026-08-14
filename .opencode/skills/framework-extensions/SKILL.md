@@ -1,8 +1,11 @@
 ---
 name: framework-extensions
-description: 'Extension system for the framework: plugin architecture, manifest schema, hooks, priority stack, catalog management. Trigger: When creating framework extensions, building plugins, or extending framework capabilities with community contributions.'
-version: 1.0
+description: 'Sistema de extensiones del framework: arquitectura de plugins, schema del manifest, hooks, pila de prioridades, gestión de catálogo. Trigger: Cuando se crean extensiones del framework, se construyen plugins o se extienden capacidades con contribuciones de la comunidad.'
+version: 1.1
 metadata:
+  when_to_use:
+  - Cuando se necesita crear una extensión o plugin del framework.
+  - Cuando se define el schema del manifest o se gestiona el catálogo de extensiones.
   phase:
     - construction
   layer:
@@ -15,7 +18,7 @@ metadata:
   agent_roles:
     - delivery-agent
     - design-agent
-  validation_profile: architecture
+  validation_profile: documentation
   mcp_usage: none
 ---
 
