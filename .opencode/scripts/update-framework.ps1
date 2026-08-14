@@ -12,8 +12,11 @@
 #   AGENTS.md   VERSIONS.md
 #
 # Lo que PRESERVA (no se toca):
-#   .workflow/  docs/ del proyecto  .env  .env.example (si existe)
-#   opencode.json (config local; solo se inyecta la instruccion de onboarding)
+#   .workflow/  docs/ del proyecto  .env  opencode.json (config local; solo se
+#   inyecta la instruccion de onboarding)
+#
+# .env.example: MERGE — la seccion del framework va ENCIMA, el contenido local
+# del proyecto se conserva debajo (idempotente, no se duplica en re-syncs).
 #
 # Uso:
 #   powershell -File update-framework.ps1 -Source "C:\ruta\ai-software-development-framework-"
@@ -142,15 +145,28 @@ foreach ($rootFile in @("AGENTS.md", "VERSIONS.md")) {
     }
 }
 
-# .env.example: NUNCA sobrescribir la plantilla local del proyecto (tiene las
-# vars del negocio: DB, JWT, SMTP, integraciones...). Solo se crea si no existe.
+# .env.example: MERGE — la seccion del framework va ENCIMA y el contenido
+# local del proyecto se conserva debajo (sus vars de negocio: DB, JWT, SMTP,
+# integraciones...). Idempotente: si el archivo ya tiene la seccion del
+# framework, no se duplica.
 $envExampleDst = Join-Path $ProjectDir ".env.example"
 $envExampleSrc = Join-Path $Source ".env.example"
-if ((Test-Path $envExampleDst) -and -not $bootstrap) {
-    Write-Host "  .env.example local PRESERVADO (vars del proyecto). Revisar que las vars MCP del framework esten presentes." -ForegroundColor Yellow
-} elseif (Test-Path $envExampleSrc) {
+$fwEnvMarker = "Environment Variables Template"
+if (-not (Test-Path $envExampleDst)) {
     Copy-Item -Path $envExampleSrc -Destination $envExampleDst -Force
     Write-Host "  sync .env.example (no existia)"
+} elseif (-not $bootstrap) {
+    $localContent = [System.IO.File]::ReadAllText($envExampleDst)
+    if ($localContent -match [regex]::Escape($fwEnvMarker)) {
+        Write-Host "  .env.example ya contiene la seccion del framework (idempotente)" -ForegroundColor DarkGray
+    } else {
+        $fwContent = [System.IO.File]::ReadAllText($envExampleSrc).TrimEnd("`r", "`n")
+        $sep = "# ============================================================================="
+        $merged = $fwContent + "`n`n" + $sep + "`n" + "# SECCION DEL PROYECTO (env example original, preservado por el sync)" + "`n" + $sep + "`n" + $localContent
+        $merged = $merged -replace "`n", "`r`n"
+        [System.IO.File]::WriteAllText($envExampleDst, $merged, (New-Object System.Text.UTF8Encoding($false)))
+        Write-Host "  .env.example: seccion del framework agregada ENCIMA del contenido local (preservado)" -ForegroundColor Green
+    }
 }
 
 if ($IncludeConfig -or $bootstrap) {
