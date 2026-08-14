@@ -8,5 +8,11 @@
   "artifacts": {},
   "resume_hint": "Ningun workflow iniciado — proyecto de framework limpio.",
   "started_at": "",
-  "last_checkpoint": ""
+  "last_checkpoint": "",
+  "tasks_summary": {
+    "total": 0,
+    "done": 0,
+    "pct": 0,
+    "by_module": {}
+  }
 }

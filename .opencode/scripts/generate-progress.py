@@ -87,6 +87,8 @@ checkpoint = state.get("last_checkpoint", state.get("started_at", "—"))
 # ── 3. Tareas por modulo (tasks.md) ──────────────────────────────────────────
 tasks_md = PROJECT / "tasks.md"
 module_tasks = {}  # slug -> (done, total)
+global_tasks_done = 0
+global_tasks_total = 0
 if tasks_md.exists():
     current_mod = None
     for line in tasks_md.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -100,9 +102,13 @@ if tasks_md.exists():
                     break
             continue
         t = re.match(r"^\s*[-*]\s*\[([ xX])\]\s*(.+)$", line)
-        if t and current_mod:
-            done, total = module_tasks.get(current_mod, (0, 0))
-            module_tasks[current_mod] = (done + (1 if t.group(1).lower() == "x" else 0), total + 1)
+        if t:
+            is_done = 1 if t.group(1).lower() == "x" else 0
+            global_tasks_done += is_done
+            global_tasks_total += 1
+            if current_mod:
+                done, total = module_tasks.get(current_mod, (0, 0))
+                module_tasks[current_mod] = (done + is_done, total + 1)
 
 # ── 4. Override manual (progress-state.json) ─────────────────────────────────
 override = read_json(PROJECT / "docs" / "artifacts" / "progress-state.json")
@@ -325,4 +331,23 @@ out_dir = PROJECT / "docs" / "artifacts"
 out_dir.mkdir(parents=True, exist_ok=True)
 out_file = out_dir / "progress.html"
 out_file.write_text(html, encoding="utf-8")
+
+# ── Auto-sync tasks summary to .workflow/state.json ─────────────────────────
+state_file = PROJECT / ".workflow" / "state.json"
+if state_file.exists():
+    try:
+        current_state = read_json(state_file)
+        if isinstance(current_state, dict):
+            current_state["tasks_summary"] = {
+                "total": global_tasks_total,
+                "done": global_tasks_done,
+                "pct": round(global_tasks_done / global_tasks_total * 100) if global_tasks_total else 0,
+                "by_module": {k: {"done": d, "total": t} for k, (d, t) in module_tasks.items()}
+            }
+            if global_tasks_total > 0 and (not current_state.get("last_checkpoint") or current_state.get("last_checkpoint") == "—"):
+                current_state["last_checkpoint"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            state_file.write_text(json.dumps(current_state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    except Exception:
+        pass
+
 print(f"OK: {out_file} ({len(html)} bytes, {len(modules)} modulos, {pct_global}% global)")

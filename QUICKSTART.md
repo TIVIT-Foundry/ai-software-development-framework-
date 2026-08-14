@@ -225,7 +225,7 @@ No necesitas pasar por todo el flujo. Puedes invocar skills específicas directa
 #   OK check-dependencies
 #   OK check-refs
 #   OK check-secrets       (secretos hardcodeados y URLs hardcodeadas en código)
-#   ... 15/15 passed
+#   ... 16/16 passed
 ```
 
 ## Paso 7: El ciclo diario

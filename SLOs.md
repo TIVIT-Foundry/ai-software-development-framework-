@@ -13,7 +13,7 @@ Definir SLOs/SLIs para el framework como producto interno: calidad del catálogo
 
 | Indicador | Métrica | Objetivo |
 |-----------|---------|----------|
-| Validadores | Porcentaje de ejecuciones con 15/15 OK | ≥ 99% |
+| Validadores | Porcentaje de ejecuciones con 16/16 OK | ≥ 99% |
 | Scaffold | Porcentaje de specs que generan código compilable | ≥ 95% |
 | Skills | Porcentaje de skills con frontmatter válido | 100% |
 | Referencias rotas | Número de links rotos en `.opencode/` | 0 |

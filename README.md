@@ -62,7 +62,7 @@ Este repositorio contiene propiedad intelectual de **TIVIT** y está destinado e
 | `.opencode/skills/` | 114 skills organizadas por dominio |
 | `.opencode/agents/` | 4 agentes especializados |
 | `.opencode/framework/` | Documentos de gobierno (MANIFEST, ROUTING, PROTOCOL, AGENT-MODEL) |
-| `.opencode/validators/` | 15 scripts Python de validación + runner PowerShell |
+| `.opencode/validators/` | 16 scripts Python de validación + runner PowerShell |
 | `.opencode/scripts/` | Scripts operacionales (update-framework, generate-progress, drift-detect, etc.) |
 | `.opencode/scaffold/` | Generador de código desde specs |
 | `.workflow/` | Estado de sesión (`state.json`), versión del framework, notas |
@@ -185,7 +185,7 @@ El primer módulo es Gestión de Tareas:
    > a una carpeta temporal y ejecuta su `update-framework.ps1` en modo bootstrap
    > (el proyecto no tiene `.opencode/` aún). Crea `.env` desde `.env.example`
    > y dime qué tokens faltan.
-3. El agente clona, instala (bootstrap), crea el venv, corre los 15 validators y te pide los tokens.
+3. El agente clona, instala (bootstrap), crea el venv, corre los 16 validators y te pide los tokens.
 4. **Reinicia opencode** — ahora carga las 114 skills y el AGENT-ONBOARDING.md (autoconfiguración).
 
 ### Opción B — Manual (2 comandos)
@@ -195,7 +195,7 @@ git clone https://github.com/TIVIT-Foundry/ai-software-development-framework- C:
 powershell -File C:\temp\framework\.opencode\scripts\update-framework.ps1 -Source C:\temp\framework -ProjectDir C:\ruta\al\proyecto
 ```
 
-El script detecta que el proyecto no tiene `.opencode/` y entra en **modo bootstrap**: copia el framework, crea `opencode.json` (con autoconfiguración), `.env.example`, el venv de validators y verifica los 15 checks.
+El script detecta que el proyecto no tiene `.opencode/` y entra en **modo bootstrap**: copia el framework, crea `opencode.json` (con autoconfiguración), `.env.example`, el venv de validators y verifica los 16 checks.
 
 > **Nota**: el repo es de la org TIVIT-Foundry — si es privado, quien instale necesita acceso a la org (o usa el release zip, descargable desde la pestaña Releases). Copiar `.env.example` a `.env` y completar los tokens (GitHub, PostgreSQL) es el único paso manual.
 

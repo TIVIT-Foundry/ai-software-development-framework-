@@ -66,6 +66,7 @@ Run-Check "check-agent-roles"            "check-agent-roles.py"
 Run-Check "check-version-bumps"          "check-version-bumps.py" -Info
 Run-Check "check-bundle-consistency"     "check-bundle-consistency.py"
 Run-Check "check-scaffold-stack"          "check-scaffold-stack.py"
+Run-Check "check-spec-drift"              "check-spec-drift.py" -Info
 
 Write-Host ""
 Write-Host "$passed passed, $failed failed (total $total)"

@@ -23,7 +23,7 @@
 
 ## 3. ¿La integridad del framework está OK?
 
-- [ ] Ejecutar `.opencode/validators/run-all.ps1` (15 checks). Si algo falla:
+- [ ] Ejecutar `.opencode/validators/run-all.ps1` (16 checks). Si algo falla:
       reportarlo ANTES de trabajar y no ocultar el fallo.
 - [ ] Cruce rápido: las skills del catálogo (SKILLS-MANIFEST) que tu herramienta
       no lista como cargables = frontmatter YAML roto (p. ej. apóstrofe sin

@@ -1,0 +1,47 @@
+name: TIVIT Foundry — Framework & Governance CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  validate-framework:
+    name: Framework Integrity & Governance (16 Checks)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install validator dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          if (Test-Path ".opencode/validators/requirements.txt") {
+            pip install -r .opencode/validators/requirements.txt
+          } else {
+            pip install pyyaml jsonschema
+          }
+
+      - name: Run Framework Validators
+        shell: pwsh
+        run: |
+          powershell -File .opencode/validators/run-all.ps1
+
+      - name: Run Spec Drift Checker
+        shell: pwsh
+        run: |
+          python .opencode/validators/check-spec-drift.py
+
+      - name: Report Phase Gates
+        shell: pwsh
+        run: |
+          powershell -File .opencode/validators/check-phase-gate.ps1

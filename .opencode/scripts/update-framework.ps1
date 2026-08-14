@@ -1,4 +1,4 @@
-﻿# update-framework.ps1 - Sincroniza el Framework Agentico a un proyecto.
+# update-framework.ps1 - Sincroniza el Framework Agentico a un proyecto.
 #
 # Copia los artefactos del framework desde el repo raiz (Source) al proyecto
 # (ProjectDir), con backup previo y validacion post-copia (validators 15).
@@ -30,7 +30,8 @@ param(
     [string]$Source = "",
     [string]$ProjectDir = "",
     [switch]$IncludeConfig,
-    [switch]$PreserveLocalSkills
+    [switch]$PreserveLocalSkills,
+    [switch]$IncludeCI
 )
 
 $ErrorActionPreference = "Stop"
@@ -235,6 +236,20 @@ if (Test-Path $ocProj) {
         }
     } catch {
         Write-Host "  opencode.json: no se pudo inyectar la instruccion (JSON invalido?) - revisar manualmente" -ForegroundColor Yellow
+    }
+}
+
+# -- CI/CD Workflow Template para GitHub Actions ------------------------------
+if ($bootstrap -or $IncludeCI) {
+    $ciSrc = Join-Path $fwSource "scaffold\templates\ci\framework-ci.yml"
+    $ghDir = Join-Path $ProjectDir ".github\workflows"
+    $ciDst = Join-Path $ghDir "framework-ci.yml"
+    if (Test-Path $ciSrc) {
+        if (-not (Test-Path $ciDst)) {
+            New-Item -ItemType Directory -Path $ghDir -Force | Out-Null
+            Copy-Item -Path $ciSrc -Destination $ciDst -Force
+            Write-Host "  sync .github/workflows/framework-ci.yml (CI de gobernanza)" -ForegroundColor Green
+        }
     }
 }
 
